@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+backend/.gradle/
+backend/build/
+!backend/gradle/wrapper/gradle-wrapper.jar
+
+# Java
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.app.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
+
+# Claude Code (local only)
+.claude/settings.local.json
+
+# IDE
+.idea/
+*.iml
+
+# Local tools
+.playwright-mcp/
+shrimp_data/
+tasks/
+.mcp.json
+
+# Secrets
+backend/src/main/resources/application-dev.yml
+
+# Logs
+backend/server.log
+*.log
+
+# Build output
+backend/bin/
+
+# Claude local memory (session-specific, not shared)
+.claude/agent-memory/
+frontend/.claude/

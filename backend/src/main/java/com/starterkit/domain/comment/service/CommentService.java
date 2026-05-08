@@ -1,0 +1,52 @@
+package com.starterkit.domain.comment.service;
+
+import com.starterkit.domain.checkin.entity.Checkin;
+import com.starterkit.domain.checkin.repository.CheckinRepository;
+import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
+import com.starterkit.domain.comment.dto.response.CommentResponse;
+import com.starterkit.domain.comment.entity.Comment;
+import com.starterkit.domain.comment.repository.CommentRepository;
+import com.starterkit.domain.user.entity.User;
+import com.starterkit.domain.user.repository.UserRepository;
+import com.starterkit.global.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class CommentService {
+
+    private final CheckinRepository checkinRepository;
+    private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+
+    public List<CommentResponse> getComments(Long checkinId) {
+        checkinRepository.findById(checkinId)
+                .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+        return commentRepository.findByCheckinIdOrderByCreatedAtAsc(checkinId)
+                .stream()
+                .map(CommentResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public CommentResponse addComment(Long checkinId, CreateCommentRequest req, UserDetails userDetails) {
+        Checkin checkin = checkinRepository.findById(checkinId)
+                .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        Comment comment = Comment.builder()
+                .user(user)
+                .checkin(checkin)
+                .content(req.content())
+                .build();
+
+        return CommentResponse.from(commentRepository.save(comment));
+    }
+}

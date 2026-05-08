@@ -1,0 +1,14 @@
+{
+        "configurations": [
+                {
+                        "type": "java",
+                        "name": "Spring Boot-StarterKitApplication<backend>",
+                        "request": "launch",
+                        "cwd": "${workspaceFolder}",
+                        "mainClass": "com.starterkit.StarterKitApplication",
+                        "projectName": "backend",
+                        "args": "",
+                        "envFile": "${workspaceFolder}/.env"
+                }
+        ]
+}
