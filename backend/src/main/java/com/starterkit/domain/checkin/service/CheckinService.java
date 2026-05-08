@@ -16,6 +16,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -36,6 +38,7 @@ public class CheckinService {
 
         private final CheckinRepository checkinRepository;
         private final UserRepository userRepository;
+        private final S3Client s3Client;
         private final S3Presigner s3Presigner;
 
         @Value("${app.s3.bucket}")
@@ -85,6 +88,12 @@ public class CheckinService {
                 if (!checkin.getUser().getId().equals(user.getId())) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 체크인만 삭제할 수 있습니다.");
                 }
+                if (checkin.getPhotoObjectKey() != null) {
+                        s3Client.deleteObject(DeleteObjectRequest.builder()
+                                        .bucket(s3Bucket)
+                                        .key(checkin.getPhotoObjectKey())
+                                        .build());
+                }
                 checkinRepository.delete(checkin);
         }
 
@@ -104,16 +113,29 @@ public class CheckinService {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();
                 List<Checkin> checkins = checkinRepository.findAllByOrderByCreatedAtDesc();
+
+                if (checkins.isEmpty()) {
+                        return new TodayFeedResponse(List.of(), 0);
+                }
+
+                List<Long> checkinIds = checkins.stream().map(Checkin::getId).toList();
+
+                // 벌크 집계 — 쿼리 3개로 N+1 해소
+                Map<Long, Long> likeCountMap = checkinRepository.countLikesByCheckinIds(checkinIds)
+                                .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+                Set<Long> likedIds = new HashSet<>(checkinRepository.findLikedCheckinIdsByUserId(checkinIds, user.getId()));
+                Map<Long, Long> commentCountMap = checkinRepository.countCommentsByCheckinIds(checkinIds)
+                                .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+
                 List<Category> myCategories = checkinRepository.findMyCategoriesToday(user.getId(), range[0], range[1]);
                 long sameCategoryUserCount = myCategories.isEmpty() ? 0
-                                : checkinRepository.countDistinctUsersByCategories(range[0], range[1], myCategories,
-                                                user.getId());
+                                : checkinRepository.countDistinctUsersByCategories(range[0], range[1], myCategories, user.getId());
+
                 List<CheckinResponse> responses = checkins.stream()
                                 .map(c -> CheckinResponse.of(c,
-                                                checkinRepository.countLikesByCheckinId(c.getId()),
-                                                checkinRepository.existsLikeByCheckinIdAndUserId(c.getId(),
-                                                                user.getId()),
-                                                checkinRepository.countCommentsByCheckinId(c.getId()),
+                                                likeCountMap.getOrDefault(c.getId(), 0L),
+                                                likedIds.contains(c.getId()),
+                                                commentCountMap.getOrDefault(c.getId(), 0L),
                                                 s3BaseUrl()))
                                 .toList();
                 return new TodayFeedResponse(responses, sameCategoryUserCount);
