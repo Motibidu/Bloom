@@ -4,7 +4,7 @@
 
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, X, ImagePlus, PenLine } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
@@ -84,16 +84,39 @@ export default function FeedPage() {
 
   if (isLoading) {
     return (
-      <main className="max-w-6xl mx-auto px-6 py-8 flex justify-center">
-        <p className="text-xl text-muted-foreground">불러오는 중...</p>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label="피드를 불러오는 중이에요"
+          className="flex flex-col items-center gap-4 py-16"
+        >
+          <svg className="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+          </svg>
+          <p className="text-xl font-semibold text-muted-foreground">잠깐만 기다려 주세요...</p>
+        </div>
       </main>
     )
   }
 
   if (isError) {
     return (
-      <main className="max-w-6xl mx-auto px-6 py-8 flex justify-center">
-        <p className="text-xl text-destructive">피드를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div role="alert" className="flex flex-col items-center gap-5 py-16 px-4 text-center">
+          <p className="text-xl font-bold text-foreground">잠깐, 피드를 불러오지 못했어요</p>
+          <p className="text-lg font-semibold text-muted-foreground leading-relaxed">
+            인터넷 연결을 확인하신 후 다시 시도해 주세요
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="min-h-[52px] px-6 text-lg font-bold rounded-xl border-2 border-primary text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
+          >
+            다시 시도하기
+          </button>
+        </div>
       </main>
     )
   }
@@ -126,11 +149,7 @@ export default function FeedPage() {
           onClick={() => setIsFormOpen(true)}
           className="w-full rounded-2xl border-2 border-primary/30 bg-primary/10 px-6 py-6 flex items-center gap-5 text-left hover:bg-primary/20 hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[96px]"
         >
-          <PenLine
-            size={36}
-            className="text-primary shrink-0"
-            aria-hidden="true"
-          />
+          <PenLine size={36} className="text-primary shrink-0" aria-hidden="true" />
           <div className="space-y-1">
             <p className="text-xl font-bold text-foreground">오늘 활동 기록하기</p>
             <p className="text-lg font-semibold text-primary">탭하면 바로 시작할 수 있어요</p>
@@ -147,7 +166,7 @@ export default function FeedPage() {
               type="button"
               onClick={handleCloseForm}
               aria-label="작성 취소하기"
-              className="inline-flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-lg text-xl font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+              className="inline-flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-lg text-xl font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
             >
               <X size={24} aria-hidden="true" />
               <span>취소</span>
@@ -155,9 +174,7 @@ export default function FeedPage() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-xl font-bold text-foreground">
-              어떤 활동을 했나요?
-            </p>
+            <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
             <CategoryIconGrid
               selected={selectedCategory}
               onSelect={setSelectedCategory}
@@ -178,7 +195,6 @@ export default function FeedPage() {
                 </div>
                 <Input
                   id="activity-title"
-                  aria-label="활동 제목 입력"
                   className="text-lg px-4 py-3 rounded-xl border-2 h-auto"
                   maxLength={50}
                   placeholder="활동 제목을 입력해 주세요"
@@ -199,7 +215,6 @@ export default function FeedPage() {
                 </div>
                 <Textarea
                   id="activity-content"
-                  aria-label="활동 내용 입력"
                   className="text-lg px-4 py-3 resize-none rounded-xl border-2"
                   rows={4}
                   maxLength={100}
@@ -229,10 +244,11 @@ export default function FeedPage() {
                     <button
                       type="button"
                       onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
-                      aria-label="사진 제거"
-                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                      aria-label="사진 제거하기"
+                      className="absolute top-2 right-2 inline-flex items-center gap-1.5 min-h-[48px] min-w-[48px] px-3 py-2 rounded-lg bg-black/70 text-white text-base font-semibold hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/70 transition-colors"
                     >
-                      <X size={18} />
+                      <X size={20} aria-hidden="true" />
+                      <span>제거</span>
                     </button>
                   </div>
                 ) : (
@@ -252,11 +268,12 @@ export default function FeedPage() {
           {selectedCategory && (
             <BigButton
               fullWidth
+              loading={isSubmitting}
               disabled={!title.trim() || !content.trim() || isSubmitting}
-              aria-label="활동 등록하기"
+              aria-label={isSubmitting ? '등록하는 중이에요' : '활동 등록하기'}
               onClick={handleSubmit}
             >
-              {isSubmitting ? '등록 중...' : '등록하기'}
+              {isSubmitting ? '등록하는 중이에요...' : '등록하기'}
             </BigButton>
           )}
         </section>
@@ -264,9 +281,21 @@ export default function FeedPage() {
 
       {/* 피드 목록 */}
       {checkins.length === 0 ? (
-        <div className="flex flex-col items-center gap-5 py-16 px-4 text-center" role="status">
-          <p className="text-2xl font-bold text-foreground">아직 오늘의 활동이 없어요</p>
-          <p className="text-xl text-muted-foreground leading-relaxed">첫 번째로 오늘 활동을 기록해 보세요!</p>
+        <div className="flex flex-col items-center gap-5 py-16 px-4 text-center">
+          <ClipboardList size={56} className="text-muted-foreground/50" aria-hidden="true" />
+          <div className="space-y-2">
+            <h3 className="text-2xl font-bold text-foreground">아직 오늘의 활동이 없어요</h3>
+            <p className="text-xl font-semibold text-muted-foreground leading-relaxed">
+              첫 번째로 오늘 활동을 기록해 보세요!
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFormOpen(true)}
+            className="h-14 px-8 text-lg font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
+          >
+            지금 기록하기
+          </button>
         </div>
       ) : (
         <section aria-label="오늘의 활동 피드">

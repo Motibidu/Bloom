@@ -60,7 +60,7 @@ shadcnui MCP를 사용하여:
 
 ## 50~60대 친화 디자인 원칙 및 가이드라인
 
-> bloom 프로젝트 코드베이스를 직접 분석해 도출한 실증 기반 원칙입니다. 새 컴포넌트를 만들거나 기존 컴포넌트를 수정할 때 반드시 준수하세요.
+> bloom 프로젝트 FeedPage, CheckInCard, ActivityDetailPage 코드를 직접 분석해 도출한 실증 기반 원칙입니다. 새 컴포넌트를 만들거나 기존 컴포넌트를 수정할 때 반드시 준수하세요.
 
 ---
 
@@ -68,40 +68,61 @@ shadcnui MCP를 사용하여:
 
 50~60대는 노안으로 인한 근거리 시력 저하, 대비 감도 저하를 경험합니다.
 
-**폰트 크기 규정:**
+**폰트 크기 규정 (FeedPage 실제 코드 기준):**
 
-| 용도 | 최솟값 | 권장값 | Tailwind |
-|------|--------|--------|----------|
-| 페이지 제목 | 32px | 36px | `text-4xl` / `text-5xl` |
-| 섹션 제목 | 24px | 28px | `text-2xl` / `text-3xl` |
-| 카드 제목 / 중요 레이블 | 20px | 24px | `text-xl` / `text-2xl` |
-| 본문 / 설명 | 20px | 24px | `text-xl` / `text-2xl` |
-| 보조 텍스트 (카운터, 시간) | 18px | 20px | `text-lg` / `text-xl` |
-| 에러 메시지 | 18px | 20px | `text-lg` / `text-xl` |
+| 용도 | Tailwind | 비고 |
+|------|----------|------|
+| 섹션 제목 / 폼 레이블 | `text-xl font-bold` | "오늘 활동 기록하기", "제목", "내용" |
+| 카드 제목 | `text-xl font-bold` | CheckInCard title |
+| 카드 본문 | `text-base text-foreground` | CheckInCard description, line-clamp-3 |
+| 닉네임 | `text-base font-bold` | 카드 헤더 |
+| 날짜 / 메타 | `text-sm text-foreground/60` | 카드 헤더 날짜 (font-medium 병기) |
+| 하단 바 카운트 | `text-base font-semibold` | 좋아요/댓글/조회수 |
+| 보조 텍스트 (글자 수 카운터) | `text-lg font-medium text-foreground/60` | aria-live 필수 |
+| body 기본값 | `1.125rem` | index.css 전역 설정 |
+
+**아이콘 크기 기준:**
+```
+size={36~40} — 작성 CTA 아이콘 (PenLine), 카테고리 그리드 아이콘
+size={26}    — 배너 아이콘 (Users)
+size={22~24} — 카드 하단 바 아이콘 (Heart, MessageCircle, Eye)
+size={22}    — MoreVertical 메뉴 아이콘
+size={16}    — 카드 헤더 카테고리 아이콘 (날짜 옆, text-primary)
+```
 
 **절대 금지:**
 - `text-xs` (12px) — 어떤 용도로도 사용 금지
-- `text-sm` — 보조 텍스트에도 금지. 최솟값은 `text-base`
+- `text-sm` 단독 주요 텍스트 — 날짜/메타 한정 허용 (`text-sm text-foreground/60 font-medium`)
 - `text-sm + text-muted-foreground` 조합 — 이중 감쇠, 판독 불가
-- `text-base + text-muted-foreground` 조합 — 위와 동일하게 감쇠 금지
 
-**보조 텍스트 허용 패턴 (반드시 font-medium 병기):**
+**보조 텍스트 허용 패턴 (font-medium 병기):**
 ```tsx
-<span className="text-lg font-medium text-foreground/60">{formatRelativeTime(createdAt)}</span>
-<span className="text-lg font-medium text-foreground/60">{value.length}/50</span>
+<span className="text-sm text-foreground/60">{formatAbsoluteTime(createdAt)}</span>   // 카드 날짜
+<span className="text-lg font-medium text-foreground/60">{value.length}/50</span>     // 글자 수 카운터
 ```
 
 **줄 간격 / 굵기:**
 - 본문: `leading-relaxed`, 긴 내용: `leading-loose`
 - `leading-tight` / `tracking-tight` 절대 금지
-- 본문 최소 `font-semibold`, 레이블 `font-bold`, 제목 `font-extrabold`
-- `font-normal` / `font-medium` 단독 사용 금지
+- 레이블 `font-bold`, 제목 `font-bold` / `font-extrabold`
+- `font-normal` 단독 사용 금지
 
 ---
 
 ### B. 색상 및 대비 원칙
 
 50~60대는 수정체 황변화로 파란색 계열 구분이 어려워지고, 색 대비 감도가 저하됩니다.
+
+**색상 토큰 (index.css @theme 실제 값):**
+```
+primary:            oklch(0.55 0.2 250)   // 파란 계열
+background:         oklch(0.97 0.005 250) // 연한 파란-회색 (카드와 대비)
+card:               oklch(1 0 0)          // 흰색 — 배경보다 밝아 카드가 떠 보임
+foreground:         oklch(0.15 0 0)
+muted-foreground:   oklch(0.35 0 0)
+border:             oklch(0.85 0.01 250)
+destructive:        oklch(0.45 0.22 25)
+```
 
 **권장 조합 (WCAG AA 이상):**
 ```
@@ -115,10 +136,20 @@ text-amber-800 on bg-amber-50           // 경고 상태
 
 **중요도별 색상 체계:**
 ```
-1단계 — 핵심 정보: text-foreground
-2단계 — 강조: text-primary
-3단계 — 보조 정보: text-foreground/60  (text-lg 이상일 때만 text-muted-foreground 허용)
-4단계 — 비활성: text-muted-foreground/50
+1단계 — 핵심 정보:  text-foreground
+2단계 — 강조:       text-primary
+3단계 — 보조 정보:  text-foreground/60  (text-sm 이상 + font-medium 병기)
+4단계 — 비활성:     text-muted-foreground
+```
+
+**강조 영역 색상 패턴 (FeedPage 기준):**
+```
+배너/알림:       bg-primary/10 border border-primary/20
+작성 CTA 버튼:   bg-primary/10 border-2 border-primary/30 hover:bg-primary/20 hover:border-primary/50
+폼 컨테이너:     border border-primary/40 bg-card
+카테고리 선택됨: ring-2 ring-primary bg-primary/10 border-primary
+좋아요 활성:     fill-red-500 text-red-500
+카테고리 아이콘: text-primary (카드 헤더, size=16)
 ```
 
 **금지 조합:**
