@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
@@ -27,9 +27,12 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 function AuthInitializer({ children }: { children: React.ReactNode }) {
   const { user, setAccessToken, logout } = useAuthStore()
   const [ready, setReady] = useState(false)
+  const called = useRef(false)
 
   useEffect(() => {
-    // user가 localStorage에 없으면 세션 없음 — refresh 불필요
+    if (called.current) return
+    called.current = true
+
     if (!user) {
       setReady(true)
       return
@@ -39,7 +42,6 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
         setAccessToken(data.accessToken)
       })
       .catch(() => {
-        // refresh token 만료 — 완전 로그아웃
         logout()
       })
       .finally(() => setReady(true))
