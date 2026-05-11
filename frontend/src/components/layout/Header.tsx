@@ -1,4 +1,4 @@
-import { LogOut, UserRound } from 'lucide-react'
+import { LogOut, UserRound, Smile } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback } from '@/components/ui/shadcn/avatar'
 import {
@@ -12,22 +12,42 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { useLogout } from '@/hooks/useAuth'
 
+const warmBlueGradient = 'linear-gradient(135deg, oklch(0.62 0.15 220), oklch(0.76 0.12 220))'
+
 export default function Header() {
   const user = useAuthStore((s) => s.user)
   const logout = useLogout()
   const navigate = useNavigate()
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
+    <header className="h-20 border-b border-border bg-white/90 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
       {/* 왼쪽: 로고 */}
-      <Link to="/" className="flex items-center">
-        <span className="text-xl font-extrabold text-primary tracking-tight">
+      <Link to="/" className="flex items-center gap-3">
+        {/* 로고 아이콘 박스 */}
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: warmBlueGradient }}
+          aria-hidden="true"
+        >
+          <Smile size={22} className="text-white" aria-hidden="true" />
+        </div>
+        {/* 브랜드 이름 — 그라디언트 텍스트 */}
+        <span
+          className="text-xl font-extrabold"
+          style={{
+            fontFamily: "'Noto Serif KR', serif",
+            backgroundImage: warmBlueGradient,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
           오늘 뭐 했어요?
         </span>
       </Link>
 
       {/* 오른쪽: PC - 피드 링크 + 프로필 드롭다운 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* PC에서만 노출되는 피드 바로가기 링크 */}
         <Link
           to="/"
@@ -44,10 +64,13 @@ export default function Header() {
               aria-label="프로필 메뉴"
             >
               <Avatar className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity">
-                <AvatarFallback className="bg-primary text-primary-foreground text-base font-semibold">
+                <AvatarFallback
+                  className="text-base font-semibold text-white"
+                  style={{ background: warmBlueGradient }}
+                >
                   {user?.nickname
                     ? user.nickname.slice(0, 2)
-                    : <UserRound size={22} />
+                    : <UserRound size={22} aria-hidden="true" />
                   }
                 </AvatarFallback>
               </Avatar>
@@ -75,7 +98,7 @@ export default function Header() {
               disabled={logout.isPending}
               className="text-destructive focus:text-destructive cursor-pointer"
             >
-              <LogOut size={20} />
+              <LogOut size={20} aria-hidden="true" />
               로그아웃
             </DropdownMenuItem>
           </DropdownMenuContent>
