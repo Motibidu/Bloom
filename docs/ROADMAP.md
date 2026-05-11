@@ -192,7 +192,7 @@ Phase 2에서 완성한 UI의 더미 데이터를 실제 API 호출로 교체합
   - 프로필 드롭다운: `useCurrentUser()` 훅으로 닉네임 표시
   - Playwright MCP로 회원가입 → 로그인 → 로그아웃 → 재로그인 E2E 시나리오 검증
 
-- [ ] **Task 015: 오늘의 피드 및 체크인 작성 API 연동** - 우선순위
+- [x] **Task 015: 오늘의 피드 및 체크인 작성 API 연동** ✅ - 우선순위
   - `useTodayFeed()` TanStack Query 훅: `GET /api/checkins/today` 호출, 30초 staleTime 설정
   - 피드 상단 "나와 같은 활동을 한 N명" 배너: `sameCategoryUserCount` 값 표시 (비로그인 또는 미체크인 시 배너 미표시)
   - 인라인 체크인 작성 폼 연동:
@@ -202,21 +202,21 @@ Phase 2에서 완성한 UI의 더미 데이터를 실제 API 호출로 교체합
     - 등록 성공 시 폼 닫힘 + 피드 캐시 무효화(즉시 갱신) + 성공 토스트
   - Playwright MCP로 피드 로딩 → 체크인 작성(사진 포함/미포함) → 피드 즉시 반영 E2E 검증
 
-- [ ] **Task 016: 활동 상세 및 소셜 인터랙션 API 연동**
+- [x] **Task 016: 활동 상세 및 소셜 인터랙션 API 연동** ✅
   - `useCheckinDetail(id)` 훅: `GET /api/checkins/{id}` 호출
   - 좋아요 토글: `POST/DELETE /api/checkins/{id}/likes` mutation + 옵티미스틱 업데이트 (`likeCount`, `likedByMe` 즉시 반영)
   - `useComments(id)` 훅: `GET /api/checkins/{id}/comments` 호출
   - 댓글 작성 mutation: `POST /api/checkins/{id}/comments` 성공 후 댓글 목록 캐시 무효화
   - Playwright MCP로 좋아요 토글 + 댓글 작성 + 다른 계정으로 확인하는 통합 E2E 검증
 
-- [ ] **Task 017: 나의 활동 페이지 API 연동**
+- [x] **Task 017: 나의 활동 페이지 API 연동** ✅
   - `useMyCalendar(year, month)` 훅: `GET /api/checkins/my/calendar` 호출
   - 날짜 클릭 시 `useMyCheckins(date)` 훅: `GET /api/checkins/my?date=YYYY-MM-DD` 호출 → 인라인 표시
   - `useMyCategoryStats(year, month)` 훅: `GET /api/checkins/my/stats` 호출
   - 월 이동 시 year/month 파라미터 갱신 후 캐시 자동 관리
   - Playwright MCP로 월 이동 → 날짜 클릭 → 통계 표시 플로우 검증
 
-- [ ] **Task 018: 전체 사용자 플로우 통합 테스트**
+- [x] **Task 018: 전체 사용자 플로우 통합 테스트** ✅
   - Playwright MCP로 핵심 사용자 여정 E2E 검증:
     - 회원가입 → 로그인 → 오늘의 피드 확인 → 체크인 작성(사진 포함) → 피드 즉시 반영
     - 다른 계정으로 로그인 → 피드에서 첫 번째 계정 체크인 확인 → 좋아요 → 댓글 작성 → 상세 페이지 확인
@@ -224,6 +224,34 @@ Phase 2에서 완성한 UI의 더미 데이터를 실제 API 호출로 교체합
     - 401 자동 갱신 인터셉터 동작 검증 (액세스 토큰 만료 시 자동 갱신 후 재요청)
   - 에러 핸들링 및 엣지 케이스 검증: 네트워크 오류, 유효성 검사 실패, 이미 좋아요한 항목 재요청
   - 로딩/에러 상태 UI 검증 (Skeleton, ErrorBoundary, 재시도 버튼)
+
+### Phase 4.5: 기능 확장 — 다중 사진 첨부
+
+MVP 연동 완료 후 사용자 경험을 개선하는 첫 번째 기능 확장입니다. 체크인 사진을 최대 3장까지 첨부하고 피드에서 슬라이더로 감상할 수 있습니다.
+
+- [x] **Task 019: 다중 사진 첨부 — 백엔드 DB 및 API 수정** ✅ - 우선순위
+  - `checkin_photos` 테이블 신규 생성 (`checkins`와 1:N, ON DELETE CASCADE)
+  - `CheckinPhoto` 엔티티 생성 (id, checkin_id, object_key, sort_order)
+  - `Checkin` 엔티티에 `@OneToMany photos` 컬렉션 추가 (기존 `photoObjectKey` 필드 유지, 하위 호환)
+  - `CreateCheckinRequest.photoObjectKey` → `photoObjectKeys(List<String>, @Size(max=3))`
+  - `CheckinResponse.photoUrl` → `photoUrls(List<String>)`; `of()` 팩토리에서 photos 정렬 후 URL 생성, 기존 `photoObjectKey` 폴백 포함
+  - `CheckinService.create()`: 각 objectKey prefix 검증 후 `CheckinPhoto` 저장
+  - `CheckinService.delete()`: photos 순회 S3 일괄 삭제
+  - `CheckinPhotoRepository` 신규 생성
+
+- [x] **Task 020: 다중 사진 첨부 — 프론트엔드 UI 및 타입 수정** ✅
+  - `CheckIn` 타입의 `photoUrl?: string` → `photoUrls?: string[]` 교체
+  - `useCreateCheckin` mutationFn의 `photoObjectKey` → `photoObjectKeys(string[])` 교체
+  - `FeedPage` 사진 첨부 UI: 썸네일 미리보기 가로 행 + 개별 삭제 버튼 + 추가 버튼 (N/3 카운터, 3장 달성 시 숨김), 파일 선택 창에서 한 번에 여러 장 선택 가능(`multiple`)
+  - `handleSubmit`: 각 파일 순차 presigned URL 발급 → S3 PUT → objectKeys 배열로 `createCheckin` 호출
+  - `checkin-card.tsx`: 1장이면 전체 너비 이미지, 2~3장이면 `snap-x` 가로 스크롤 슬라이더
+  - `ActivityDetailPage.tsx`: photoUrls 배열 처리로 수정
+
+- [x] **Task 021: 사진 클릭 확대 (라이트박스)** ✅
+  - `ActivityDetailPage` 사진 클릭 시 전체화면 오버레이로 원본 비율 확대 표시
+  - 배경 클릭 또는 X 버튼으로 닫기
+  - 2~3장일 경우 좌우 화살표로 탐색 + 하단 페이지 표시 (`1 / 3`)
+  - 외부 라이브러리 없이 `lightboxIndex` 상태로 인라인 구현
 
 ### Phase 5: 배포 및 인프라
 

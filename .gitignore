@@ -14,7 +14,9 @@ frontend/tsconfig.app.tsbuildinfo
 frontend/tsconfig.node.tsbuildinfo
 
 # Claude Code (local only)
-.claude/settings.local.json
+.claude/
+.agents/
+.claude/skills/
 
 # IDE
 .idea/
