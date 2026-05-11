@@ -14,7 +14,7 @@ export interface CheckIn {
   category: Category
   title: string
   description: string
-  photoUrl?: string
+  photoUrls?: string[]
   likeCount: number
   likedByMe: boolean
   commentCount: number

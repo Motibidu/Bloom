@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "checkins", indexes = {
@@ -37,6 +39,11 @@ public class Checkin {
 
     @Column(name = "photo_object_key", length = 300)
     private String photoObjectKey;
+
+    @OneToMany(mappedBy = "checkin", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    @Builder.Default
+    private List<CheckinPhoto> photos = new ArrayList<>();
 
     @Column(name = "view_count", nullable = false)
     @Builder.Default

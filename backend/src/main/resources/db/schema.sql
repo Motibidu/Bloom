@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS checkins (
     INDEX idx_checkins_created_cat   (created_at, category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS checkin_photos (
+    id               BIGINT       NOT NULL AUTO_INCREMENT,
+    checkin_id       BIGINT       NOT NULL,
+    object_key       VARCHAR(300) NOT NULL,
+    sort_order       TINYINT      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_checkin_photos_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id) ON DELETE CASCADE,
+    INDEX idx_checkin_photos_checkin (checkin_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS likes (
     id         BIGINT   NOT NULL AUTO_INCREMENT,
     user_id    BIGINT   NOT NULL,

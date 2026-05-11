@@ -63,10 +63,12 @@ public class CheckinService {
         @Transactional
         public CheckinResponse create(String email, CreateCheckinRequest req) {
                 User user = findUserByEmail(email);
-                if (req.photoObjectKey() != null) {
-                        String expectedPrefix = "checkins/" + user.getId() + "/";
-                        if (!req.photoObjectKey().startsWith(expectedPrefix)) {
-                                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "잘못된 이미지 경로입니다.");
+                String expectedPrefix = "checkins/" + user.getId() + "/";
+                if (req.photoObjectKeys() != null) {
+                        for (String key : req.photoObjectKeys()) {
+                                if (!key.startsWith(expectedPrefix)) {
+                                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "잘못된 이미지 경로입니다.");
+                                }
                         }
                 }
                 Checkin checkin = Checkin.builder()
@@ -74,8 +76,17 @@ public class CheckinService {
                                 .category(req.category())
                                 .title(req.title())
                                 .description(req.description())
-                                .photoObjectKey(req.photoObjectKey())
                                 .build();
+                if (req.photoObjectKeys() != null) {
+                        for (int i = 0; i < req.photoObjectKeys().size(); i++) {
+                                checkin.getPhotos().add(
+                                        com.starterkit.domain.checkin.entity.CheckinPhoto.builder()
+                                                .checkin(checkin)
+                                                .objectKey(req.photoObjectKeys().get(i))
+                                                .sortOrder(i)
+                                                .build());
+                        }
+                }
                 checkinRepository.save(checkin);
                 return CheckinResponse.of(checkin, 0, false, 0, s3BaseUrl());
         }
@@ -88,12 +99,11 @@ public class CheckinService {
                 if (!checkin.getUser().getId().equals(user.getId())) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 체크인만 삭제할 수 있습니다.");
                 }
-                if (checkin.getPhotoObjectKey() != null) {
+                checkin.getPhotos().forEach(p ->
                         s3Client.deleteObject(DeleteObjectRequest.builder()
                                         .bucket(s3Bucket)
-                                        .key(checkin.getPhotoObjectKey())
-                                        .build());
-                }
+                                        .key(p.getObjectKey())
+                                        .build()));
                 checkinRepository.delete(checkin);
         }
 
