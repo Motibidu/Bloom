@@ -4,6 +4,13 @@ import LikeButton from '@/components/ui/domain/checkin/like-button'
 import { useLikeToggle } from '@/hooks/useCheckin'
 import type { CheckIn } from '@/types'
 
+const main  = 'oklch(0.62 0.15 220)'
+const dark  = 'oklch(0.48 0.15 220)'
+const light = 'oklch(0.76 0.12 220)'
+const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
+const lA = (a: number) => `oklch(0.76 0.12 220 / ${a})`
+const grad = `linear-gradient(135deg, ${main}, ${light})`
+
 function formatAbsoluteTime(createdAt: string): string {
   const date = new Date(createdAt + 'Z')
   const y = date.getFullYear()
@@ -25,44 +32,132 @@ export default function CheckInCard({ checkin, onClick, showFullContent = false 
   const likeToggle = useLikeToggle(checkin.id)
 
   return (
-    <div
-      className={`rounded-2xl border border-border bg-card overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
+    <article
       onClick={onClick}
+      style={{
+        boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}`,
+        transition: 'box-shadow 0.25s ease, transform 0.25s ease',
+      }}
+      className={`
+        group relative rounded-2xl bg-white overflow-hidden
+        ${onClick ? 'cursor-pointer' : ''}
+      `}
+      onMouseEnter={onClick ? (e) => {
+        const el = e.currentTarget
+        el.style.boxShadow = `0 8px 32px ${mA(0.18)}, 0 2px 8px ${mA(0.10)}`
+        el.style.transform = 'translateY(-3px)'
+      } : undefined}
+      onMouseLeave={onClick ? (e) => {
+        const el = e.currentTarget
+        el.style.boxShadow = `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}`
+        el.style.transform = 'translateY(0)'
+      } : undefined}
     >
-      {/* 헤더 + 제목 + 내용 */}
-      <div className="px-5 pt-5 pb-4 space-y-1">
+      {/* 좌측 카테고리 컬러 바 */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
+        style={{ background: grad }}
+        aria-hidden="true"
+      />
+
+      {/* 메인 콘텐츠 */}
+      <div className="pl-6 pr-5 pt-5 pb-4">
+
         {/* 프로필 행 */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-            <span className="text-base font-bold text-primary">{checkin.nickname[0]}</span>
+        <div className="flex items-start gap-3 mb-3">
+          {/* 아바타 */}
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-black"
+            style={{
+              background: grad,
+              color: 'white',
+              boxShadow: `0 2px 8px ${mA(0.25)}`,
+            }}
+            aria-hidden="true"
+          >
+            {checkin.nickname[0]}
           </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold text-foreground">{checkin.nickname}</span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm text-foreground/60">{formatAbsoluteTime(checkin.createdAt)}</span>
-              <Icon size={16} className="text-primary shrink-0" aria-hidden="true" />
+
+          <div className="flex-1 min-w-0">
+            {/* 닉네임 + 카테고리 뱃지 */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className="text-base font-black text-foreground"
+              >
+                {checkin.nickname}
+              </span>
+              {/* 카테고리 pill */}
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm font-bold"
+                style={{
+                  background: mA(0.10),
+                  border: `1px solid ${mA(0.22)}`,
+                  color: dark,
+                }}
+              >
+                <Icon size={13} aria-hidden="true" />
+                {label}
+              </span>
             </div>
+            {/* 시각 */}
+            <time
+              className="text-sm text-foreground/50 font-medium"
+              dateTime={checkin.createdAt}
+            >
+              {formatAbsoluteTime(checkin.createdAt)}
+            </time>
           </div>
         </div>
-        <p className="text-xl font-bold text-foreground">{checkin.title}</p>
-        <p className={`text-base text-foreground ${showFullContent ? '' : 'line-clamp-3'}`}>
+
+        {/* 제목 */}
+        <p
+          className="text-xl font-black text-foreground mb-1.5 leading-snug"
+        >
+          {checkin.title}
+        </p>
+
+        {/* 본문 */}
+        <p
+          className={`text-base text-foreground/75 leading-relaxed ${showFullContent ? '' : 'line-clamp-3'}`}
+        >
           {checkin.description}
         </p>
       </div>
 
       {/* 사진 */}
-      {checkin.photoUrl && (
+      {checkin.photoUrls && checkin.photoUrls.length > 0 && (
         <div className="px-5 pb-4">
-          <img
-            src={checkin.photoUrl}
-            alt={`${checkin.nickname}님의 ${label} 활동 사진`}
-            className="max-h-64 max-w-full rounded-xl object-contain"
-          />
+          {checkin.photoUrls.length === 1 ? (
+            <img
+              src={checkin.photoUrls[0]}
+              alt={`${checkin.nickname}님의 ${label} 활동 사진`}
+              className="w-full max-h-72 rounded-xl object-cover"
+              style={{ boxShadow: `0 2px 12px ${mA(0.10)}` }}
+            />
+          ) : (
+            <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+              {checkin.photoUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${checkin.nickname}님의 ${label} 활동 사진 ${i + 1}`}
+                  className="shrink-0 w-64 h-52 rounded-xl object-cover snap-start"
+                  style={{ boxShadow: `0 2px 12px ${mA(0.10)}` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* 하단 */}
-      <div className="px-4 py-0 flex items-center gap-5 border-t border-border">
+      {/* 하단 반응 바 */}
+      <div
+        className="px-5 py-2.5 flex items-center gap-4"
+        style={{
+          borderTop: `1px solid ${mA(0.10)}`,
+          background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,
+        }}
+      >
         <LikeButton
           likeCount={checkin.likeCount}
           likedByMe={checkin.likedByMe}
@@ -70,15 +165,36 @@ export default function CheckInCard({ checkin, onClick, showFullContent = false 
           disabled={likeToggle.isPending}
           size="md"
         />
-        <div className="flex items-center gap-1 text-foreground">
+
+        <button
+          type="button"
+          className="flex items-center gap-1.5 min-h-[44px] rounded-xl px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          style={{ color: `oklch(0.55 0.05 220)` }}
+          aria-label={`댓글 ${checkin.commentCount}개`}
+          onClick={(e) => e.stopPropagation()}
+          tabIndex={onClick ? -1 : 0}
+        >
           <MessageCircle size={22} aria-hidden="true" />
-          <span className="text-base font-semibold">{checkin.commentCount}</span>
-        </div>
-        <div className="flex items-center gap-1 text-foreground">
+          <span className="text-base font-bold">{checkin.commentCount}</span>
+        </button>
+
+        <div
+          className="flex items-center gap-1.5 min-h-[44px] px-1"
+          style={{ color: `oklch(0.65 0.03 220)` }}
+          aria-label={`조회 ${checkin.viewCount}회`}
+        >
           <Eye size={22} aria-hidden="true" />
-          <span className="text-base font-semibold">{checkin.viewCount}</span>
+          <span className="text-base font-bold">{checkin.viewCount}</span>
+        </div>
+
+        {/* 우측 여백 채우기 + 카테고리 대형 워터마크 아이콘 */}
+        <div className="flex-1 flex justify-end items-center pointer-events-none" aria-hidden="true">
+          <Icon
+            size={28}
+            style={{ color: lA(0.18) }}
+          />
         </div>
       </div>
-    </div>
+    </article>
   )
 }

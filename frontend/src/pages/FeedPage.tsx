@@ -1,10 +1,6 @@
-// FeedPage.tsx
-// 역할: 오늘의 피드 메인 페이지 — 실제 API에서 피드 목록 조회, 체크인 작성 폼 표시
-// 사용처: / (인덱스 라우트, Layout 내부)
-
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, X, ImagePlus, PenLine, ClipboardList } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
@@ -13,14 +9,36 @@ import BigButton from '@/components/ui/common/big-button'
 import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
 import type { Category } from '@/types'
 
+// ── Warm Blue 테마 상수 ────────────────────────────────────────────────────────
+const main  = 'oklch(0.62 0.15 220)'
+const dark  = 'oklch(0.48 0.15 220)'
+const light = 'oklch(0.76 0.12 220)'
+const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
+const lA = (a: number) => `oklch(0.76 0.12 220 / ${a})`
+const grad  = `linear-gradient(135deg, ${main}, ${light})`
+
+const btnPrimary: React.CSSProperties = {
+  background: grad,
+  color: 'white',
+  transition: 'opacity 0.2s, transform 0.15s',
+}
+
+function formatTodayKo(): string {
+  const now = new Date()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+  return `${month}월 ${day}일 (${weekdays[now.getDay()]})`
+}
+
 export default function FeedPage() {
   const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -33,46 +51,51 @@ export default function FeedPage() {
     setSelectedCategory(null)
     setTitle('')
     setContent('')
-    setPhotoFile(null)
-    setPhotoPreview(null)
+    setPhotoFiles([])
+    setPhotoPreviews([])
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoFile(file)
-    const reader = new FileReader()
-    reader.onload = () => setPhotoPreview(reader.result as string)
-    reader.readAsDataURL(file)
+    const selected = Array.from(e.target.files ?? [])
+    if (selected.length === 0) return
+    const remaining = 3 - photoFiles.length
+    const toAdd = selected.slice(0, remaining)
+    setPhotoFiles(prev => [...prev, ...toAdd])
+    toAdd.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => setPhotoPreviews(prev => [...prev, reader.result as string])
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ''
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index))
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async () => {
     if (!selectedCategory || !title.trim() || !content.trim()) return
     setIsSubmitting(true)
     try {
-      let photoObjectKey: string | undefined
-
-      if (photoFile) {
-        // 1. S3 presigned URL 발급
+      const objectKeys: string[] = []
+      for (const file of photoFiles) {
         const { uploadUrl, objectKey } = await getUploadUrl.mutateAsync({
-          filename: photoFile.name,
-          contentType: photoFile.type,
+          filename: file.name,
+          contentType: file.type,
         })
-        // 2. S3에 직접 PUT (인터셉터 불필요하므로 fetch 사용)
         await fetch(uploadUrl, {
           method: 'PUT',
-          body: photoFile,
-          headers: { 'Content-Type': photoFile.type },
+          body: file,
+          headers: { 'Content-Type': file.type },
         })
-        photoObjectKey = objectKey
+        objectKeys.push(objectKey)
       }
-
-      // 3. 체크인 생성
       await createCheckin.mutateAsync({
         category: selectedCategory,
         title: title.trim(),
         content: content.trim(),
-        photoObjectKey,
+        photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
       })
       handleCloseForm()
     } catch {
@@ -82,6 +105,7 @@ export default function FeedPage() {
     }
   }
 
+  // ── 로딩 ────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <main className="max-w-6xl mx-auto px-6 py-8">
@@ -89,30 +113,56 @@ export default function FeedPage() {
           role="status"
           aria-live="polite"
           aria-label="피드를 불러오는 중이에요"
-          className="flex flex-col items-center gap-4 py-16"
+          className="flex flex-col items-center gap-5 py-20"
         >
-          <svg className="animate-spin h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center"
+            style={{ background: mA(0.12) }}
+            aria-hidden="true"
+          >
+            <svg
+              className="animate-spin h-9 w-9"
+              viewBox="0 0 24 24"
+              fill="none"
+              style={{ color: main }}
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          </div>
           <p className="text-xl font-semibold text-muted-foreground">잠깐만 기다려 주세요...</p>
         </div>
       </main>
     )
   }
 
+  // ── 에러 ────────────────────────────────────────────────────────────────────
   if (isError) {
     return (
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <div role="alert" className="flex flex-col items-center gap-5 py-16 px-4 text-center">
-          <p className="text-xl font-bold text-foreground">잠깐, 피드를 불러오지 못했어요</p>
-          <p className="text-lg font-semibold text-muted-foreground leading-relaxed">
-            인터넷 연결을 확인하신 후 다시 시도해 주세요
-          </p>
+        <div role="alert" className="flex flex-col items-center gap-6 py-20 px-4 text-center">
+          <div
+            className="w-24 h-24 rounded-3xl flex items-center justify-center"
+            style={{ background: mA(0.10) }}
+            aria-hidden="true"
+          >
+            <span className="text-5xl">😔</span>
+          </div>
+          <div className="space-y-2">
+            <p className="text-2xl font-bold text-foreground">
+              피드를 불러오지 못했어요
+            </p>
+            <p className="text-lg font-medium text-muted-foreground leading-relaxed">
+              인터넷 연결을 확인하신 후 다시 시도해 주세요
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="min-h-[52px] px-6 text-lg font-bold rounded-xl border-2 border-primary text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
+            className="min-h-[56px] px-10 text-lg font-bold rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ ...btnPrimary, '--tw-ring-color': main } as React.CSSProperties}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
           >
             다시 시도하기
           </button>
@@ -126,145 +176,295 @@ export default function FeedPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-      {/* 같은 카테고리 활동자 배너 */}
+
+      {/* ── 인사말 헤더 ────────────────────────────────────────────────────── */}
+      <header
+        className="relative rounded-3xl px-8 py-8 flex items-center gap-6 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${mA(0.08)} 0%, ${lA(0.12)} 100%)`,
+          border: `1px solid ${mA(0.15)}`,
+        }}
+      >
+        {/* 배경 장식 orb */}
+        <div
+          className="absolute -top-8 -right-8 w-40 h-40 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${lA(0.25)}, transparent 70%)` }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-6 -left-4 w-28 h-28 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${mA(0.15)}, transparent 70%)` }}
+          aria-hidden="true"
+        />
+
+        {/* 아이콘 */}
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 relative lp-float"
+          style={{ background: grad }}
+          aria-hidden="true"
+        >
+          <span className="text-3xl">☀️</span>
+        </div>
+
+        <div className="space-y-1 min-w-0 relative">
+          <p className="text-base font-bold" style={{ color: dark }}>
+            {formatTodayKo()}
+          </p>
+          <h1 className="text-2xl font-black text-foreground leading-snug">
+            오늘도 좋은 하루 되세요!
+          </h1>
+          <p className="text-base font-medium text-muted-foreground leading-relaxed">
+            오늘 하루 어떤 활동을 하셨나요? 기록해 보세요.
+          </p>
+        </div>
+      </header>
+
+      {/* ── 같은 카테고리 활동자 배너 ─────────────────────────────────────── */}
       {sameCategoryUserCount > 0 && (
         <div
           role="status"
           aria-live="polite"
-          className="rounded-2xl bg-primary/10 border border-primary/20 px-5 py-5 flex items-center gap-4"
+          className="rounded-2xl px-6 py-5 flex items-center gap-4 lp-badge-in"
+          style={{
+            background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.08)})`,
+            border: `1px solid ${mA(0.20)}`,
+          }}
         >
-          <Users className="text-primary shrink-0" size={26} aria-hidden="true" />
-          <p className="text-lg font-bold text-primary">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: grad }}
+            aria-hidden="true"
+          >
+            <Users size={22} className="text-white" />
+          </div>
+
+          <p className="text-lg font-bold leading-snug flex-1" style={{ color: dark }}>
             나와 같은 활동을 한{' '}
-            <strong>{sameCategoryUserCount}명</strong>이 있어요!
+            <strong className="text-2xl" style={{ color: main }}>
+              {sameCategoryUserCount}명
+            </strong>
+            이 있어요!
           </p>
+
+          <Sparkles
+            size={22}
+            className="shrink-0 lp-float"
+            style={{ color: light }}
+            aria-hidden="true"
+          />
         </div>
       )}
 
-      {/* 체크인 작성 영역 */}
+      {/* ── 체크인 작성 영역 ────────────────────────────────────────────────── */}
       {!isFormOpen ? (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
           onClick={() => setIsFormOpen(true)}
-          className="w-full rounded-2xl border-2 border-primary/30 bg-primary/10 px-6 py-6 flex items-center gap-5 text-left hover:bg-primary/20 hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[96px]"
+          className="w-full rounded-2xl px-7 py-7 flex items-center gap-5 text-left min-h-[108px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{
+            ...btnPrimary,
+            '--tw-ring-color': main,
+          } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
         >
-          <PenLine size={36} className="text-primary shrink-0" aria-hidden="true" />
+          {/* 아이콘 박스 */}
+          <div
+            className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: 'oklch(1 0 0 / 0.18)' }}
+            aria-hidden="true"
+          >
+            <PenLine size={28} className="text-white" />
+          </div>
+
           <div className="space-y-1">
-            <p className="text-xl font-bold text-foreground">오늘 활동 기록하기</p>
-            <p className="text-lg font-semibold text-primary">탭하면 바로 시작할 수 있어요</p>
+            <p className="text-xl font-black text-white">오늘 활동 기록하기</p>
+            <p className="text-base font-semibold" style={{ color: 'oklch(1 0 0 / 0.80)' }}>
+              탭하면 바로 시작할 수 있어요
+            </p>
+          </div>
+
+          <div
+            className="ml-auto shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'oklch(1 0 0 / 0.18)' }}
+            aria-hidden="true"
+          >
+            <span className="text-white text-lg font-black">→</span>
           </div>
         </button>
       ) : (
         <section
           aria-label="활동 기록 작성"
-          className="rounded-2xl border border-primary/40 bg-card px-6 py-6 space-y-6 shadow-sm"
+          className="rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
+          style={{ border: `2px solid ${mA(0.20)}` }}
         >
+          {/* 폼 헤더 */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">오늘 활동 기록하기</h2>
+            <h2 className="text-2xl font-black text-foreground">
+              오늘 활동 기록하기
+            </h2>
             <button
               type="button"
               onClick={handleCloseForm}
               aria-label="작성 취소하기"
-              className="inline-flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-3 rounded-lg text-xl font-semibold text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+              className="inline-flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 rounded-xl text-lg font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ '--tw-ring-color': main } as React.CSSProperties}
             >
-              <X size={24} aria-hidden="true" />
+              <X size={22} aria-hidden="true" />
               <span>취소</span>
             </button>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
-            <CategoryIconGrid
-              selected={selectedCategory}
-              onSelect={setSelectedCategory}
-            />
+          {/* 구분선 */}
+          <div
+            className="h-px w-full rounded-full"
+            style={{ background: `linear-gradient(90deg, ${mA(0.30)}, ${lA(0.15)}, transparent)` }}
+            aria-hidden="true"
+          />
+
+          {/* STEP 1 — 카테고리 선택 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
+                style={{ background: grad }}
+                aria-hidden="true"
+              >
+                1
+              </span>
+              <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
+            </div>
+            <CategoryIconGrid selected={selectedCategory} onSelect={setSelectedCategory} />
           </div>
 
+          {/* STEP 2 — 제목 · 내용 · 사진 */}
           {selectedCategory && (
             <div className="space-y-5">
-              {/* 제목 */}
+              <div
+                className="h-px w-full rounded-full"
+                style={{ background: `linear-gradient(90deg, ${mA(0.20)}, transparent)` }}
+                aria-hidden="true"
+              />
+
+              <div className="flex items-center gap-3">
+                <span
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
+                  style={{ background: grad }}
+                  aria-hidden="true"
+                >
+                  2
+                </span>
+                <p className="text-xl font-bold text-foreground">활동을 설명해 주세요</p>
+              </div>
+
+              {/* 제목 입력 */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="activity-title" className="text-xl font-bold text-foreground">
+                  <label htmlFor="activity-title" className="text-lg font-bold text-foreground">
                     제목
                   </label>
-                  <span className="text-lg font-medium text-foreground/60" aria-live="polite">
+                  <span className="text-base font-medium text-foreground/50" aria-live="polite">
                     {title.length}/50
                   </span>
                 </div>
                 <Input
                   id="activity-title"
-                  className="text-lg px-4 py-3 rounded-xl border-2 h-auto"
+                  className="text-lg px-4 py-3 rounded-xl border-2 h-auto focus-visible:ring-0"
+                  style={title.length > 0 ? { borderColor: mA(0.45) } : undefined}
                   maxLength={50}
                   placeholder="활동 제목을 입력해 주세요"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={e => setTitle(e.target.value)}
                 />
               </div>
 
-              {/* 내용 */}
+              {/* 내용 입력 */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="activity-content" className="text-xl font-bold text-foreground">
+                  <label htmlFor="activity-content" className="text-lg font-bold text-foreground">
                     내용
                   </label>
-                  <span className="text-lg font-medium text-foreground/60" aria-live="polite">
+                  <span className="text-base font-medium text-foreground/50" aria-live="polite">
                     {content.length}/100
                   </span>
                 </div>
                 <Textarea
                   id="activity-content"
-                  className="text-lg px-4 py-3 resize-none rounded-xl border-2"
+                  className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
+                  style={content.length > 0 ? { borderColor: mA(0.45) } : undefined}
                   rows={4}
                   maxLength={100}
                   placeholder="오늘 활동을 간단히 설명해 주세요"
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={e => setContent(e.target.value)}
                 />
               </div>
 
               {/* 사진 첨부 */}
-              <div className="space-y-2">
-                <p className="text-xl font-bold text-foreground">사진 첨부 (선택)</p>
+              <div className="space-y-3">
+                <p className="text-lg font-bold text-foreground">
+                  사진 첨부{' '}
+                  <span className="text-base font-medium text-muted-foreground">(선택, 최대 3장)</span>
+                </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  multiple
                   className="hidden"
                   onChange={handlePhotoChange}
                 />
-                {photoPreview ? (
-                  <div className="relative">
-                    <img
-                      src={photoPreview}
-                      alt="첨부 사진 미리보기"
-                      className="w-full max-h-48 object-cover rounded-xl"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setPhotoFile(null); setPhotoPreview(null) }}
-                      aria-label="사진 제거하기"
-                      className="absolute top-2 right-2 inline-flex items-center gap-1.5 min-h-[48px] min-w-[48px] px-3 py-2 rounded-lg bg-black/70 text-white text-base font-semibold hover:bg-black/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/70 transition-colors"
-                    >
-                      <X size={20} aria-hidden="true" />
-                      <span>제거</span>
-                    </button>
+                {/* 썸네일 미리보기 */}
+                {photoPreviews.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {photoPreviews.map((src, i) => (
+                      <div key={i} className="relative shrink-0 w-28 h-28 rounded-xl overflow-hidden">
+                        <img
+                          src={src}
+                          alt={`첨부 사진 ${i + 1} 미리보기`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(i)}
+                          aria-label={`${i + 1}번째 사진 제거`}
+                          className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          <X size={14} className="text-white" aria-hidden="true" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ) : (
+                )}
+                {/* 추가 버튼 — 3장 미만일 때만 표시 */}
+                {photoPreviews.length < 3 && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 min-h-[52px] px-4 rounded-xl border-2 border-dashed border-border text-xl font-medium text-muted-foreground hover:border-primary/50 hover:bg-primary/5 transition-colors w-full"
+                    className="flex items-center justify-center gap-3 min-h-[68px] px-4 rounded-2xl border-2 border-dashed text-lg font-medium text-muted-foreground transition-all duration-200 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style={{
+                      borderColor: mA(0.22),
+                      '--tw-ring-color': main,
+                    } as React.CSSProperties}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = mA(0.45); e.currentTarget.style.background = mA(0.04) }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = mA(0.22); e.currentTarget.style.background = 'transparent' }}
                   >
-                    <ImagePlus size={22} aria-hidden="true" />
-                    사진 추가하기
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: mA(0.10) }}
+                      aria-hidden="true"
+                    >
+                      <ImagePlus size={20} style={{ color: main }} />
+                    </div>
+                    <span>사진 추가하기 ({photoPreviews.length}/3)</span>
                   </button>
                 )}
               </div>
             </div>
           )}
 
+          {/* 등록 버튼 */}
           {selectedCategory && (
             <BigButton
               fullWidth
@@ -272,6 +472,8 @@ export default function FeedPage() {
               disabled={!title.trim() || !content.trim() || isSubmitting}
               aria-label={isSubmitting ? '등록하는 중이에요' : '활동 등록하기'}
               onClick={handleSubmit}
+              className="h-16 text-xl font-black rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed"
+              style={btnPrimary}
             >
               {isSubmitting ? '등록하는 중이에요...' : '등록하기'}
             </BigButton>
@@ -279,26 +481,60 @@ export default function FeedPage() {
         </section>
       )}
 
-      {/* 피드 목록 */}
+      {/* ── 피드 목록 ────────────────────────────────────────────────────────── */}
       {checkins.length === 0 ? (
-        <div className="flex flex-col items-center gap-5 py-16 px-4 text-center">
-          <ClipboardList size={56} className="text-muted-foreground/50" aria-hidden="true" />
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-foreground">아직 오늘의 활동이 없어요</h3>
-            <p className="text-xl font-semibold text-muted-foreground leading-relaxed">
-              첫 번째로 오늘 활동을 기록해 보세요!
+        <div className="flex flex-col items-center gap-7 py-20 px-4 text-center">
+          {/* 아이콘 배경 */}
+          <div
+            className="w-28 h-28 rounded-3xl flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.14)})` }}
+            aria-hidden="true"
+          >
+            <ClipboardList size={52} style={{ color: main }} />
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-2xl font-black text-foreground">
+              아직 오늘의 활동이 없어요
+            </h3>
+            <p className="text-lg font-medium text-muted-foreground leading-relaxed max-w-xs mx-auto">
+              첫 번째로 오늘 활동을 기록해 보세요!<br />
+              작은 기록이 큰 추억이 됩니다.
             </p>
           </div>
+
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="h-14 px-8 text-lg font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
+            className="h-16 px-12 text-xl font-black rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ ...btnPrimary, '--tw-ring-color': main } as React.CSSProperties}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
           >
             지금 기록하기
           </button>
         </div>
       ) : (
         <section aria-label="오늘의 활동 피드">
+          {/* 섹션 헤더 */}
+          <div className="flex items-center gap-4 mb-7">
+            <h2 className="text-2xl font-black text-foreground shrink-0">
+              오늘의 활동들
+            </h2>
+            {/* warm blue 구분선 */}
+            <div
+              className="flex-1 h-0.5 rounded-full"
+              style={{ background: `linear-gradient(90deg, ${mA(0.35)}, ${lA(0.15)}, transparent)` }}
+              aria-hidden="true"
+            />
+            <span
+              className="text-sm font-black px-3 py-1.5 rounded-full shrink-0 text-white"
+              style={{ background: grad }}
+            >
+              {checkins.length}개
+            </span>
+          </div>
+
           <div className="space-y-6">
             {checkins.map((checkin: any) => (
               <CheckInCard

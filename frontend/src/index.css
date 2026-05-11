@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Nanum+Gothic:wght@400;700;800&display=swap');
 
 @theme {
   --color-primary: oklch(0.55 0.2 250);
@@ -23,6 +24,89 @@
 }
 
 body {
+  font-family: 'Nanum Gothic', sans-serif;
   font-size: 1.125rem;
   line-height: 1.8;
 }
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: landing-fade-up 0.6s ease-out both;
+}
+
+/* ── LandingPage 전용 (.lp-* — @theme 변수와 충돌 없음) ──────────── */
+
+.lp-gradient-text {
+  background: linear-gradient(135deg, oklch(0.65 0.22 28), oklch(0.72 0.20 50));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lp-coral-btn {
+  background: linear-gradient(135deg, oklch(0.65 0.22 28), oklch(0.72 0.20 50));
+  color: white;
+  transition: opacity 0.2s, transform 0.15s;
+}
+.lp-coral-btn:hover { opacity: 0.92; transform: translateY(-2px); }
+
+.lp-hero-bg {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.72 0.20 50 / 0.15) 0%, transparent 70%),
+    oklch(0.98 0.015 50);
+}
+
+.lp-feed-bg {
+  background:
+    radial-gradient(ellipse 60% 40% at 100% 50%, oklch(0.65 0.22 28 / 0.08) 0%, transparent 60%),
+    oklch(0.96 0.01 50);
+}
+
+.lp-cta-bg {
+  background: linear-gradient(135deg, oklch(0.60 0.22 28), oklch(0.68 0.22 42), oklch(0.72 0.20 50));
+}
+
+.lp-card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+.lp-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px oklch(0.65 0.22 28 / 0.15);
+}
+
+.lp-badge-coral {
+  background: oklch(0.65 0.22 28 / 0.10);
+  border: 1px solid oklch(0.65 0.22 28 / 0.25);
+  color: oklch(0.52 0.22 28);
+}
+
+.lp-feature-icon-bg {
+  background: linear-gradient(135deg, oklch(0.65 0.22 28 / 0.12), oklch(0.72 0.20 50 / 0.12));
+}
+
+@keyframes lp-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes lp-badge-in {
+  from { opacity: 0; transform: scale(0.85) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes lp-orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50%       { transform: scale(1.08); opacity: 0.6; }
+}
+
+.lp-float     { animation: lp-float 4s ease-in-out infinite; }
+.lp-badge-in  { animation: lp-badge-in 0.5s ease-out both; }
+.lp-orb-pulse { animation: lp-orb-pulse 6s ease-in-out infinite; }

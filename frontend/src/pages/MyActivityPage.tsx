@@ -156,9 +156,9 @@ export default function MyActivityPage() {
                   </div>
                   <p className="text-xl font-bold text-foreground">{checkin.title}</p>
                   <p className="text-xl text-foreground">{checkin.description}</p>
-                  {checkin.photoUrl && (
+                  {checkin.photoUrls && checkin.photoUrls.length > 0 && (
                     <img
-                      src={checkin.photoUrl}
+                      src={checkin.photoUrls[0]}
                       alt={`${checkin.nickname}님의 ${label} 활동 사진`}
                       className="w-full rounded-lg object-cover max-h-48"
                     />
