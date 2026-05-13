@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles, Zap, AlignLeft } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
 import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
+import { AUTO_TITLES } from '@/lib/categories'
 import type { Category } from '@/types'
 
 // ── Warm Blue 테마 상수 ────────────────────────────────────────────────────────
@@ -42,9 +43,19 @@ export default function FeedPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [checkinMode, setCheckinMode] = useState<'simple' | 'detail'>(() => {
+    return (localStorage.getItem('checkinMode') as 'simple' | 'detail') ?? 'simple'
+  })
+
   const { data: feed, isLoading, isError } = useTodayFeed()
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
+
+  const handleModeToggle = () => {
+    const next = checkinMode === 'simple' ? 'detail' : 'simple'
+    setCheckinMode(next)
+    localStorage.setItem('checkinMode', next)
+  }
 
   const handleCloseForm = () => {
     setIsFormOpen(false)
@@ -75,7 +86,8 @@ export default function FeedPage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedCategory || !title.trim() || !content.trim()) return
+    if (!selectedCategory) return
+    if (checkinMode === 'detail' && (!title.trim() || !content.trim())) return
     setIsSubmitting(true)
     try {
       const objectKeys: string[] = []
@@ -325,21 +337,101 @@ export default function FeedPage() {
 
           {/* STEP 1 — 카테고리 선택 */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span
-                className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
-                style={{ background: grad }}
-                aria-hidden="true"
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
+                  style={{ background: grad }}
+                  aria-hidden="true"
+                >
+                  1
+                </span>
+                <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
+              </div>
+              {/* 모드 토글 버튼 */}
+              <button
+                type="button"
+                onClick={handleModeToggle}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[40px]"
+                style={{
+                  color: dark,
+                  background: checkinMode === 'simple' ? `oklch(0.62 0.15 220 / 0.08)` : `oklch(0.62 0.15 220 / 0.08)`,
+                  '--tw-ring-color': main,
+                } as React.CSSProperties}
+                aria-pressed={checkinMode === 'detail'}
+                aria-label={checkinMode === 'simple' ? '상세 모드로 전환' : '간편 모드로 전환'}
               >
-                1
-              </span>
-              <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
+                {checkinMode === 'simple' ? (
+                  <>
+                    <AlignLeft size={15} aria-hidden="true" />
+                    <span>상세하게 쓰기</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap size={15} aria-hidden="true" />
+                    <span>간편하게 쓰기</span>
+                  </>
+                )}
+              </button>
             </div>
-            <CategoryIconGrid selected={selectedCategory} onSelect={setSelectedCategory} />
+            <CategoryIconGrid selected={selectedCategory} onSelect={(cat) => {
+              setSelectedCategory(cat)
+              if (checkinMode === 'simple') {
+                const autoTitle = AUTO_TITLES[cat]
+                setTitle(autoTitle)
+                setContent(autoTitle)
+              }
+            }} />
           </div>
 
-          {/* STEP 2 — 제목 · 내용 · 사진 */}
-          {selectedCategory && (
+          {/* 간편 모드 — 카테고리 선택 후 바로 등록 */}
+          {checkinMode === 'simple' && (
+            <div className="space-y-4">
+              <div
+                className="h-px w-full rounded-full"
+                style={{ background: `linear-gradient(90deg, ${mA(0.20)}, transparent)` }}
+                aria-hidden="true"
+              />
+              {selectedCategory ? (
+                <>
+                  {/* 자동 제목 미리보기 */}
+                  <div
+                    className="flex items-center gap-3 px-5 py-4 rounded-2xl"
+                    style={{ background: mA(0.07), border: `1px solid ${mA(0.15)}` }}
+                  >
+                    <Zap size={20} style={{ color: main }} aria-hidden="true" className="shrink-0" />
+                    <p className="text-base font-semibold text-muted-foreground leading-snug">
+                      <span className="font-black" style={{ color: dark }}>'{AUTO_TITLES[selectedCategory]}'</span>
+                      {' '}로 등록돼요
+                    </p>
+                  </div>
+                  {/* 바로 등록 버튼 */}
+                  <BigButton
+                    fullWidth
+                    loading={isSubmitting}
+                    disabled={isSubmitting}
+                    aria-label={isSubmitting ? '등록하는 중이에요' : '바로 등록하기'}
+                    onClick={handleSubmit}
+                    className="h-16 text-xl font-black rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={btnPrimary}
+                  >
+                    {isSubmitting ? '등록하는 중이에요...' : '바로 등록하기'}
+                  </BigButton>
+                </>
+              ) : (
+                <p
+                  className="text-center text-base font-semibold py-3"
+                  style={{ color: mA(0.55) }}
+                  aria-live="polite"
+                >
+                  위에서 카테고리를 선택해 주세요
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* STEP 2 — 제목 · 내용 · 사진 (상세 모드) */}
+          {checkinMode === 'detail' && selectedCategory && (
             <div className="space-y-5">
               <div
                 className="h-px w-full rounded-full"
@@ -464,8 +556,8 @@ export default function FeedPage() {
             </div>
           )}
 
-          {/* 등록 버튼 */}
-          {selectedCategory && (
+          {/* 등록 버튼 — 상세 모드 전용 */}
+          {checkinMode === 'detail' && selectedCategory && (
             <BigButton
               fullWidth
               loading={isSubmitting}

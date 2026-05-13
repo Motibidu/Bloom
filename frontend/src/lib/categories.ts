@@ -15,3 +15,13 @@ export const CATEGORY_META: Record<Category, { icon: LucideIcon; label: string }
 export const CATEGORY_ORDER: Category[] = [
   'WALK', 'COOKING', 'READING', 'GARDENING', 'EXERCISE', 'MEETING', 'OTHER',
 ]
+
+export const AUTO_TITLES: Record<Category, string> = {
+  WALK:      '산책했어요',
+  COOKING:   '요리했어요',
+  READING:   '독서했어요',
+  GARDENING: '정원을 가꿨어요',
+  EXERCISE:  '운동했어요',
+  MEETING:   '친구를 만났어요',
+  OTHER:     '활동했어요',
+}
