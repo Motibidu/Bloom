@@ -27,6 +27,10 @@ public class Like {
     @JoinColumn(name = "checkin_id", nullable = false)
     private Checkin checkin;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reaction_type", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'LIKE'")
+    private ReactionType reactionType;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

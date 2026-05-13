@@ -56,26 +56,46 @@ export function useCheckinDetail(id: number) {
   })
 }
 
-// 좋아요 토글 (옵티미스틱 업데이트)
+// 리액션 토글 (옵티미스틱 업데이트)
+// reactionType: undefined 이면 기존 리액션 취소, 값이 있으면 해당 리액션 등록
 export function useLikeToggle(checkinId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ liked }: { liked: boolean }) =>
-      liked
-        ? api.delete(`/checkins/${checkinId}/likes`)
-        : api.post(`/checkins/${checkinId}/likes`),
-    onMutate: async ({ liked }) => {
+    mutationFn: ({ reactionType }: { reactionType?: string }) =>
+      api.post(`/checkins/${checkinId}/likes`, reactionType ? { reactionType } : {}).then(r => r.data),
+    onMutate: async ({ reactionType }) => {
       await queryClient.cancelQueries({ queryKey: ['checkins', checkinId] })
       await queryClient.cancelQueries({ queryKey: ['checkins', 'today'] })
 
       const prevDetail = queryClient.getQueryData(['checkins', checkinId])
       const prevFeed = queryClient.getQueryData(['checkins', 'today'])
 
-      const updater = (old: any) => ({
-        ...old,
-        likedByMe: !liked,
-        likeCount: liked ? old.likeCount - 1 : old.likeCount + 1,
-      })
+      const updater = (old: any) => {
+        const prevReaction = old.myReactionType as string | null
+        const isTogglingOff = prevReaction === reactionType
+        const newReaction = isTogglingOff ? null : (reactionType ?? null)
+
+        // reactionCounts 낙관적 업데이트
+        const prevCounts: Record<string, number> = old.reactionCounts ?? {}
+        const newCounts = { ...prevCounts }
+        if (prevReaction && newCounts[prevReaction]) {
+          newCounts[prevReaction] = Math.max(0, (newCounts[prevReaction] ?? 0) - 1)
+          if (newCounts[prevReaction] === 0) delete newCounts[prevReaction]
+        }
+        if (newReaction) {
+          newCounts[newReaction] = (newCounts[newReaction] ?? 0) + 1
+        }
+
+        const totalLikes = Object.values(newCounts).reduce((a, b) => a + b, 0)
+
+        return {
+          ...old,
+          myReactionType: newReaction,
+          reactionCounts: newCounts,
+          likedByMe: !!newReaction,
+          likeCount: totalLikes,
+        }
+      }
 
       queryClient.setQueryData(['checkins', checkinId], (old: any) => old ? updater(old) : old)
       queryClient.setQueryData(['checkins', 'today'], (old: any) => {
@@ -93,7 +113,7 @@ export function useLikeToggle(checkinId: number) {
       if (context?.prevFeed) queryClient.setQueryData(['checkins', 'today'], context.prevFeed)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['checkins', checkinId] })
+      // 상세 페이지는 invalidate 하지 않음 — GET /checkins/{id}가 viewCount를 증가시키기 때문
       queryClient.invalidateQueries({ queryKey: ['checkins', 'today'] })
     },
   })

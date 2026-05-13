@@ -17,6 +17,8 @@ export interface CheckIn {
   photoUrls?: string[]
   likeCount: number
   likedByMe: boolean
+  myReactionType: string | null
+  reactionCounts: Record<string, number>
   commentCount: number
   viewCount: number
   createdAt: string

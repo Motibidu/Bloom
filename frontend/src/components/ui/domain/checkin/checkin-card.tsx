@@ -1,6 +1,6 @@
 import { Eye, MessageCircle } from 'lucide-react'
 import { CATEGORY_META } from '@/lib/categories'
-import LikeButton from '@/components/ui/domain/checkin/like-button'
+import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
 import { useLikeToggle } from '@/hooks/useCheckin'
 import type { CheckIn } from '@/types'
 
@@ -158,12 +158,12 @@ export default function CheckInCard({ checkin, onClick, showFullContent = false 
           background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,
         }}
       >
-        <LikeButton
-          likeCount={checkin.likeCount}
-          likedByMe={checkin.likedByMe}
-          onToggle={() => likeToggle.mutate({ liked: checkin.likedByMe })}
+        <ReactionPicker
+          checkinId={checkin.id}
+          myReactionType={checkin.myReactionType ?? null}
+          reactionCounts={checkin.reactionCounts ?? {}}
+          onReact={(reactionType) => likeToggle.mutate({ reactionType })}
           disabled={likeToggle.isPending}
-          size="md"
         />
 
         <button

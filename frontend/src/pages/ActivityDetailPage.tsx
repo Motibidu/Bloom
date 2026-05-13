@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Eye, MessageCircle, MoreVertical, Send, X as XIcon } from 'lucide-react'
 import { CATEGORY_META } from '@/lib/categories'
-import LikeButton from '@/components/ui/domain/checkin/like-button'
+import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { useCheckinDetail, useLikeToggle, useDeleteCheckin } from '@/hooks/useCheckin'
 import { useComments, useCreateComment } from '@/hooks/useComment'
@@ -61,9 +61,9 @@ export default function ActivityDetailPage() {
     })
   }
 
-  const handleLikeToggle = () => {
+  const handleReact = (reactionType: string) => {
     if (!checkin) return
-    likeToggle.mutate({ liked: checkin.likedByMe })
+    likeToggle.mutate({ reactionType })
   }
 
   const handleCommentSubmit = () => {
@@ -279,11 +279,12 @@ export default function ActivityDetailPage() {
             background: `linear-gradient(to right, ${mA(0.04)}, transparent)`,
           }}
         >
-          <LikeButton
-            likeCount={checkin.likeCount}
-            likedByMe={checkin.likedByMe}
-            size="md"
-            onToggle={handleLikeToggle}
+          <ReactionPicker
+            checkinId={checkin.id}
+            myReactionType={checkin.myReactionType ?? null}
+            reactionCounts={checkin.reactionCounts ?? {}}
+            onReact={handleReact}
+            disabled={likeToggle.isPending}
           />
 
           <div
