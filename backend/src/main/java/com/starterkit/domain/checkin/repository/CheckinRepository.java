@@ -51,4 +51,24 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
 
     @Query("SELECT c.checkin.id, COUNT(c) FROM Comment c WHERE c.checkin.id IN :checkinIds GROUP BY c.checkin.id")
     List<Object[]> countCommentsByCheckinIds(@Param("checkinIds") List<Long> checkinIds);
+
+    @Query("SELECT c FROM Checkin c WHERE c.user.id = :userId " +
+           "AND c.createdAt >= :start AND c.createdAt < :end " +
+           "ORDER BY c.createdAt ASC")
+    List<Checkin> findByUserIdAndDateRange(
+            @Param("userId") Long userId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    /**
+     * 특정 사용자가 여러 체크인에 남긴 리액션 타입 조회 (피드 렌더링용).
+     * result[0] = checkinId, result[1] = ReactionType
+     */
+    @Query("SELECT l.checkin.id, l.reactionType FROM Like l WHERE l.checkin.id IN :checkinIds AND l.user.id = :userId")
+    List<Object[]> findReactionsByUserIdAndCheckinIds(@Param("checkinIds") List<Long> checkinIds, @Param("userId") Long userId);
+
+    // 가족 피드: 특정 사용자들의 체크인 조회
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds ORDER BY c.createdAt DESC")
+    List<Checkin> findByUserIdsOrderByCreatedAtDesc(@Param("userIds") List<Long> userIds);
 }

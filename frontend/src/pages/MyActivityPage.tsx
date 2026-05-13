@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/categories'
 import { useMyCalendar, useMyCheckins, useMyCategoryStats } from '@/hooks/useMyActivity'
@@ -18,6 +19,7 @@ function getCalendarDays(year: number, month: number): (string | null)[] {
 }
 
 export default function MyActivityPage() {
+  const navigate = useNavigate()
   const now = new Date()
   const [currentYear, setCurrentYear] = useState(now.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1)
@@ -61,7 +63,18 @@ export default function MyActivityPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-      <h1 className="text-3xl font-bold text-foreground">나의 활동</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-foreground">나의 활동</h1>
+        <button
+          onClick={() => navigate('/me/report')}
+          aria-label="월간 리포트 보기"
+          className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
+          style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
+        >
+          <BarChart2 size={20} aria-hidden="true" />
+          월간 리포트
+        </button>
+      </div>
 
       {/* 캘린더 섹션 */}
       <section className="space-y-4">

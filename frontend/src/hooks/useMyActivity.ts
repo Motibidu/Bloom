@@ -22,3 +22,26 @@ export function useMyCategoryStats(year: number, month: number) {
     queryFn: () => api.get('/checkins/my/stats', { params: { year, month } }).then(r => r.data),
   })
 }
+
+export interface MonthlyReportResponse {
+  year: number
+  month: number
+  totalDays: number
+  totalCheckins: number
+  categoryStats: Record<string, number>
+  activeDays: number[]
+  mostActiveCategory: string | null
+  currentStreak: number
+  longestStreak: number
+}
+
+export function useMonthlyReport(year: number, month: number) {
+  return useQuery({
+    queryKey: ['monthly-report', year, month],
+    queryFn: () =>
+      api
+        .get<MonthlyReportResponse>(`/users/me/monthly-report`, { params: { year, month } })
+        .then(r => r.data),
+    staleTime: 1000 * 60 * 5,
+  })
+}

@@ -1,5 +1,7 @@
 package com.starterkit.domain.user.controller;
 
+import com.starterkit.domain.checkin.dto.response.MonthlyReportResponse;
+import com.starterkit.domain.checkin.service.CheckinService;
 import com.starterkit.domain.user.dto.response.UserResponse;
 import com.starterkit.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,11 +27,21 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final CheckinService checkinService;
 
     @GetMapping("/me")
     @Operation(summary = "내 프로필 조회")
     public ResponseEntity<UserResponse> getMe(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(userService.findByEmail(userDetails.getUsername()));
+    }
+
+    @GetMapping("/me/monthly-report")
+    @Operation(summary = "월간 리포트 조회", description = "year, month 파라미터로 해당 월의 활동 통계를 반환합니다.")
+    public ResponseEntity<MonthlyReportResponse> getMonthlyReport(
+            @RequestParam int year,
+            @RequestParam int month,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(checkinService.getMonthlyReport(userDetails.getUsername(), year, month));
     }
 
     @GetMapping("/check-nickname")

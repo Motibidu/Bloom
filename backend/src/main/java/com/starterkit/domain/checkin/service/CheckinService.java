@@ -6,6 +6,9 @@ import com.starterkit.domain.checkin.dto.response.*;
 import com.starterkit.domain.checkin.entity.Category;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
+import com.starterkit.domain.comment.repository.CommentRepository;
+import com.starterkit.domain.like.entity.ReactionType;
+import com.starterkit.domain.like.repository.LikeRepository;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
@@ -27,6 +30,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +43,8 @@ public class CheckinService {
 
         private final CheckinRepository checkinRepository;
         private final UserRepository userRepository;
+        private final CommentRepository commentRepository;
+        private final LikeRepository likeRepository;
         private final S3Client s3Client;
         private final S3Presigner s3Presigner;
 
@@ -99,6 +106,8 @@ public class CheckinService {
                 if (!checkin.getUser().getId().equals(user.getId())) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 체크인만 삭제할 수 있습니다.");
                 }
+                likeRepository.deleteByCheckinId(id);
+                commentRepository.deleteByCheckinId(id);
                 checkin.getPhotos().forEach(p ->
                         s3Client.deleteObject(DeleteObjectRequest.builder()
                                         .bucket(s3Bucket)
@@ -116,7 +125,16 @@ public class CheckinService {
                 long likeCount = checkinRepository.countLikesByCheckinId(id);
                 boolean likedByMe = checkinRepository.existsLikeByCheckinIdAndUserId(id, user.getId());
                 long commentCount = checkinRepository.countCommentsByCheckinId(id);
-                return CheckinResponse.of(checkin, likeCount, likedByMe, commentCount, s3BaseUrl());
+
+                // 리액션 집계
+                List<Object[]> reactionRows = likeRepository.countByReactionTypeForCheckin(id);
+                Map<String, Long> reactionCounts = buildReactionCountMap(reactionRows);
+
+                // 내 리액션 타입 조회
+                List<Object[]> myReactions = checkinRepository.findReactionsByUserIdAndCheckinIds(List.of(id), user.getId());
+                ReactionType myReactionType = myReactions.isEmpty() ? null : (ReactionType) myReactions.get(0)[1];
+
+                return CheckinResponse.of(checkin, likeCount, likedByMe, myReactionType, reactionCounts, commentCount, s3BaseUrl());
         }
 
         public TodayFeedResponse getTodayFeed(String email) {
@@ -130,12 +148,28 @@ public class CheckinService {
 
                 List<Long> checkinIds = checkins.stream().map(Checkin::getId).toList();
 
-                // 벌크 집계 — 쿼리 3개로 N+1 해소
+                // 벌크 집계 — 쿼리로 N+1 해소
                 Map<Long, Long> likeCountMap = checkinRepository.countLikesByCheckinIds(checkinIds)
                                 .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
-                Set<Long> likedIds = new HashSet<>(checkinRepository.findLikedCheckinIdsByUserId(checkinIds, user.getId()));
                 Map<Long, Long> commentCountMap = checkinRepository.countCommentsByCheckinIds(checkinIds)
                                 .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+
+                // 리액션 집계: checkinId → Map<reactionTypeName, count>
+                Map<Long, Map<String, Long>> reactionCountsMap = new HashMap<>();
+                List<Object[]> reactionBulk = likeRepository.countByReactionTypeForCheckinIds(checkinIds);
+                for (Object[] row : reactionBulk) {
+                        Long cId = (Long) row[0];
+                        ReactionType rt = (ReactionType) row[1];
+                        Long cnt = (Long) row[2];
+                        reactionCountsMap.computeIfAbsent(cId, k -> new LinkedHashMap<>()).put(rt.name(), cnt);
+                }
+
+                // 내 리액션: checkinId → ReactionType
+                Map<Long, ReactionType> myReactionMap = new HashMap<>();
+                List<Object[]> myReactions = checkinRepository.findReactionsByUserIdAndCheckinIds(checkinIds, user.getId());
+                for (Object[] row : myReactions) {
+                        myReactionMap.put((Long) row[0], (ReactionType) row[1]);
+                }
 
                 List<Category> myCategories = checkinRepository.findMyCategoriesToday(user.getId(), range[0], range[1]);
                 long sameCategoryUserCount = myCategories.isEmpty() ? 0
@@ -144,7 +178,9 @@ public class CheckinService {
                 List<CheckinResponse> responses = checkins.stream()
                                 .map(c -> CheckinResponse.of(c,
                                                 likeCountMap.getOrDefault(c.getId(), 0L),
-                                                likedIds.contains(c.getId()),
+                                                myReactionMap.containsKey(c.getId()),
+                                                myReactionMap.get(c.getId()),
+                                                reactionCountsMap.getOrDefault(c.getId(), Map.of()),
                                                 commentCountMap.getOrDefault(c.getId(), 0L),
                                                 s3BaseUrl()))
                                 .toList();
@@ -208,6 +244,75 @@ public class CheckinService {
                                 .toList();
         }
 
+        public MonthlyReportResponse getMonthlyReport(String email, int year, int month) {
+                User user = findUserByEmail(email);
+                ZoneId kst = ZoneId.of("Asia/Seoul");
+
+                ZonedDateTime kstStart = ZonedDateTime.of(year, month, 1, 0, 0, 0, 0, kst);
+                ZonedDateTime kstEnd = kstStart.plusMonths(1);
+                LocalDateTime utcStart = kstStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+                LocalDateTime utcEnd = kstEnd.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+
+                List<Checkin> checkins = checkinRepository.findByUserIdAndDateRange(user.getId(), utcStart, utcEnd);
+
+                // 카테고리별 집계
+                Map<String, Integer> categoryStats = new LinkedHashMap<>();
+                for (Checkin c : checkins) {
+                        String key = c.getCategory().name();
+                        categoryStats.merge(key, 1, Integer::sum);
+                }
+
+                // 활동 날짜(KST 일) 집계 — 중복 제거 후 정렬
+                Set<Integer> activeDaySet = new TreeSet<>();
+                for (Checkin c : checkins) {
+                        int day = c.getCreatedAt()
+                                .atZone(ZoneOffset.UTC)
+                                .withZoneSameInstant(kst)
+                                .getDayOfMonth();
+                        activeDaySet.add(day);
+                }
+                List<Integer> activeDays = new ArrayList<>(activeDaySet);
+
+                int totalDays = activeDays.size();
+                int totalCheckins = checkins.size();
+
+                // 가장 많은 카테고리
+                String mostActiveCategory = categoryStats.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse(null);
+
+                // 현재 연속 활동 일수 (오늘 KST 기준 역순)
+                LocalDate today = LocalDate.now(kst);
+                int currentStreak = 0;
+                LocalDate cursor = today;
+                while (activeDaySet.contains(cursor.getDayOfMonth())
+                        && cursor.getYear() == year
+                        && cursor.getMonthValue() == month) {
+                        currentStreak++;
+                        cursor = cursor.minusDays(1);
+                }
+
+                // 해당 월 최장 연속 활동 일수
+                int longestStreak = 0;
+                int streak = 0;
+                int daysInMonth = kstStart.toLocalDate().lengthOfMonth();
+                for (int d = 1; d <= daysInMonth; d++) {
+                        if (activeDaySet.contains(d)) {
+                                streak++;
+                                longestStreak = Math.max(longestStreak, streak);
+                        } else {
+                                streak = 0;
+                        }
+                }
+
+                return new MonthlyReportResponse(
+                        year, month, totalDays, totalCheckins,
+                        categoryStats, activeDays, mostActiveCategory,
+                        currentStreak, longestStreak
+                );
+        }
+
         public PhotoUploadUrlResponse generatePhotoUploadUrl(PhotoUploadUrlRequest request, UserDetails userDetails) {
                 if (!List.of("image/jpeg", "image/png").contains(request.contentType())) {
                         throw new IllegalArgumentException("허용되지 않는 파일 형식입니다. image/jpeg 또는 image/png만 허용됩니다.");
@@ -241,5 +346,15 @@ public class CheckinService {
         private User findUserByEmail(String email) {
                 return userRepository.findByEmail(email)
                                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        }
+
+        private Map<String, Long> buildReactionCountMap(List<Object[]> rows) {
+                Map<String, Long> counts = new LinkedHashMap<>();
+                for (Object[] row : rows) {
+                        ReactionType rt = (ReactionType) row[0];
+                        Long cnt = (Long) row[1];
+                        counts.put(rt.name(), cnt);
+                }
+                return counts;
         }
 }
