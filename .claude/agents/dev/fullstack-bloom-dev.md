@@ -82,6 +82,7 @@ com.starterkit
 1. **Analyze** the existing code patterns before writing new code
 2. **Backend first**: Define entities → repository → service → controller → DTOs
 3. **Frontend second**: Define types → API calls → React Query hooks → components → pages
+   - **UI/Design work**: When implementing frontend UI components, pages, or design work, invoke the `/frontend-design:frontend-design` skill via the Skill tool BEFORE writing any markup or styling code. This skill produces distinctive, production-grade UI that avoids generic AI aesthetics.
 4. **Verify** new endpoints are either secured or explicitly public in SecurityConfig
 5. **Document** new APIs with SpringDoc annotations
 
@@ -97,6 +98,34 @@ This app serves adults aged 50-60. When implementing UI:
 - Clear feedback for all actions
 - Accessible color contrast
 
+### WebView Considerations
+This app is intended to run inside a WebView (mobile app shell). Always keep the following in mind:
+
+**Layout & Scroll**
+- Avoid `100vh` / `dvh` — use `min-h-screen` carefully; prefer flex column layouts that grow naturally
+- Do not rely on browser chrome (address bar, tab bar) for spacing — assume zero chrome
+- Use `safe-area-inset-*` CSS env variables for notch/home-indicator areas: `pb-[env(safe-area-inset-bottom)]`
+- Horizontal scroll must never occur — ensure `overflow-x: hidden` at the root level
+
+**Touch & Interaction**
+- All tap targets must be ≥ 48px (use `min-h-12` / `min-w-12`)
+- Disable tap highlight: `tap-highlight-color: transparent` via Tailwind `[-webkit-tap-highlight-color:transparent]`
+- Avoid hover-only interactions — every interaction must work via touch
+- `position: fixed` elements (bottom nav, modals) must account for soft keyboard pushing layout
+
+**Navigation**
+- Do not rely on browser back button — the WebView may intercept it; implement in-app back navigation explicitly
+- Avoid `window.open()` and `<a target="_blank">` — links stay within the WebView unless intentionally bridged
+
+**Performance**
+- Minimize heavy CSS animations on scroll — prefer `transform` and `opacity` only (GPU-composited)
+- Lazy-load images with `loading="lazy"` and use explicit `width`/`height` to prevent layout shift
+- Keep initial bundle small; prefer route-level code splitting
+
+**Bridge & Native**
+- Do not access `navigator.clipboard`, `navigator.geolocation`, or other sensitive APIs without confirming WebView bridge support
+- Avoid `alert()` / `confirm()` / `prompt()` — they may be blocked in WebView; use custom modal components instead
+
 ## Self-Verification Checklist
 Before finalizing any implementation:
 - [ ] Backend follows domain-based package structure
@@ -106,6 +135,8 @@ Before finalizing any implementation:
 - [ ] Authentication/authorization is correctly applied
 - [ ] Code follows existing patterns in the codebase
 - [ ] UI considerations for 50-60 age demographic are addressed
+- [ ] Frontend UI/design work used `/frontend-design:frontend-design` skill via Skill tool
+- [ ] WebView constraints respected (no 100vh, tap targets ≥ 48px, no hover-only UX, no browser dialogs, safe-area insets applied)
 
 **Update your agent memory** as you discover architectural patterns, domain structures, common implementation approaches, and project-specific conventions in the Bloom codebase. This builds institutional knowledge across conversations.
 

@@ -1,6 +1,9 @@
 #!/bin/bash
 # Claude Code Stop 훅 — 슬랙으로 작업 완료 알림 전송
 
+# .claude/away 파일이 없으면 알림 비활성화
+[ ! -f "$(dirname "$0")/../away" ] && cat > /dev/null && exit 0
+
 INPUT=$(cat)
 
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""' | head -c 8)

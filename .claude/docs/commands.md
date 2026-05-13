@@ -22,5 +22,5 @@ npm run lint      # ESLint 검사
 ### 환경 변수
 
 백엔드는 `application-dev.yml` 기준으로 동작하며 기본값이 설정되어 있음:
-- DB: `localhost:3306/starterkit_dev` (username: `root`, password: `1234`)
+- DB: `localhost:3306/bloom_dev` (username: `root`, password: `1234`)
 - JWT secret, CORS origins: `application.yml`의 `${ENV_VAR:default}` 패턴으로 오버라이드 가능

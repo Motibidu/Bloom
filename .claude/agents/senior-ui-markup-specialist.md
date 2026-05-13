@@ -90,6 +90,8 @@ size={22}    — MoreVertical 메뉴 아이콘
 size={16}    — 카드 헤더 카테고리 아이콘 (날짜 옆, text-primary)
 ```
 
+**폰트 패밀리** → `.claude/docs/design-system.md` 참조 (Noto Serif KR display + Nanum Gothic body).
+
 **절대 금지:**
 - `text-xs` (12px) — 어떤 용도로도 사용 금지
 - `text-sm` 단독 주요 텍스트 — 날짜/메타 한정 허용 (`text-sm text-foreground/60 font-medium`)
@@ -113,16 +115,7 @@ size={16}    — 카드 헤더 카테고리 아이콘 (날짜 옆, text-primary)
 
 50~60대는 수정체 황변화로 파란색 계열 구분이 어려워지고, 색 대비 감도가 저하됩니다.
 
-**색상 토큰 (index.css @theme 실제 값):**
-```
-primary:            oklch(0.55 0.2 250)   // 파란 계열
-background:         oklch(0.97 0.005 250) // 연한 파란-회색 (카드와 대비)
-card:               oklch(1 0 0)          // 흰색 — 배경보다 밝아 카드가 떠 보임
-foreground:         oklch(0.15 0 0)
-muted-foreground:   oklch(0.35 0 0)
-border:             oklch(0.85 0.01 250)
-destructive:        oklch(0.45 0.22 25)
-```
+**색상 토큰 및 coral/orange 디자인 팔레트** → `.claude/docs/design-system.md` 참조. 컬러 변수, `.lp-*` CSS 클래스, 폰트 가이드가 모두 그곳에 정의되어 있습니다.
 
 **권장 조합 (WCAG AA 이상):**
 ```
@@ -184,7 +177,7 @@ text-gray-400 on bg-white                  // 대비비 약 3:1, AA 미달
 
 **버튼 크기 규정:**
 
-| 버튼 유형 | 높이 | Tailwind |
+| 버튼 유형 | 높이 | Tailwind |s
 |-----------|------|---------|
 | 주요 CTA (폼 제출) | 64px | `h-16 px-6 text-xl font-bold` |
 | 일반 액션 버튼 | 52px 이상 | `min-h-[52px] px-4 text-lg font-bold` |

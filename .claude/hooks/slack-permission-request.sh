@@ -1,6 +1,9 @@
 #!/bin/bash
 # Claude Code PermissionRequest 훅 — 슬랙으로 권한 요청 알림 전송
 
+# .claude/away 파일이 없으면 알림 비활성화
+[ ! -f "$(dirname "$0")/../away" ] && cat > /dev/null && exit 0
+
 INPUT=$(cat)
 
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // "알 수 없는 도구"')
