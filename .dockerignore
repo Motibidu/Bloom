@@ -1,0 +1,32 @@
+# Node
+**/node_modules
+
+# Gradle
+**/.gradle
+**/build
+
+# Frontend dist
+**/dist
+
+# 환경 변수 (절대 포함 금지)
+.env
+.env.*
+!.env.example
+
+# IDE
+**/.idea
+**/.vscode
+**/*.iml
+
+# Git
+.git
+.gitignore
+
+# 문서
+docs
+*.md
+!README.md
+
+# OS
+.DS_Store
+Thumbs.db
