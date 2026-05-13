@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { CheckIn } from '@/types'
 
+export interface FamilyFeedResponse {
+  groupId: number
+  groupName: string
+  checkins: CheckIn[]
+}
+
 export interface FamilyMember {
   userId: number
   nickname: string
@@ -9,7 +15,7 @@ export interface FamilyMember {
 }
 
 export interface FamilyGroup {
-  groupId: number
+  id: number
   name: string
   inviteCode: string
   members: FamilyMember[]
@@ -61,9 +67,9 @@ export function useJoinFamily() {
 }
 
 export function useFamilyFeed(groupId: number | undefined) {
-  return useQuery<CheckIn[]>({
+  return useQuery<FamilyFeedResponse>({
     queryKey: ['family', 'feed', groupId],
-    queryFn: () => api.get<CheckIn[]>(`/families/${groupId}/feed`).then(r => r.data),
+    queryFn: () => api.get<FamilyFeedResponse>(`/families/${groupId}/feed`).then(r => r.data),
     enabled: !!groupId,
   })
 }

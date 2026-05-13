@@ -93,7 +93,7 @@ function FamilyFeed({ groupId }: { groupId: number }) {
     )
   }
 
-  if (!feed || feed.length === 0) {
+  if (!feed || feed.checkins.length === 0) {
     return (
       <div
         className="rounded-2xl p-8 text-center"
@@ -112,7 +112,7 @@ function FamilyFeed({ groupId }: { groupId: number }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {feed.map(checkin => (
+      {feed.checkins.map(checkin => (
         <CheckInCard
           key={checkin.id}
           checkin={checkin}
@@ -434,7 +434,7 @@ export default function FamilyPage() {
     <main className="max-w-2xl mx-auto px-4 pb-28 pt-4">
       {family ? (
         <FamilyGroupView
-          groupId={family.groupId}
+          groupId={family.id}
           name={family.name}
           inviteCode={family.inviteCode}
           members={family.members}

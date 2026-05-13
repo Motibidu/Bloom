@@ -15,6 +15,7 @@ import com.starterkit.domain.family.exception.FamilyNotFoundException;
 import com.starterkit.domain.family.exception.InvalidInviteCodeException;
 import com.starterkit.domain.family.repository.FamilyGroupRepository;
 import com.starterkit.domain.family.repository.FamilyMemberRepository;
+import com.starterkit.domain.like.entity.ReactionType;
 import com.starterkit.domain.like.repository.LikeRepository;
 import com.starterkit.domain.comment.repository.CommentRepository;
 import com.starterkit.domain.user.entity.User;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
 
 @Slf4j
 @Service
@@ -42,6 +44,7 @@ public class FamilyService {
     private final FamilyMemberRepository familyMemberRepository;
     private final UserRepository userRepository;
     private final CheckinRepository checkinRepository;
+    private final LikeRepository likeRepository;
 
     @Autowired(required = false)
     private JavaMailSender mailSender;
@@ -49,11 +52,13 @@ public class FamilyService {
     public FamilyService(FamilyGroupRepository familyGroupRepository,
                          FamilyMemberRepository familyMemberRepository,
                          UserRepository userRepository,
-                         CheckinRepository checkinRepository) {
+                         CheckinRepository checkinRepository,
+                         LikeRepository likeRepository) {
         this.familyGroupRepository = familyGroupRepository;
         this.familyMemberRepository = familyMemberRepository;
         this.userRepository = userRepository;
         this.checkinRepository = checkinRepository;
+        this.likeRepository = likeRepository;
     }
 
     @Value("${app.s3.bucket}")
@@ -169,14 +174,32 @@ public class FamilyService {
 
         Map<Long, Long> likeCountMap = checkinRepository.countLikesByCheckinIds(checkinIds)
                 .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
-        Set<Long> likedIds = new HashSet<>(checkinRepository.findLikedCheckinIdsByUserId(checkinIds, user.getId()));
         Map<Long, Long> commentCountMap = checkinRepository.countCommentsByCheckinIds(checkinIds)
                 .stream().collect(Collectors.toMap(r -> (Long) r[0], r -> (Long) r[1]));
+
+        // 리액션 집계: checkinId → Map<reactionTypeName, count>
+        Map<Long, Map<String, Long>> reactionCountsMap = new HashMap<>();
+        List<Object[]> reactionBulk = likeRepository.countByReactionTypeForCheckinIds(checkinIds);
+        for (Object[] row : reactionBulk) {
+            Long cId = (Long) row[0];
+            ReactionType rt = (ReactionType) row[1];
+            Long cnt = (Long) row[2];
+            reactionCountsMap.computeIfAbsent(cId, k -> new LinkedHashMap<>()).put(rt.name(), cnt);
+        }
+
+        // 내 리액션: checkinId → ReactionType
+        Map<Long, ReactionType> myReactionMap = new HashMap<>();
+        List<Object[]> myReactions = checkinRepository.findReactionsByUserIdAndCheckinIds(checkinIds, user.getId());
+        for (Object[] row : myReactions) {
+            myReactionMap.put((Long) row[0], (ReactionType) row[1]);
+        }
 
         List<CheckinResponse> responses = checkins.stream()
                 .map(c -> CheckinResponse.of(c,
                         likeCountMap.getOrDefault(c.getId(), 0L),
-                        likedIds.contains(c.getId()),
+                        myReactionMap.containsKey(c.getId()),
+                        myReactionMap.get(c.getId()),
+                        reactionCountsMap.getOrDefault(c.getId(), Map.of()),
                         commentCountMap.getOrDefault(c.getId(), 0L),
                         baseUrl))
                 .toList();
