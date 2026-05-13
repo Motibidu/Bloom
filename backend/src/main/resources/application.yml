@@ -3,6 +3,11 @@ spring:
     active: dev
   application:
     name: starterkit
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/bloom_dev?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -15,10 +20,30 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 app:
   jwt:
-    secret: ${JWT_SECRET:StarterKitDefaultSecretKeyForDevelopmentOnly2024}
+    secret: ${JWT_SECRET:MyBloomLocalDevSecretKey2026!!}
     access-token-expiration-ms: 900000       # 15분
     refresh-token-expiration-ms: 604800000   # 7일
   cors:

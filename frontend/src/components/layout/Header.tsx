@@ -48,12 +48,18 @@ export default function Header() {
 
       {/* 오른쪽: PC - 피드 링크 + 프로필 드롭다운 */}
       <div className="flex items-center gap-4">
-        {/* PC에서만 노출되는 피드 바로가기 링크 */}
+        {/* PC에서만 노출되는 네비게이션 링크 */}
         <Link
           to="/"
           className="hidden md:block text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
           피드
+        </Link>
+        <Link
+          to="/family"
+          className="hidden md:block text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          가족
         </Link>
 
         {/* 프로필 아바타 드롭다운 */}
@@ -86,6 +92,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
               </>
             )}
+            <DropdownMenuItem
+              onClick={() => navigate('/family')}
+              className="cursor-pointer"
+            >
+              가족 그룹
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => navigate('/me')}
               className="cursor-pointer"

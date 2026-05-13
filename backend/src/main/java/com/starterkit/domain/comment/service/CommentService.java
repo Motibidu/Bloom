@@ -28,7 +28,7 @@ public class CommentService {
     public List<CommentResponse> getComments(Long checkinId) {
         checkinRepository.findById(checkinId)
                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
-        return commentRepository.findByCheckinIdOrderByCreatedAtAsc(checkinId)
+        return commentRepository.findByCheckinIdOrderByCreatedAtDesc(checkinId)
                 .stream()
                 .map(CommentResponse::from)
                 .toList();

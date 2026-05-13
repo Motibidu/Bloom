@@ -11,6 +11,9 @@ import LandingPage from '@/pages/LandingPage'
 import FeedPage from '@/pages/FeedPage'
 import ActivityDetailPage from '@/pages/ActivityDetailPage'
 import MyActivityPage from '@/pages/MyActivityPage'
+import MonthlyReportPage from '@/pages/MonthlyReportPage'
+import FamilyPage from '@/pages/FamilyPage'
+import FamilyInvitePage from '@/pages/FamilyInvitePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -76,7 +79,10 @@ export default function App() {
           >
             <Route index element={<FeedPage />} />
             <Route path="checkin/:id" element={<ActivityDetailPage />} />
+            <Route path="family" element={<FamilyPage />} />
+            <Route path="family/invite" element={<FamilyInvitePage />} />
             <Route path="me" element={<MyActivityPage />} />
+            <Route path="me/report" element={<MonthlyReportPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />
