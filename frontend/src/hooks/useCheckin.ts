@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 // 오늘의 피드
-export function useTodayFeed() {
+export function useTodayFeed(feedType: 'all' | 'following' = 'all') {
   return useQuery({
-    queryKey: ['checkins', 'today'],
-    queryFn: () => api.get('/checkins/today').then(r => r.data),
+    queryKey: ['checkins', 'today', feedType],
+    queryFn: () =>
+      api.get('/checkins/today', { params: { feedType } }).then(r => r.data),
   })
 }
 

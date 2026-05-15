@@ -41,3 +41,5 @@ backend/bin/
 # Claude local memory (session-specific, not shared)
 .claude/agent-memory/
 frontend/.claude/
+
+playwright_screenshot/*

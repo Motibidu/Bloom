@@ -296,7 +296,7 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
 
 핵심 MVP 이후 50~60대 사용자의 감성과 생활 패턴에 맞춘 차별화 기능을 우선 구현합니다. 백엔드 변경이 적거나 없는 항목부터 시작하여 빠른 사이클로 배포합니다.
 
-- [ ] **Task 025: 오늘의 한 마디 (간편 체크인)** - 우선순위
+- [x] **Task 025: 오늘의 한 마디 (간편 체크인)** - 우선순위
   - 프론트엔드 전용 변경 (백엔드 API 변경 없음), 예상 공수 1~2일
   - `FeedPage` 인라인 체크인 폼을 **간편 모드 / 상세 모드** 2단계로 리팩토링:
     - 간편 모드: 카테고리 선택만으로 제목 자동 생성 (예: "산책했어요", "요리했어요") 후 즉시 등록 가능
@@ -305,7 +305,7 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
   - 간편/상세 모드 토글 버튼(텍스트 링크 스타일), 모드 선택 상태 localStorage에 기억
   - Playwright MCP로 간편 모드 체크인 등록 → 피드 즉시 반영 E2E 검증
 
-- [ ] **Task 026: 감정 반응 표현판 (리액션 5종)**
+- [x] **Task 026: 감정 반응 표현판 (리액션 5종)**
   - 예상 공수 3~4일, like 도메인 확장
   - **백엔드**:
     - `likes` 테이블에 `reaction_type` 컬럼 추가 (ENUM: `LIKE`, `DELICIOUS`, `GREAT`, `ENVIOUS`, `WELL_DONE`, DEFAULT: `LIKE`)
@@ -319,7 +319,7 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
     - `useLikeToggle` 훅 확장: `reactionType` 파라미터 추가
   - Playwright MCP로 반응 선택 → 카운트 즉시 반영 → 다른 계정으로 확인 E2E 검증
 
-- [ ] **Task 027: 월간 리포트 (이달의 나)**
+- [x] **Task 027: 월간 리포트 (이달의 나)**
   - 예상 공수 3~4일, 집계 API 신설
   - **백엔드**:
     - `GET /api/users/me/monthly-report?year={year}&month={month}` 신규 엔드포인트
@@ -333,7 +333,7 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
     - 공유 가능한 카드 이미지 생성 (`html2canvas` 또는 Canvas API)
   - Playwright MCP로 리포트 페이지 진입 → 데이터 표시 → 월 변경 E2E 검증
 
-- [ ] **Task 028: 가족 연결 (패밀리 링크)**
+- [x] **Task 028: 가족 연결 (패밀리 링크)**
   - 예상 공수 7~10일, 신규 `domain/family/` 패키지
   - **백엔드**:
     - `family_groups`, `family_members` 테이블 신규 생성
@@ -349,25 +349,41 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
     - 하단 탭바에 "가족" 탭 추가 (집 아이콘)
   - Playwright MCP로 그룹 생성 → 초대 코드 공유 → 참여 → 가족 피드 조회 E2E 검증
 
-### Phase 7: 한국 5060 차별화 기능 — MVP+2
+### Phase 7: 한국 5060 차별화 기능 — MVP+2 (UI 먼저 개발)
 
-Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 심화합니다.
+Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 심화합니다. UI를 먼저 더미 데이터로 완성한 뒤 백엔드 API를 구현하고 연동합니다.
 
-- [ ] **Task 029: 칭찬 카드 (응원 메시지)**
+#### Phase 7-A: UI/UX 완성 (더미 데이터 활용)
+
+- [x] **Task 029: 칭찬 카드 UI (더미 데이터)** ✅
+  - 예상 공수 1~2일, 프론트엔드 전용
+  - 댓글 입력 영역에 "칭찬 카드 보내기" 탭 추가
+  - `praise-card-picker.tsx` 신규 컴포넌트: 5종 칭찬 카드 선택 UI (카드 디자인 포함)
+  - 더미 데이터로 칭찬 카드 형태 렌더링 (배경색 + 이모지 + 텍스트)
+  - 실제 API 연동은 Task 031에서 진행
+
+- [x] **Task 030: 팔로우 / 사용자 찾기 UI (더미 데이터)** ✅
+  - 예상 공수 2~3일, 프론트엔드 전용
+  - `/discover` 라우트 신규 추가 (사용자 검색 화면)
+  - 닉네임 검색 입력 UI + 더미 사용자 목록 + 팔로우 버튼
+  - 피드 페이지에 "전체 피드 / 팔로우 피드" 탭 추가 (UI만, 더미)
+  - 하단 탭바에 "찾기" 탭 추가 (돋보기 아이콘)
+  - 실제 API 연동은 Task 032에서 진행
+
+#### Phase 7-B: 백엔드 API 구현 및 연동
+
+- [x] **Task 031: 칭찬 카드 백엔드 API 및 연동** ✅
   - 예상 공수 2~3일, comment 도메인 확장
   - **백엔드**:
     - `comments` 테이블에 `comment_type` 컬럼 추가 (ENUM: `TEXT`, `PRAISE_CARD`, DEFAULT: `TEXT`)
     - `praise_card_type` 컬럼 추가 (ENUM: `GREAT_JOB`, `KEEP_IT_UP`, `IMPRESSIVE`, `HEALTHY`, `INSPIRING`, NULL 허용)
     - `POST /api/checkins/{id}/comments` 요청에 `commentType`, `praiseCardType` 필드 추가
     - DB 마이그레이션 스크립트
-  - **프론트엔드**:
-    - 댓글 입력 영역에 "칭찬 카드 보내기" 탭 추가
-    - `praise-card-picker.tsx` 신규 컴포넌트: 5종 칭찬 카드 선택 UI (카드 디자인 포함)
-    - 댓글 목록: `PRAISE_CARD` 타입 댓글은 카드 형태로 렌더링 (배경색 + 이모지 + 텍스트)
+  - **프론트엔드 연동**: Task 029에서 만든 UI를 실제 API와 연결
   - Playwright MCP로 칭찬 카드 전송 → 카드 형태 표시 E2E 검증
 
-- [ ] **Task 030: 옛 인연 다시 만나기 (팔로우 + 카카오 친구 연동)**
-  - 예상 공수 10~14일, 신규 `domain/follow/` 패키지 + 카카오 친구 API
+- [ ] **Task 032: 팔로우 백엔드 API 및 연동**
+  - 예상 공수 7~10일, 신규 `domain/follow/` 패키지
   - **백엔드**:
     - `follows` 테이블 신규 생성 (`follower_id`, `following_id`, UNIQUE KEY)
     - `POST /api/follows/{userId}` — 팔로우
@@ -376,19 +392,14 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
     - `GET /api/follows/followers` — 나를 팔로우하는 사람 목록
     - `GET /api/checkins/following` — 팔로우한 사람들의 피드 (커서 기반 페이지네이션)
     - `GET /api/users/search?nickname=` — 닉네임 검색으로 사용자 찾기
-  - **프론트엔드**:
-    - `/discover` 라우트 신규 추가 (사용자 검색 + 카카오 친구 목록)
-    - 카카오 JS SDK 친구 API: `Kakao.API.request({ url: '/v1/api/talk/friends' })`로 카카오 친구 중 서비스 가입자 조회
-    - Android Chrome 환경에서 Contacts Picker API(`navigator.contacts.select`) 추가 지원 (조건부 활성화)
-    - 피드 페이지에 "전체 피드 / 팔로우 피드" 탭 추가
-    - 하단 탭바에 "찾기" 탭 추가 (돋보기 아이콘)
+  - **프론트엔드 연동**: Task 030에서 만든 UI를 실제 API와 연결
   - Playwright MCP로 닉네임 검색 → 팔로우 → 팔로우 피드 확인 E2E 검증
 
 ### Phase 8: 플랫폼 확장 — React Native WebView 앱
 
 웹 코드베이스를 유지하면서 iOS/Android 네이티브 앱 경험을 제공합니다. JS Bridge를 통해 네이티브 기능을 점진적으로 활성화합니다.
 
-- [ ] **Task 031: React Native WebView 앱 래퍼 구축** - 우선순위
+- [ ] **Task 033: React Native WebView 앱 래퍼 구축** - 우선순위
   - React Native 프로젝트 신규 생성 (`mobile/` 디렉토리, Expo 또는 RN CLI)
   - `react-native-webview`로 웹앱 전체 래핑 (iOS + Android)
   - JS Bridge 구현:
@@ -399,21 +410,21 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 웹앱 코드에 `isNativeApp()` 헬퍼 함수 추가: `window.ReactNativeWebView !== undefined` 감지로 웹/앱 환경 자동 분기
   - App Store (iOS) / Play Store (Android) 심사 준비 및 배포
 
-- [ ] **Task 032: 웹 푸시 알림 (Web Push API / FCM)**
+- [ ] **Task 034: 웹 푸시 알림 (Web Push API / FCM)**
   - Web Push API 구현 (웹 환경):
     - Service Worker 등록 (`/sw.js`)
     - `PushManager.subscribe()`로 구독 정보 서버 저장
     - `POST /api/push-subscriptions` — 구독 정보 저장
     - `web-push` 라이브러리(백엔드)로 서버 발송
   - FCM 네이티브 푸시 (React Native 앱 환경):
-    - Task 031의 JS Bridge를 통해 FCM 토큰 수신
+    - Task 033의 JS Bridge를 통해 FCM 토큰 수신
     - `POST /api/push-tokens` — FCM 토큰 저장
     - Firebase Admin SDK(백엔드)로 서버 발송
   - 알림 트리거: 가족 그룹 참여, 내 체크인에 좋아요/댓글, 팔로우 알림
   - Phase 6 Task 028의 이메일 알림을 웹 푸시로 대체
 
-- [ ] **Task 033: 카카오 로그인 연동**
-  - 카카오 친구 API(Task 030) 사용을 위한 전제조건
+- [ ] **Task 035: 카카오 로그인 연동**
+  - 카카오 친구 API(Task 032) 사용을 위한 전제조건
   - **백엔드**:
     - `users` 테이블에 `kakao_id` 컬럼 추가 (UNIQUE, NULL 허용)
     - `POST /api/auth/kakao` — 카카오 액세스 토큰 검증 후 자체 JWT 발급 (신규 가입 또는 기존 계정 연결)
@@ -428,37 +439,37 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
 
 서비스 운영 중 발견되는 불편함을 해소하고, 보안 및 성능을 강화합니다.
 
-- [ ] **Task 034: 체크인 수정 및 삭제**
+- [ ] **Task 036: 체크인 수정 및 삭제**
   - `PATCH /api/checkins/{id}` — 설명 및 카테고리 수정 (작성자 권한 검증)
   - `DELETE /api/checkins/{id}` — 체크인 삭제 + S3 사진 일괄 삭제 (작성자 권한 검증)
   - 피드/상세 페이지에서 본인 체크인에 수정/삭제 버튼 표시 (케밥 메뉴 또는 하단 시트)
   - Playwright MCP로 수정 → 반영 확인 → 삭제 → 피드에서 제거 확인 E2E 검증
 
-- [ ] **Task 035: 프로필 수정**
+- [ ] **Task 037: 프로필 수정**
   - `PATCH /api/users/me` 엔드포인트 (닉네임, 자기소개 변경, 닉네임 UNIQUE 검증 포함)
   - 나의 활동 페이지 상단 또는 별도 `/me/edit` 라우트에 프로필 편집 UI
   - React Hook Form + 실시간 닉네임 중복 확인 디바운스 적용
   - 수정 성공 시 `useCurrentUser` 캐시 무효화 + 성공 토스트
 
-- [ ] **Task 036: 프로필 이미지 업로드**
+- [ ] **Task 038: 프로필 이미지 업로드**
   - `User` 엔티티에 `profile_image_object_key` 컬럼 추가
   - `POST /api/users/me/profile-image-url` — 프로필 이미지용 presigned URL 발급 (경로: `profiles/{userId}/{uuid}.jpg`)
   - `PATCH /api/users/me` 에 `profileImageObjectKey` 필드 추가
   - 프로필 편집 UI에 이미지 변경 버튼 + 원형 미리보기 + S3 업로드 플로우
 
-- [ ] **Task 037: 실시간 알림 (좋아요 / 댓글)**
+- [ ] **Task 039: 실시간 알림 (좋아요 / 댓글)**
   - SSE(Server-Sent Events) 기반 알림 스트림: `GET /api/notifications/stream`
   - `notifications` 테이블: `id`, `user_id`, `type` (LIKE / COMMENT / FOLLOW / FAMILY_JOIN), `actor_id`, `target_id`, `is_read`, `created_at`
   - 헤더 알림 아이콘에 읽지 않은 알림 수 뱃지 표시
   - 알림 목록 드롭다운: 최근 20개, 클릭 시 해당 체크인 상세로 이동 + `is_read` 처리
 
-- [ ] **Task 038: 피드 무한스크롤 페이지네이션**
+- [ ] **Task 040: 피드 무한스크롤 페이지네이션**
   - `GET /api/checkins/today`: 커서 기반 페이지네이션 (`?cursor=lastCheckinId&limit=20`) 추가
   - `GET /api/checkins/following`: 동일 페이지네이션 적용
   - 프론트엔드: `useInfiniteQuery` + `IntersectionObserver`로 무한스크롤 구현
   - 스켈레톤 로딩 카드 유지하며 자연스러운 추가 로딩 UX
 
-- [ ] **Task 039: 신고 / 차단 기능**
+- [ ] **Task 041: 신고 / 차단 기능**
   - `reports` 테이블: 신고 사유 ENUM (SPAM / INAPPROPRIATE / ABUSE / OTHER)
   - `blocks` 테이블: 차단한 사용자 피드/댓글 자동 필터링
   - `POST /api/reports` — 체크인 또는 댓글 신고
@@ -466,7 +477,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 체크인 카드 케밥 메뉴에 "신고하기" / "차단하기" 옵션 추가
   - 어드민 모더레이션 화면 (신고 목록, 처리 상태 관리)
 
-- [ ] **Task 040: Refresh Token Rotation**
+- [ ] **Task 042: Refresh Token Rotation**
   - 갱신 시 새 리프레시 토큰 재발급 + 구 토큰 DB/Redis에 블랙리스트 등록
   - 탈취된 구 토큰 재사용 감지 시 해당 계정 전체 세션 무효화
   - `refresh_tokens` 테이블 또는 Redis TTL 기반 저장소 선택

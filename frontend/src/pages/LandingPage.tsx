@@ -216,26 +216,26 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white flex flex-col">
 
       {/* ── 헤더 ──────────────────────────────────────────────────────────── */}
-      <header className="h-20 border-b border-gray-100 bg-white/90 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-2.5">
+      <header className="h-16 sm:h-20 border-b border-gray-100 bg-white/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
+        <div className="flex items-center gap-2 shrink-0">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
             style={coralBtn}
           >
-            <Smile size={20} className="text-white" aria-hidden="true" />
+            <Smile size={18} className="text-white" aria-hidden="true" />
           </div>
           <span
-            className="text-xl font-black tracking-tight"
+            className="text-base sm:text-xl font-black tracking-tight whitespace-nowrap"
             style={{ ...serifStyle, ...gradientText }}
           >
             오늘 뭐 했어요?
           </span>
         </div>
 
-        <nav aria-label="주요 메뉴" className="flex items-center gap-3">
+        <nav aria-label="주요 메뉴" className="flex items-center gap-2 shrink-0">
           <Link to="/login">
             <button
-              className="min-h-[48px] px-5 text-base font-bold rounded-xl
+              className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap
                          text-foreground/70 hover:text-foreground transition-colors
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             >
@@ -244,7 +244,7 @@ export default function LandingPage() {
           </Link>
           <Link to="/register">
             <button
-              className="min-h-[48px] px-5 text-base font-bold rounded-xl
+              className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={coralBtn}
             >
@@ -292,19 +292,18 @@ export default function LandingPage() {
 
               <h1
                 id="hero-heading"
-                className="text-5xl md:text-6xl font-black leading-tight tracking-tight text-foreground animate-fade-up"
-                style={{ ...serifStyle, animationDelay: '0.1s' }}
+                className="text-4xl sm:text-5xl md:text-6xl font-black leading-tight tracking-tight text-foreground animate-fade-up"
+                style={{ ...serifStyle, animationDelay: '0.1s', textWrap: 'balance', wordBreak: 'keep-all' } as React.CSSProperties}
               >
-                오늘 하루도<br />
+                오늘 하루도{' '}
                 <span style={gradientText}>수고하셨어요.</span>
               </h1>
 
               <p
-                className="text-xl text-foreground/70 leading-relaxed font-medium animate-fade-up"
-                style={{ animationDelay: '0.2s' }}
+                className="text-lg sm:text-xl text-foreground/70 leading-relaxed font-medium animate-fade-up"
+                style={{ animationDelay: '0.2s', wordBreak: 'keep-all' }}
               >
-                나의 소소한 일상을 기록하고,<br />
-                같은 활동을 한 이웃과 따뜻하게 연결되어 보세요.
+                나의 소소한 일상을 기록하고, 같은 활동을 한 이웃과 따뜻하게 연결되어 보세요.
               </p>
 
               <div
