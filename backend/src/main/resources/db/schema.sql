@@ -44,12 +44,25 @@ CREATE TABLE IF NOT EXISTS likes (
     CONSTRAINT fk_likes_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS follows (
+    id           BIGINT   NOT NULL AUTO_INCREMENT,
+    follower_id  BIGINT   NOT NULL,
+    following_id BIGINT   NOT NULL,
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_follow (follower_id, following_id),
+    CONSTRAINT fk_follows_follower  FOREIGN KEY (follower_id)  REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_follows_following FOREIGN KEY (following_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS comments (
-    id         BIGINT       NOT NULL AUTO_INCREMENT,
-    user_id    BIGINT       NOT NULL,
-    checkin_id BIGINT       NOT NULL,
-    content    VARCHAR(200) NOT NULL,
-    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id               BIGINT       NOT NULL AUTO_INCREMENT,
+    user_id          BIGINT       NOT NULL,
+    checkin_id       BIGINT       NOT NULL,
+    content          VARCHAR(200) NULL,
+    comment_type     ENUM('TEXT','PRAISE_CARD') NOT NULL DEFAULT 'TEXT',
+    praise_card_type ENUM('GREAT_JOB','KEEP_IT_UP','IMPRESSIVE','HEALTHY','INSPIRING') NULL,
+    created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_comments_user    FOREIGN KEY (user_id)    REFERENCES users    (id),
     CONSTRAINT fk_comments_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id)

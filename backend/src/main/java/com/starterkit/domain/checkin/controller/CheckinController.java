@@ -4,6 +4,7 @@ import com.starterkit.domain.checkin.dto.request.CreateCheckinRequest;
 import com.starterkit.domain.checkin.dto.request.PhotoUploadUrlRequest;
 import com.starterkit.domain.checkin.dto.response.*;
 import com.starterkit.domain.checkin.service.CheckinService;
+import com.starterkit.domain.follow.service.FollowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ import java.util.List;
 public class CheckinController {
 
     private final CheckinService checkinService;
+    private final FollowService followService;
 
     @PostMapping
     @Operation(summary = "체크인 생성")
@@ -36,8 +38,12 @@ public class CheckinController {
     @GetMapping("/today")
     @Operation(summary = "오늘의 피드 조회 (KST 기준)")
     public ResponseEntity<TodayFeedResponse> getToday(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(checkinService.getTodayFeed(userDetails.getUsername()));
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "all") String feedType) {
+        List<Long> followingIds = "following".equals(feedType)
+                ? followService.getFollowingIds(userDetails)
+                : null;
+        return ResponseEntity.ok(checkinService.getTodayFeed(userDetails.getUsername(), followingIds));
     }
 
     @GetMapping("/my/calendar")

@@ -61,6 +61,12 @@ export default function Header() {
         >
           가족
         </Link>
+        <Link
+          to="/discover"
+          className="hidden md:block text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          찾기
+        </Link>
 
         {/* 프로필 아바타 드롭다운 */}
         <DropdownMenu>
@@ -97,6 +103,12 @@ export default function Header() {
               className="cursor-pointer"
             >
               가족 그룹
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigate('/discover')}
+              className="cursor-pointer"
+            >
+              사람 찾기
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => navigate('/me')}

@@ -137,10 +137,12 @@ public class CheckinService {
                 return CheckinResponse.of(checkin, likeCount, likedByMe, myReactionType, reactionCounts, commentCount, s3BaseUrl());
         }
 
-        public TodayFeedResponse getTodayFeed(String email) {
+        public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds) {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();
-                List<Checkin> checkins = checkinRepository.findAllByOrderByCreatedAtDesc();
+                List<Checkin> checkins = (followingIds != null && !followingIds.isEmpty())
+                        ? checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds)
+                        : checkinRepository.findAllByOrderByCreatedAtDesc();
 
                 if (checkins.isEmpty()) {
                         return new TodayFeedResponse(List.of(), 0);

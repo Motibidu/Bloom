@@ -14,6 +14,7 @@ import MyActivityPage from '@/pages/MyActivityPage'
 import MonthlyReportPage from '@/pages/MonthlyReportPage'
 import FamilyPage from '@/pages/FamilyPage'
 import FamilyInvitePage from '@/pages/FamilyInvitePage'
+import DiscoverPage from '@/pages/DiscoverPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="checkin/:id" element={<ActivityDetailPage />} />
             <Route path="family" element={<FamilyPage />} />
             <Route path="family/invite" element={<FamilyInvitePage />} />
+            <Route path="discover" element={<DiscoverPage />} />
             <Route path="me" element={<MyActivityPage />} />
             <Route path="me/report" element={<MonthlyReportPage />} />
           </Route>

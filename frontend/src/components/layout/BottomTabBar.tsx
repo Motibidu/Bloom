@@ -1,4 +1,4 @@
-import { LayoutList, Users, UserCircle2 } from 'lucide-react'
+import { LayoutList, Users, UserCircle2, Search } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const warmBlueGradient = 'linear-gradient(135deg, oklch(0.62 0.15 220), oklch(0.76 0.12 220))'
@@ -31,6 +31,14 @@ export default function BottomTabBar() {
       matchPrefix: true,
       icon: <Users size={26} className="text-muted-foreground" aria-hidden="true" />,
       iconActive: <Users size={26} className="text-white" aria-hidden="true" />,
+    },
+    {
+      path: '/discover',
+      label: '찾기',
+      ariaLabel: '사람 찾기',
+      matchPrefix: true,
+      icon: <Search size={26} className="text-muted-foreground" aria-hidden="true" />,
+      iconActive: <Search size={26} className="text-white" aria-hidden="true" />,
     },
     {
       path: '/me',
