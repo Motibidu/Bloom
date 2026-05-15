@@ -50,13 +50,12 @@ export default function CheckInCard({
   return (
     <article
       className={`
-        group relative rounded-2xl bg-white overflow-hidden
+        group relative rounded-2xl bg-white overflow-hidden flex flex-col
         checkin-card
         ${isClickable ? 'checkin-card--clickable cursor-pointer' : ''}
       `}
       style={{
         boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}`,
-        minHeight: showFullContent ? '320px' : undefined,
       }}
     >
       <style>{`
@@ -160,7 +159,7 @@ export default function CheckInCard({
       <hr className="mx-6 border-none h-px" style={{ background: mA(0.18) }} />
 
       {/* 본문 */}
-      <div className={`pl-7 pr-5 pt-4 pb-5 ${!checkin.photoUrls?.length && !showFullContent ? 'min-h-[130px]' : ''}`}>
+      <div className={`pl-7 pr-5 pt-4 pb-5 flex-1 ${showFullContent ? 'min-h-[200px]' : 'min-h-[160px]'}`}>
         <h3
           className="text-xl font-black text-foreground mb-2 leading-snug"
           style={{ textWrap: 'balance' } as React.CSSProperties}
@@ -208,7 +207,7 @@ export default function CheckInCard({
 
       {/* 하단 반응 바 */}
       <div
-        className="px-5 py-0 flex items-center gap-4 relative"
+        className="px-5 flex items-center gap-4 relative mt-auto"
         style={{
           borderTop: `1px solid ${mA(0.10)}`,
           background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,
