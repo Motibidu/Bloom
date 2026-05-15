@@ -114,6 +114,7 @@ public class FamilyService {
                 FamilyMember.builder()
                         .group(group)
                         .user(newMember)
+                        .role(com.starterkit.domain.family.entity.FamilyMemberRole.GUEST)
                         .build()
         );
 

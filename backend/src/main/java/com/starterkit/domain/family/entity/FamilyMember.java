@@ -27,11 +27,20 @@ public class FamilyMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 10)
+    @Builder.Default
+    private FamilyMemberRole role = FamilyMemberRole.OWNER;
+
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt;
 
     @PrePersist
     protected void onCreate() {
         joinedAt = LocalDateTime.now(java.time.ZoneOffset.UTC);
+    }
+
+    public boolean isGuest() {
+        return FamilyMemberRole.GUEST == this.role;
     }
 }

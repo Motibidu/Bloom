@@ -7,6 +7,7 @@ import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
 import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
+import { useIsGuestMember } from '@/hooks/useFamily'
 import { AUTO_TITLES } from '@/lib/categories'
 import type { Category } from '@/types'
 
@@ -51,6 +52,7 @@ export default function FeedPage() {
   const { data: feed, isLoading, isError } = useTodayFeed(feedTab)
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
+  const isGuest = useIsGuestMember()
 
   const handleModeToggle = () => {
     const next = checkinMode === 'simple' ? 'detail' : 'simple'
@@ -268,8 +270,20 @@ export default function FeedPage() {
         </div>
       )}
 
-      {/* ── 체크인 작성 영역 ────────────────────────────────────────────────── */}
-      {!isFormOpen ? (
+      {/* ── 체크인 작성 영역 (GUEST 제외) ──────────────────────────────────── */}
+      {isGuest ? (
+        <div
+          className="rounded-2xl px-6 py-5 flex items-center gap-3"
+          style={{ background: mA(0.05), border: `1px dashed ${mA(0.2)}` }}
+          role="note"
+          aria-label="가족 피드 열람 전용"
+        >
+          <span className="text-2xl" aria-hidden="true">👀</span>
+          <p className="text-base font-bold text-foreground/60">
+            가족의 활동을 응원해 보세요. 활동 기록은 본인 계정으로만 작성할 수 있어요.
+          </p>
+        </div>
+      ) : !isFormOpen ? (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
@@ -573,7 +587,7 @@ export default function FeedPage() {
             </BigButton>
           )}
         </section>
-      )}
+      ) : null}
 
       {/* ── 피드 목록 ────────────────────────────────────────────────────────── */}
       {checkins.length === 0 ? (

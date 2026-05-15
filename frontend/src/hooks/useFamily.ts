@@ -8,10 +8,13 @@ export interface FamilyFeedResponse {
   checkins: CheckIn[]
 }
 
+export type FamilyMemberRole = 'OWNER' | 'GUEST'
+
 export interface FamilyMember {
   userId: number
   nickname: string
   profileImageUrl: string | null
+  role: FamilyMemberRole
 }
 
 export interface FamilyGroup {
@@ -72,4 +75,24 @@ export function useFamilyFeed(groupId: number | undefined) {
     queryFn: () => api.get<FamilyFeedResponse>(`/families/${groupId}/feed`).then(r => r.data),
     enabled: !!groupId,
   })
+}
+
+/** 현재 사용자가 가족 그룹에서 GUEST인지 여부 */
+export function useIsGuestMember(): boolean {
+  const { data: family } = useMyFamily()
+  const currentUserId = useCurrentUserId()
+  if (!family || currentUserId == null) return false
+  const me = family.members.find(m => m.userId === currentUserId)
+  return me?.role === 'GUEST'
+}
+
+function useCurrentUserId(): number | null {
+  const raw = localStorage.getItem('auth-storage')
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed?.state?.user?.id ?? null
+  } catch {
+    return null
+  }
 }

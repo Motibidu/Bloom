@@ -55,6 +55,29 @@ CREATE TABLE IF NOT EXISTS follows (
     CONSTRAINT fk_follows_following FOREIGN KEY (following_id) REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS family_groups (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    name        VARCHAR(50)  NOT NULL,
+    invite_code VARCHAR(20)  NOT NULL,
+    created_by  BIGINT       NOT NULL,
+    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_family_groups_invite_code (invite_code),
+    CONSTRAINT fk_family_groups_created_by FOREIGN KEY (created_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS family_members (
+    id        BIGINT      NOT NULL AUTO_INCREMENT,
+    group_id  BIGINT      NOT NULL,
+    user_id   BIGINT      NOT NULL,
+    role      ENUM('OWNER','GUEST') NOT NULL DEFAULT 'OWNER',
+    joined_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_family_members_group_user (group_id, user_id),
+    CONSTRAINT fk_family_members_group FOREIGN KEY (group_id) REFERENCES family_groups (id) ON DELETE CASCADE,
+    CONSTRAINT fk_family_members_user  FOREIGN KEY (user_id)  REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS comments (
     id               BIGINT       NOT NULL AUTO_INCREMENT,
     user_id          BIGINT       NOT NULL,
