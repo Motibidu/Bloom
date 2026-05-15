@@ -271,7 +271,7 @@ export default function FeedPage() {
       )}
 
       {/* ── 체크인 작성 영역 (GUEST 제외) ──────────────────────────────────── */}
-      {isGuest ? (
+      {isGuest && (
         <div
           className="rounded-2xl px-6 py-5 flex items-center gap-3"
           style={{ background: mA(0.05), border: `1px dashed ${mA(0.2)}` }}
@@ -283,7 +283,8 @@ export default function FeedPage() {
             가족의 활동을 응원해 보세요. 활동 기록은 본인 계정으로만 작성할 수 있어요.
           </p>
         </div>
-      ) : !isFormOpen ? (
+      )}
+      {!isGuest && !isFormOpen ? (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
@@ -587,7 +588,7 @@ export default function FeedPage() {
             </BigButton>
           )}
         </section>
-      ) : null}
+      )}
 
       {/* ── 피드 목록 ────────────────────────────────────────────────────────── */}
       {checkins.length === 0 ? (
