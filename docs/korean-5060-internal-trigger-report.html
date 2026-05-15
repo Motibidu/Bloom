@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>한국 50~60대 내부 트리거 분석 보고서</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #eff6ff;
+      --primary-dark: #1e40af;
+      --accent: #dc2626;
+      --accent-light: #fef2f2;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f9fafb;
+      --card: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    /* ── 커버 ── */
+    .cover {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+      color: white;
+      padding: 80px 48px 60px;
+      text-align: center;
+    }
+    .cover .label {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 999px;
+      padding: 6px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .cover h1 {
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 900;
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+    .cover .subtitle {
+      font-size: 18px;
+      opacity: 0.85;
+      margin-bottom: 40px;
+    }
+    .cover .meta {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      opacity: 0.75;
+    }
+    .cover .meta span::before { content: '— '; }
+
+    /* ── 레이아웃 ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── 섹션 ── */
+    .section { margin-bottom: 56px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary-dark);
+      margin-bottom: 28px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--primary);
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-size: 15px;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    /* ── 요약 박스 ── */
+    .summary-box {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 12px 12px 0;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+      font-size: 16px;
+      line-height: 1.9;
+    }
+    .summary-box strong { color: var(--primary-dark); }
+
+    /* ── 트리거 카드 ── */
+    .trigger-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+    }
+    .trigger-card:hover { box-shadow: 0 6px 24px rgba(37,99,235,0.12); }
+
+    .trigger-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .trigger-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .trigger-meta { flex: 1; }
+    .trigger-name {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .trigger-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .trigger-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .badge-critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .badge-high     { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+    .badge-medium   { background: #fefce8; color: #ca8a04; border: 1px solid #fde68a; }
+
+    .trigger-quote {
+      background: #f8fafc;
+      border-left: 3px solid var(--primary);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--primary-dark);
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+
+    .trigger-body { font-size: 15px; color: #374151; line-height: 1.85; }
+    .trigger-body p { margin-bottom: 10px; }
+    .trigger-body p:last-child { margin-bottom: 0; }
+
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .stat-pill {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* ── 우선순위 매트릭스 ── */
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .matrix-table thead tr {
+      background: var(--primary);
+      color: white;
+    }
+    .matrix-table th {
+      padding: 14px 18px;
+      font-weight: 700;
+      text-align: left;
+      font-size: 14px;
+    }
+    .matrix-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .matrix-table tbody tr:last-child td { border-bottom: none; }
+    .matrix-table tbody tr:hover { background: var(--primary-light); }
+    .stars { color: #f59e0b; letter-spacing: 1px; }
+
+    /* ── 문화 교차 표 ── */
+    .culture-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .culture-table thead tr { background: #1e3a8a; color: white; }
+    .culture-table th {
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      text-align: left;
+    }
+    .culture-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .culture-table tbody tr:last-child td { border-bottom: none; }
+    .culture-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .culture-key {
+      font-weight: 900;
+      color: var(--primary-dark);
+    }
+
+    /* ── 공백 섹션 ── */
+    .gap-box {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 1px solid #f59e0b;
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 16px;
+    }
+    .gap-box h3 { font-size: 17px; font-weight: 900; color: #92400e; margin-bottom: 12px; }
+    .gap-box p { font-size: 15px; color: #78350f; line-height: 1.85; }
+
+    /* ── 결론 ── */
+    .conclusion-box {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: white;
+      border-radius: 20px;
+      padding: 40px 40px;
+      text-align: center;
+    }
+    .conclusion-box h3 {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 16px;
+      opacity: 0.85;
+    }
+    .conclusion-quote {
+      font-size: clamp(18px, 2.5vw, 24px);
+      font-weight: 900;
+      line-height: 1.6;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 24px 32px;
+      margin-bottom: 20px;
+    }
+    .conclusion-body { font-size: 15px; opacity: 0.85; line-height: 1.85; }
+
+    /* ── 출처 ── */
+    .sources { margin-top: 48px; }
+    .sources h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sources ul { list-style: none; }
+    .sources li {
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .sources a { color: var(--primary); text-decoration: none; }
+    .sources a:hover { text-decoration: underline; }
+
+    /* ── 반응형 ── */
+    @media (max-width: 600px) {
+      .cover { padding: 48px 24px 40px; }
+      .container { padding: 32px 16px 60px; }
+      .trigger-card { padding: 20px 20px; }
+      .conclusion-box { padding: 28px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 커버 -->
+<div class="cover">
+  <div class="label">Research Report · 2026.05.11</div>
+  <h1>한국 50~60대 중장년층<br>내부 트리거(Internal Trigger) 분석</h1>
+  <p class="subtitle">니르 이얄 『훅(Hooked)』 모델 기반 심층 분석</p>
+  <div class="meta">
+    <span>Bloom 프로젝트 무관 순수 연구</span>
+    <span>실증 데이터 기반</span>
+    <span>한국 문화 특수성 분석 포함</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Executive Summary -->
+  <div class="summary-box">
+    한국 50~60대는 <strong>역할 상실·사회적 고립·체면 불안·가족 단절</strong>이라는 구조적 위기가 만들어낸,
+    생존에 가까운 강렬한 심리적 동인을 가지고 있다.
+    OECD 1위의 노인 고독감 지표, 고독사 사망자의 62.9%가 50~60대라는 통계는
+    이 세대의 내부 트리거가 얼마나 강렬하고 반복적인지를 증명한다.
+    이들의 디지털 습관은 단순한 오락이 아니라 <strong>정체성 회복 및 연결 욕구</strong>에서 출발한다.
+  </div>
+
+  <!-- 1. 핵심 트리거 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">1</span>
+      핵심 내부 트리거 분석
+    </div>
+
+    <!-- 트리거 1 -->
+    <div class="trigger-card">
+      <div class="trigger-header">
+        <div class="trigger-icon">😶</div>
+        <div class="trigger-meta">
+          <div class="trigger-name">역할 상실감 (Role-Loss Syndrome)</div>
+          <div class="trigger-sub">발생 빈도: 매일 · 평일 오전 9~11시 집중</div>
+        </div>
+        <div class="trigger-badge badge-critical">최고 강도 ★★★★★</div>
+      </div>
+      <div class="trigger-quote">"나는 지금 쓸모없는 존재인가?"</div>
+      <div class="trigger-body">
+        <p>평생 "부장님", "팀장님"으로 불리며 조직 내 역할이 자아의 전부였던 세대. 직함이 사라지는 순간 사회적 존재감이 함께 증발하는 경험을 한다.</p>
+        <p>퇴직 후 생활만족도 '좋지 않음' 응답: <strong>50대 31.6%, 60대 42.1%</strong>. 은퇴 후 5년 내 사회적 관계가 절반 이하로 줄었다는 응답이 <strong>70% 이상</strong>.</p>
+      </div>
+      <div class="stat-row">
+        <span class="stat-pill">KLI 연구</span>
+        <span class="stat-pill">서울시 공무원연금공단 조사</span>
+        <span class="stat-pill">자기결정이론(SDT) — 유능감 욕구 좌절</span>
+      </div>
+    </div>
+
+    <!-- 트리거 2 -->
+    <div class="trigger-card">
+      <div class="trigger-header">
+        <div class="trigger-icon">🏝️</div>
+        <div class="trigger-meta">
+          <div class="trigger-name">사회적 고립감 (Social Isolation)</div>
+          <div class="trigger-sub">발생 빈도: 매일 저녁 · 카카오톡 읽지 않은 메시지 없을 때</div>
+        </div>
+        <div class="trigger-badge badge-critical">최고 강도 ★★★★★</div>
+      </div>
+      <div class="trigger-quote">"나만 혼자인가 — 다들 바쁜가"</div>
+      <div class="trigger-body">
+        <p>50대 41.7%, 60대 39.5%가 일상적 외로움을 경험 (OECD 최상위권). 고독사 사망자의 <strong>62.9%가 50~60대</strong>로, 고립이 생존 문제로 직결된다.</p>
+        <p>외로울수록 스마트폰 의존도가 선형적으로 증가하며 (PMC, 2024), 현재 이 욕구를 채우는 앱은 유튜브(수동 소비)와 카카오톡(반응 대기)뿐이다.</p>
+      </div>
+      <div class="stat-row">
+        <span class="stat-pill">OECD 노인 고독감 1위 (2025)</span>
+        <span class="stat-pill">보건복지부 2024</span>
+        <span class="stat-pill">PMC 스마트폰 과의존 연구</span>
+      </div>
+    </div>
+
+    <!-- 트리거 3 -->
+    <div class="trigger-card">
+      <div class="trigger-header">
+        <div class="trigger-icon">👨‍👩‍👧</div>
+        <div class="trigger-meta">
+          <div class="trigger-name">가족 연결 욕구 (Family Bond Activation)</div>
+          <div class="trigger-sub">발생 빈도: 매일 저녁 · 주말</div>
+        </div>
+        <div class="trigger-badge badge-critical">한국 고유 ★★★★★</div>
+      </div>
+      <div class="trigger-quote">"자녀가 내 삶에 관심을 가져줬으면 — 하지만 직접 말하긴 체면상 어색해"</div>
+      <div class="trigger-body">
+        <p>유교적 가족 중심주의와 세대 간 소통 단절이 충돌. 부모 세대는 자녀가 자신의 삶에 관심을 가져주기를 원하나 직접 요청하기 어려운 문화적 구조.</p>
+        <p>"나 이렇게 잘 살고 있어, 걱정 마"를 자녀에게 간접 전달하고 싶은 욕구. <strong>일본 슈미토 클럽에는 없는 한국 고유 트리거</strong>다.</p>
+      </div>
+      <div class="stat-row">
+        <span class="stat-pill">유교적 가족주의</span>
+        <span class="stat-pill">정(情)의 디지털화 욕구</span>
+        <span class="stat-pill">ScienceDirect 세대간 지지 연구 (2023)</span>
+      </div>
+    </div>
+
+    <!-- 트리거 4 -->
+    <div class="trigger-card">
+      <div class="trigger-header">
+        <div class="trigger-icon">💪</div>
+        <div class="trigger-meta">
+          <div class="trigger-name">현역성 증명 욕구 (Active Identity Validation)</div>
+          <div class="trigger-sub">발생 빈도: 주 3~5회 · 신체 활동 후</div>
+        </div>
+        <div class="trigger-badge badge-high">강도 ★★★★</div>
+      </div>
+      <div class="trigger-quote">"나는 아직 늙지 않았다, 여전히 뭔가 하는 사람이다"</div>
+      <div class="trigger-body">
+        <p>5060세대의 <strong>47.7%가 "남은 인생 나 자신을 위해 살겠다"</strong>고 선언 (브라보마이라이프 조사). 노쇠에 대한 두려움과 능동적 정체성 수호의 충돌.</p>
+        <p>빨리빨리 문화의 역설: 아무것도 안 하는 것에 극도의 불편함 → 일상 기록 욕구로 전환. 에릭슨의 생성성(Generativity) — "내가 뭔가를 남기고 있다"는 감각이 핵심.</p>
+      </div>
+      <div class="stat-row">
+        <span class="stat-pill">신중년·액티브 시니어 담론</span>
+        <span class="stat-pill">빨리빨리 문화 역전</span>
+        <span class="stat-pill">에릭슨 발달 이론</span>
+      </div>
+    </div>
+
+    <!-- 트리거 5 -->
+    <div class="trigger-card">
+      <div class="trigger-header">
+        <div class="trigger-icon">😰</div>
+        <div class="trigger-meta">
+          <div class="trigger-name">체면 손상 불안 (Chemyeon Anxiety)</div>
+          <div class="trigger-sub">발생 빈도: 주 5~7회 · 지인 소식 접할 때</div>
+        </div>
+        <div class="trigger-badge badge-medium">강도 ★★★★</div>
+      </div>
+      <div class="trigger-quote">"저 사람은 저렇게 사는데 나는 뭘 하고 있나"</div>
+      <div class="trigger-body">
+        <p>체면(Chemyeon)은 단순한 자존심이 아니라 <strong>"타인의 시선을 통해 구성되는 자아"</strong>다 (ResearchGate, 2016). 이것이 무너지는 경험은 자아의 붕괴에 가깝다.</p>
+        <p>FOMO + FOPO(Fear Of other People's Opinions)가 동시 작동. 지인의 여행·맛집·손자녀 사진이 상향 비교를 자극. <strong>양날의 검</strong> — "나도 뭔가 해야 한다"는 행동 동기로 전환 가능.</p>
+      </div>
+      <div class="stat-row">
+        <span class="stat-pill">Chemyeon 문화 (ResearchGate)</span>
+        <span class="stat-pill">사회비교이론 (Festinger)</span>
+        <span class="stat-pill">FOMO·FOPO 복합 작동</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 우선순위 매트릭스 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">2</span>
+      트리거 우선순위 매트릭스
+    </div>
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>내부 트리거</th>
+          <th>발생 빈도</th>
+          <th>감정 강도</th>
+          <th>행동 전환 가능성</th>
+          <th>종합</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>역할 상실감</strong></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><strong>14/15</strong></td>
+        </tr>
+        <tr>
+          <td><strong>사회적 고립감</strong></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><strong>14/15</strong></td>
+        </tr>
+        <tr>
+          <td><strong>가족 연결 욕구</strong></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><span class="stars">★★★★★</span></td>
+          <td><strong>14/15</strong></td>
+        </tr>
+        <tr>
+          <td><strong>현역성 증명 욕구</strong></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><strong>12/15</strong></td>
+        </tr>
+        <tr>
+          <td><strong>체면 손상 불안</strong></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><span class="stars">★★★★</span></td>
+          <td><span class="stars">★★★</span></td>
+          <td><strong>11/15</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3. 한국 문화 교차점 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">3</span>
+      한국 문화 특수성과 트리거 교차점
+    </div>
+    <table class="culture-table">
+      <thead>
+        <tr>
+          <th>문화 요소</th>
+          <th>연결 트리거</th>
+          <th>메커니즘</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="culture-key">정(情)</span></td>
+          <td>사회적 고립감</td>
+          <td>공동 경험 축적으로 형성. 타인의 일상을 지켜보는 것 자체가 정(情) 쌓기. 쌍방향 교류 구조가 유튜브보다 훨씬 강한 연결감 제공.</td>
+        </tr>
+        <tr>
+          <td><span class="culture-key">체면(Chemyeon)</span></td>
+          <td>체면 손상 불안</td>
+          <td>소박한 일상(산책, 밥 짓기)도 "당당하게 기록할 수 있다"는 문화적 허용 설계가 없으면 진입 장벽이 됨.</td>
+        </tr>
+        <tr>
+          <td><span class="culture-key">빨리빨리</span></td>
+          <td>현역성 증명</td>
+          <td>"매일 완수" 사이클 — 작은 기록이 생산성 정체성 해소구로 기능. "아무것도 안 하는 것"에 극도의 불편함.</td>
+        </tr>
+        <tr>
+          <td><span class="culture-key">가족 중심주의</span></td>
+          <td>가족 연결 욕구</td>
+          <td>기록이 자녀에게 "나 잘 지낸다"는 신호를 자연스럽게 전달. 직접 전화보다 간접적인 존재 알림 선호.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. 핵심 공백 -->
+  <div class="section">
+    <div class="section-title">
+      <span class="section-num">4</span>
+      현재 디지털 서비스의 핵심 공백
+    </div>
+
+    <div class="gap-box">
+      <h3>현재 50~60대가 사용하는 앱</h3>
+      <p>
+        <strong>유튜브</strong> — 수동적 소비, 고립감의 임시 처방<br>
+        <strong>카카오톡</strong> — 반응을 기다리는 불안 구조<br>
+        <strong>네이버 밴드</strong> — 커뮤니티 소속감 (40~50대 40.6%, 60대 31.1%)
+      </p>
+    </div>
+
+    <div class="trigger-card" style="border-color: #2563eb; border-width: 2px;">
+      <div class="trigger-body">
+        <p style="font-size: 17px; font-weight: 700; color: #1e40af; margin-bottom: 8px;">채워지지 않은 공백</p>
+        <p>"내가 주체적으로 기록하고, 의미 있는 반응을 받는 경험"</p>
+        <p style="margin-top: 12px; color: var(--text-muted);">
+          유튜브(수동 소비)도, 카카오톡(반응 대기)도 이 욕구를 해소하지 못한다.
+          능동적 자아 표현 + 즉각적 정서 교환이 동시에 이루어지는 공간이 없다.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결론 -->
+  <div class="conclusion-box">
+    <h3>가장 강력한 내부 트리거 — 한 문장 요약</h3>
+    <div class="conclusion-quote">
+      "오늘도 나는 뭔가 했다<br>— 그리고 누군가 그것을 알아줬으면 한다."
+    </div>
+    <p class="conclusion-body">
+      이 트리거의 강도와 빈도는 매우 높고, 기존 서비스가 해소하지 못하고 있다.<br>
+      한국의 정(情) 문화·가족 중심주의·체면 문화는 모두 소셜 기록 서비스와 자연스럽게 정합한다.
+    </p>
+  </div>
+
+  <!-- 출처 -->
+  <div class="sources">
+    <h3>참고 출처</h3>
+    <ul>
+      <li><a href="https://car.withnews.kr/news/income-gap-loneliness-survey-2025" target="_blank">OECD 1위의 불명예 — 한국 노인들이 유독 더 외로운 결정적 이유 (withnews, 2025)</a></li>
+      <li><a href="https://mohw.go.kr/board.es?act=view&bid=0027&list_no=1488039&mid=a10503000000" target="_blank">2024년 고독사 현황 — 보건복지부</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10854068/" target="_blank">Smartphone usage and overdependence risk among middle-aged adults — PMC (2024)</a></li>
+      <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10903315/" target="_blank">Smartphone Use Motives and Life Satisfaction in Elderly Koreans — PMC</a></li>
+      <li><a href="https://bravo.etoday.co.kr/view/atc_view/213" target="_blank">5060세대 정체성 보고서 — 브라보마이라이프</a></li>
+      <li><a href="https://www.reportera.co.kr/news/5060-generation-time-paradox-unhappiness/" target="_blank">역할·돈·관계 한꺼번에 무너지는 5060세대 — reportera</a></li>
+      <li><a href="https://www.researchgate.net/publication/298871023_Chemyeon-social_face_in_Korean_culture" target="_blank">Chemyeon: Social Face in Korean Culture — ResearchGate (2016)</a></li>
+      <li><a href="https://www.ytn.co.kr/_ln/0106_202502061333463168" target="_blank">카톡·유튜브 이용 압도적, 5060은 밴드 대세 — YTN (2025)</a></li>
+      <li><a href="https://www.sciencedirect.com/science/article/pii/S2666558123000507" target="_blank">Child-to-parent intergenerational support — ScienceDirect (2023)</a></li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>
