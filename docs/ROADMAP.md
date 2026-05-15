@@ -335,18 +335,26 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
 
 - [x] **Task 028: 가족 연결 (패밀리 링크)**
   - 예상 공수 7~10일, 신규 `domain/family/` 패키지
+  - **가족 멤버 권한 설계** (옵션 A 채택):
+    - 중장년 본인(그룹 생성자·멤버): 체크인 작성 가능
+    - 초대된 가족(자녀 등): **체크인 작성 불가 (열람 전용 게스트)**
+    - 댓글·감정 반응(좋아요·칭찬카드)은 가족 모두 동등하게 허용
+    - 근거: 서비스 주인공은 중장년 본인, 가족은 응원자 역할로 한정하여 서비스 정체성 유지
   - **백엔드**:
     - `family_groups`, `family_members` 테이블 신규 생성
+    - `family_members.role` 컬럼: `OWNER` / `MEMBER` / `GUEST` 구분
     - `POST /api/families` — 가족 그룹 생성 (그룹명, 초대 코드 자동 생성)
-    - `POST /api/families/join` — 초대 코드로 가족 그룹 참여
+    - `POST /api/families/join` — 초대 코드로 가족 그룹 참여 (role=GUEST로 가입)
     - `GET /api/families/my` — 내가 속한 가족 그룹 및 멤버 목록
     - `GET /api/families/{id}/feed` — 가족 그룹 피드 (멤버 체크인만 조회)
+    - 체크인 작성 API에서 GUEST role 차단 (403 반환)
     - 이메일 알림: 가족 참여 시 그룹 내 기존 멤버에게 가입 알림 발송 (Spring Mail + Gmail SMTP)
   - **프론트엔드**:
     - `/family` 라우트 신규 추가 (가족 그룹 홈)
     - `/family/invite` — 초대 코드 입력 또는 카카오 JS SDK로 초대 링크 공유
     - 카카오 JS SDK 연동 (`window.Kakao.Link.sendDefault`): 앱 설치 유도 + 초대 딥링크 포함
     - 하단 탭바에 "가족" 탭 추가 (집 아이콘)
+    - GUEST 역할 사용자에게 체크인 작성 버튼 미노출
   - Playwright MCP로 그룹 생성 → 초대 코드 공유 → 참여 → 가족 피드 조회 E2E 검증
 
 ### Phase 7: 한국 5060 차별화 기능 — MVP+2 (UI 먼저 개발)
