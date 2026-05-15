@@ -30,6 +30,8 @@ export interface Comment {
   nickname: string
   content: string
   createdAt: string
+  commentType?: 'TEXT' | 'PRAISE_CARD'
+  praiseCardType?: 'GREAT_JOB' | 'KEEP_IT_UP' | 'IMPRESSIVE' | 'HEALTHY' | 'INSPIRING'
 }
 
 export interface TodayFeedResponse {
@@ -45,6 +47,15 @@ export interface CalendarDayEntry {
 export interface CategoryStats {
   category: Category
   count: number
+}
+
+export interface UserSearchResult {
+  id: number
+  nickname: string
+  bio?: string
+  followerCount: number
+  followingCount: number
+  isFollowing: boolean
 }
 
 export interface PhotoUploadUrlRequest {

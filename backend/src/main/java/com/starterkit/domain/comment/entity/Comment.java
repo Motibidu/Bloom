@@ -27,8 +27,16 @@ public class Comment {
     @JoinColumn(name = "checkin_id", nullable = false)
     private Checkin checkin;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = true, length = 200)
     private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "comment_type", nullable = false, length = 20)
+    private CommentType commentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "praise_card_type", nullable = true, length = 20)
+    private PraiseCardType praiseCardType;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

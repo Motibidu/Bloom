@@ -12,8 +12,12 @@ export function useComments(checkinId: number) {
 export function useCreateComment(checkinId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (content: string) =>
-      api.post(`/checkins/${checkinId}/comments`, { content }).then(r => r.data),
+    mutationFn: (data: {
+      content?: string
+      commentType: 'TEXT' | 'PRAISE_CARD'
+      praiseCardType?: string
+    }) =>
+      api.post(`/checkins/${checkinId}/comments`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', checkinId] })
       queryClient.invalidateQueries({ queryKey: ['checkins', checkinId] })

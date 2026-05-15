@@ -1,8 +1,15 @@
 package com.starterkit.domain.comment.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
+import com.starterkit.domain.comment.entity.CommentType;
+import com.starterkit.domain.comment.entity.PraiseCardType;
 import jakarta.validation.constraints.Size;
 
 public record CreateCommentRequest(
-        @NotBlank @Size(max = 200) String content
-) {}
+        @Size(max = 200) String content,
+        CommentType commentType,
+        PraiseCardType praiseCardType
+) {
+    public CommentType resolvedCommentType() {
+        return commentType != null ? commentType : CommentType.TEXT;
+    }
+}

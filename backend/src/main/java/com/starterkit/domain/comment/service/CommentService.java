@@ -41,10 +41,13 @@ public class CommentService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
 
+        String content = req.content() != null ? req.content() : "";
         Comment comment = Comment.builder()
                 .user(user)
                 .checkin(checkin)
-                .content(req.content())
+                .content(content)
+                .commentType(req.resolvedCommentType())
+                .praiseCardType(req.praiseCardType())
                 .build();
 
         return CommentResponse.from(commentRepository.save(comment));
