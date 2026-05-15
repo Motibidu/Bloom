@@ -390,7 +390,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - **프론트엔드 연동**: Task 029에서 만든 UI를 실제 API와 연결
   - Playwright MCP로 칭찬 카드 전송 → 카드 형태 표시 E2E 검증
 
-- [ ] **Task 032: 팔로우 백엔드 API 및 연동**
+- [x] **Task 032: 팔로우 백엔드 API 및 연동**
   - 예상 공수 7~10일, 신규 `domain/follow/` 패키지
   - **백엔드**:
     - `follows` 테이블 신규 생성 (`follower_id`, `following_id`, UNIQUE KEY)

@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @.claude/docs/overview.md
 @.claude/docs/commands.md
+@.claude/docs/dev-commands.md
 @.claude/docs/backend-architecture.md
 @.claude/docs/frontend-architecture.md
 @.claude/docs/design-system.md
