@@ -11,6 +11,22 @@ export function useSearchUsers(nickname: string) {
   })
 }
 
+export function useFollowingList() {
+  return useQuery({
+    queryKey: ['follows', 'following'],
+    queryFn: () =>
+      api.get<UserSearchResult[]>('/follows/following').then(r => r.data),
+  })
+}
+
+export function useFollowersList() {
+  return useQuery({
+    queryKey: ['follows', 'followers'],
+    queryFn: () =>
+      api.get<UserSearchResult[]>('/follows/followers').then(r => r.data),
+  })
+}
+
 export function useFollowToggle(targetUserId: number, isFollowing: boolean) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -20,6 +36,7 @@ export function useFollowToggle(targetUserId: number, isFollowing: boolean) {
         : api.post(`/users/${targetUserId}/follow`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', 'search'] })
+      queryClient.invalidateQueries({ queryKey: ['follows'] })
       queryClient.invalidateQueries({ queryKey: ['feed', 'following'] })
     },
   })

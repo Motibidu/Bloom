@@ -68,4 +68,36 @@ public class FollowService {
                 .map(f -> f.getFollowing().getId())
                 .toList();
     }
+
+    public List<UserSearchResponse> getFollowingList(UserDetails userDetails) {
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        return followRepository.findByFollowerIdWithFollowing(currentUser.getId()).stream()
+                .map(f -> {
+                    User target = f.getFollowing();
+                    return UserSearchResponse.of(
+                            target,
+                            followRepository.countByFollowingId(target.getId()),
+                            followRepository.countByFollowerId(target.getId()),
+                            true
+                    );
+                })
+                .toList();
+    }
+
+    public List<UserSearchResponse> getFollowersList(UserDetails userDetails) {
+        User currentUser = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        return followRepository.findByFollowingIdWithFollower(currentUser.getId()).stream()
+                .map(f -> {
+                    User target = f.getFollower();
+                    return UserSearchResponse.of(
+                            target,
+                            followRepository.countByFollowingId(target.getId()),
+                            followRepository.countByFollowerId(target.getId()),
+                            followRepository.existsByFollowerIdAndFollowingId(currentUser.getId(), target.getId())
+                    );
+                })
+                .toList();
+    }
 }

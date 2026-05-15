@@ -46,4 +46,18 @@ public class FollowController {
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(followService.searchUsers(nickname, userDetails));
     }
+
+    @GetMapping("/api/follows/following")
+    @Operation(summary = "내가 팔로우하는 사람 목록")
+    public ResponseEntity<List<UserSearchResponse>> getFollowingList(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(followService.getFollowingList(userDetails));
+    }
+
+    @GetMapping("/api/follows/followers")
+    @Operation(summary = "나를 팔로우하는 사람 목록")
+    public ResponseEntity<List<UserSearchResponse>> getFollowersList(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(followService.getFollowersList(userDetails));
+    }
 }
