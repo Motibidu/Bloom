@@ -70,6 +70,9 @@ public class CheckinService {
         @Transactional
         public CheckinResponse create(String email, CreateCheckinRequest req) {
                 User user = findUserByEmail(email);
+                if (!user.isAdult50s()) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "50대 이상만 활동을 기록할 수 있습니다.");
+                }
                 String expectedPrefix = "checkins/" + user.getId() + "/";
                 if (req.photoObjectKeys() != null) {
                         for (String key : req.photoObjectKeys()) {
@@ -140,9 +143,16 @@ public class CheckinService {
         public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds) {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();
-                List<Checkin> checkins = (followingIds != null && !followingIds.isEmpty())
-                        ? checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds)
-                        : checkinRepository.findAllByOrderByCreatedAtDesc();
+                List<Checkin> checkins;
+                if (followingIds != null) {
+                        // 팔로우 피드: 팔로잉 목록이 없으면 빈 결과 반환
+                        if (followingIds.isEmpty()) {
+                                return new TodayFeedResponse(List.of(), 0);
+                        }
+                        checkins = checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds);
+                } else {
+                        checkins = checkinRepository.findAllByOrderByCreatedAtDesc();
+                }
 
                 if (checkins.isEmpty()) {
                         return new TodayFeedResponse(List.of(), 0);

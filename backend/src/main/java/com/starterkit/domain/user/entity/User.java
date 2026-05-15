@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.time.Year;
 
 @Entity
 @Table(name = "users")
@@ -35,8 +36,15 @@ public class User implements UserDetails {
     @Column(length = 50)
     private String bio;
 
+    @Column(name = "birth_year", nullable = false)
+    private Integer birthYear;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public boolean isAdult50s() {
+        return (Year.now().getValue() - this.birthYear) >= 50;
+    }
 
     @PrePersist
     protected void onCreate() {

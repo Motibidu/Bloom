@@ -144,6 +144,24 @@ export default function RegisterPage() {
                 <p className="text-base text-destructive font-medium">{errors.bio.message}</p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="birthYear" className="text-lg font-semibold">출생연도</Label>
+              <Input
+                id="birthYear"
+                type="number"
+                className="h-14 text-lg px-4"
+                placeholder="예: 1965"
+                {...register('birthYear', {
+                  required: '출생연도를 입력하세요',
+                  min: { value: 1900, message: '올바른 출생연도를 입력하세요' },
+                  max: { value: 2010, message: '올바른 출생연도를 입력하세요' },
+                  valueAsNumber: true,
+                })}
+              />
+              {errors.birthYear && (
+                <p className="text-base text-destructive font-medium">{errors.birthYear.message}</p>
+              )}
+            </div>
             {registerMutation.isError && (
               <p className="text-base text-destructive font-medium text-center">
                 {getErrorMessage()}

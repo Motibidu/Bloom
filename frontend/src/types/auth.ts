@@ -8,6 +8,7 @@ export interface RegisterRequest {
   password: string
   nickname: string
   bio?: string
+  birthYear: number
 }
 
 export interface AuthResponse {

@@ -3,4 +3,5 @@ export interface User {
   email: string
   nickname: string
   bio?: string
+  canWriteFeed: boolean
 }

@@ -57,6 +57,7 @@ public class AuthService implements UserDetailsService {
                 .password(passwordEncoder.encode(req.password()))
                 .nickname(req.nickname())
                 .bio(req.bio())
+                .birthYear(req.birthYear())
                 .build();
         userRepository.save(user);
         return generateTokenPair(user.getEmail());

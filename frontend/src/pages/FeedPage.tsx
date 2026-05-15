@@ -7,7 +7,7 @@ import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
 import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
-import { useIsGuestMember } from '@/hooks/useFamily'
+import { useAuthStore } from '@/store/authStore'
 import { AUTO_TITLES } from '@/lib/categories'
 import type { Category } from '@/types'
 
@@ -52,7 +52,8 @@ export default function FeedPage() {
   const { data: feed, isLoading, isError } = useTodayFeed(feedTab)
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
-  const isGuest = useIsGuestMember()
+  const currentUser = useAuthStore((s) => s.user)
+  const canWriteFeed = currentUser?.canWriteFeed ?? false
 
   const handleModeToggle = () => {
     const next = checkinMode === 'simple' ? 'detail' : 'simple'
@@ -271,7 +272,7 @@ export default function FeedPage() {
       )}
 
       {/* ── 체크인 작성 영역 (GUEST 제외) ──────────────────────────────────── */}
-      {isGuest && (
+      {!canWriteFeed && (
         <div
           className="rounded-2xl px-6 py-5 flex items-center gap-3"
           style={{ background: mA(0.05), border: `1px dashed ${mA(0.2)}` }}
@@ -284,7 +285,7 @@ export default function FeedPage() {
           </p>
         </div>
       )}
-      {!isGuest && !isFormOpen ? (
+      {canWriteFeed && (isFormOpen ? null : (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
@@ -322,7 +323,8 @@ export default function FeedPage() {
             <span className="text-white text-lg font-black">→</span>
           </div>
         </button>
-      ) : (
+      ))}
+      {canWriteFeed && isFormOpen && (
         <section
           aria-label="활동 기록 작성"
           className="rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
