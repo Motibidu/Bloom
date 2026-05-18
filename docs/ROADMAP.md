@@ -13,6 +13,7 @@
 - **가족 연결**: 가족 그룹을 만들어 서로의 일상을 공유하고 응원하는 패밀리 링크
 - **칭찬 카드**: 응원 메시지를 카드 형태로 전달하는 따뜻한 소통 수단
 - **옛 인연 다시 만나기**: 카카오 친구 또는 연락처 기반으로 아는 사람과 연결
+- **소비자 참여 강화**: "나도 했어요" 원탭 버튼, "나와 같은 N명" 배너 탭 연결, 오늘의 참여 온도 표시로 피드 소비자를 생산자로 자연스럽게 전환
 
 웹앱으로 시작하여 Phase 8에서 React Native WebView 앱(iOS/Android)으로 확장 예정. 웹 코드베이스를 그대로 유지하면서 JS Bridge를 통해 네이티브 기능(연락처, 카메라, 푸시 알림)을 점진적으로 활성화한다.
 
@@ -269,13 +270,15 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
   - `.env.example` 작성: `DB_PASSWORD`, `JWT_SECRET`, `AWS_S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`
   - Nginx 설정: `/api` → backend:8080, `/` → frontend:80 리버스 프록시
 
-- [ ] **Task 023: AWS 인프라 구축**
-  - EC2 인스턴스 프로비저닝 (Ubuntu 22.04), Docker 및 Docker Compose 설치
-  - RDS MySQL 8.x 생성 및 보안 그룹 설정 (EC2에서만 접근 허용)
-  - S3 버킷 생성 + CORS 정책(프론트엔드 도메인에서 PUT 허용) + IAM 정책(presigned PUT 전용) 구성
-  - S3 Standard-IA 스토리지 클래스 + Lifecycle 정책 (90일 후 Glacier) 설정
+- [ ] **Task 023: Oracle Cloud 인프라 구축**
+  - OCI Compute 인스턴스 프로비저닝 (Ubuntu 22.04, Always Free Tier), Docker 및 Docker Compose 설치
+  - OCI VCN(Virtual Cloud Network) 생성 + 보안 목록(Security List) 설정 (80, 443, 22 포트 허용)
+  - MySQL HeatWave (또는 Compute 내 Docker MySQL 8.x) 구성, Compute 내부 접근만 허용
+  - OCI Object Storage 버킷 생성 + CORS 정책(프론트엔드 도메인에서 PUT 허용) + Pre-Authenticated Request 또는 IAM 정책(presigned PUT 전용) 구성
+  - Object Storage Lifecycle 정책 (90일 후 Infrequent Access 전환) 설정
   - 도메인 연결 및 Nginx 리버스 프록시 구성
   - Certbot으로 Let's Encrypt HTTPS 인증서 발급 및 자동 갱신
+  - GitHub Actions deploy.yml의 EC2 SSH 액션을 OCI Compute SSH로 교체
 
 - [x] **Task 024: GitHub Actions CI/CD 파이프라인** - 우선순위
   - **브랜치 전략 (GitHub Flow)**:
@@ -403,11 +406,40 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - **프론트엔드 연동**: Task 030에서 만든 UI를 실제 API와 연결
   - Playwright MCP로 닉네임 검색 → 팔로우 → 팔로우 피드 확인 E2E 검증
 
+### Phase 7-C: 소비자-생산자 분리 해소 — 피드 참여 강화
+
+리서치(`docs/consumer-internal-trigger-analysis.md`)에서 도출된 핵심 문제: 피드 소비자가 타인의 기록에 관심이 없어 내부 트리거가 해소되지 않는 생산자-소비자 분리 현상. 소비자를 생산자로 전환하는 최소 마찰 경로를 설계한다.
+
+- [ ] **Task 033: "나도 했어요" 원탭 버튼** - 우선순위
+  - 예상 공수 1일, 프론트엔드 전용 (백엔드 변경 없음)
+  - 피드 카드 하단 좋아요 버튼 옆에 "나도 했어요" 버튼 추가
+  - 탭 시 해당 카드의 카테고리로 즉시 간편 체크인 등록 (내용 입력 없음)
+  - 기존 `useCreateCheckin` 훅 + `AUTO_TITLES` 상수 재활용
+  - 등록 성공 시 토스트("산책 활동이 기록되었어요!") + 피드 캐시 무효화
+  - Playwright MCP로 피드에서 "나도 했어요" 탭 → 피드 상단에 내 카드 등장 E2E 검증
+
+- [ ] **Task 034: "나와 같은 N명" 배너 탭 연결**
+  - 예상 공수 2~3일
+  - **백엔드**:
+    - `GET /api/checkins/today/same-category-users` — 오늘 내가 기록한 카테고리와 같은 카테고리를 기록한 사용자 목록 (닉네임, bio, 팔로우 여부 포함)
+  - **프론트엔드**:
+    - 현재 탭해도 반응 없는 "나와 같은 활동을 한 N명이 있어요!" 배너를 탭 가능한 버튼으로 전환
+    - 탭 시 바텀시트로 사용자 목록 표시 (닉네임 + bio + 팔로우 버튼)
+    - 이미 팔로우 중이면 "이웃" 뱃지 표시
+  - Playwright MCP로 배너 탭 → 사용자 목록 → 팔로우 E2E 검증
+
+- [ ] **Task 035: 오늘의 참여 온도 표시**
+  - 예상 공수 0.5일, 프론트엔드 전용
+  - 피드 헤더 하단에 오늘의 총 활동 참여자 수 한 줄 표시
+  - 예: "오늘 오전에만 벌써 23명이 활동을 기록했어요"
+  - `GET /api/checkins/today` 응답에 `totalCheckinCount` 필드 추가 (백엔드 소공수)
+  - Playwright MCP로 피드 진입 시 참여 온도 표시 확인
+
 ### Phase 8: 플랫폼 확장 — React Native WebView 앱
 
 웹 코드베이스를 유지하면서 iOS/Android 네이티브 앱 경험을 제공합니다. JS Bridge를 통해 네이티브 기능을 점진적으로 활성화합니다.
 
-- [ ] **Task 033: React Native WebView 앱 래퍼 구축** - 우선순위
+- [ ] **Task 036: React Native WebView 앱 래퍼 구축** - 우선순위
   - React Native 프로젝트 신규 생성 (`mobile/` 디렉토리, Expo 또는 RN CLI)
   - `react-native-webview`로 웹앱 전체 래핑 (iOS + Android)
   - JS Bridge 구현:
@@ -418,20 +450,20 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 웹앱 코드에 `isNativeApp()` 헬퍼 함수 추가: `window.ReactNativeWebView !== undefined` 감지로 웹/앱 환경 자동 분기
   - App Store (iOS) / Play Store (Android) 심사 준비 및 배포
 
-- [ ] **Task 034: 웹 푸시 알림 (Web Push API / FCM)**
+- [ ] **Task 037: 웹 푸시 알림 (Web Push API / FCM)**
   - Web Push API 구현 (웹 환경):
     - Service Worker 등록 (`/sw.js`)
     - `PushManager.subscribe()`로 구독 정보 서버 저장
     - `POST /api/push-subscriptions` — 구독 정보 저장
     - `web-push` 라이브러리(백엔드)로 서버 발송
   - FCM 네이티브 푸시 (React Native 앱 환경):
-    - Task 033의 JS Bridge를 통해 FCM 토큰 수신
+    - Task 036의 JS Bridge를 통해 FCM 토큰 수신
     - `POST /api/push-tokens` — FCM 토큰 저장
     - Firebase Admin SDK(백엔드)로 서버 발송
   - 알림 트리거: 가족 그룹 참여, 내 체크인에 좋아요/댓글, 팔로우 알림
   - Phase 6 Task 028의 이메일 알림을 웹 푸시로 대체
 
-- [ ] **Task 035: 카카오 로그인 연동**
+- [ ] **Task 038: 카카오 로그인 연동**
   - 카카오 친구 API(Task 032) 사용을 위한 전제조건
   - **백엔드**:
     - `users` 테이블에 `kakao_id` 컬럼 추가 (UNIQUE, NULL 허용)
@@ -447,37 +479,37 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
 
 서비스 운영 중 발견되는 불편함을 해소하고, 보안 및 성능을 강화합니다.
 
-- [ ] **Task 036: 체크인 수정 및 삭제**
+- [ ] **Task 039: 체크인 수정 및 삭제**
   - `PATCH /api/checkins/{id}` — 설명 및 카테고리 수정 (작성자 권한 검증)
   - `DELETE /api/checkins/{id}` — 체크인 삭제 + S3 사진 일괄 삭제 (작성자 권한 검증)
   - 피드/상세 페이지에서 본인 체크인에 수정/삭제 버튼 표시 (케밥 메뉴 또는 하단 시트)
   - Playwright MCP로 수정 → 반영 확인 → 삭제 → 피드에서 제거 확인 E2E 검증
 
-- [ ] **Task 037: 프로필 수정**
+- [ ] **Task 040: 프로필 수정**
   - `PATCH /api/users/me` 엔드포인트 (닉네임, 자기소개 변경, 닉네임 UNIQUE 검증 포함)
   - 나의 활동 페이지 상단 또는 별도 `/me/edit` 라우트에 프로필 편집 UI
   - React Hook Form + 실시간 닉네임 중복 확인 디바운스 적용
   - 수정 성공 시 `useCurrentUser` 캐시 무효화 + 성공 토스트
 
-- [ ] **Task 038: 프로필 이미지 업로드**
+- [ ] **Task 041: 프로필 이미지 업로드**
   - `User` 엔티티에 `profile_image_object_key` 컬럼 추가
   - `POST /api/users/me/profile-image-url` — 프로필 이미지용 presigned URL 발급 (경로: `profiles/{userId}/{uuid}.jpg`)
   - `PATCH /api/users/me` 에 `profileImageObjectKey` 필드 추가
   - 프로필 편집 UI에 이미지 변경 버튼 + 원형 미리보기 + S3 업로드 플로우
 
-- [ ] **Task 039: 실시간 알림 (좋아요 / 댓글)**
+- [ ] **Task 042: 실시간 알림 (좋아요 / 댓글)**
   - SSE(Server-Sent Events) 기반 알림 스트림: `GET /api/notifications/stream`
   - `notifications` 테이블: `id`, `user_id`, `type` (LIKE / COMMENT / FOLLOW / FAMILY_JOIN), `actor_id`, `target_id`, `is_read`, `created_at`
   - 헤더 알림 아이콘에 읽지 않은 알림 수 뱃지 표시
   - 알림 목록 드롭다운: 최근 20개, 클릭 시 해당 체크인 상세로 이동 + `is_read` 처리
 
-- [ ] **Task 040: 피드 무한스크롤 페이지네이션**
+- [ ] **Task 043: 피드 무한스크롤 페이지네이션**
   - `GET /api/checkins/today`: 커서 기반 페이지네이션 (`?cursor=lastCheckinId&limit=20`) 추가
   - `GET /api/checkins/following`: 동일 페이지네이션 적용
   - 프론트엔드: `useInfiniteQuery` + `IntersectionObserver`로 무한스크롤 구현
   - 스켈레톤 로딩 카드 유지하며 자연스러운 추가 로딩 UX
 
-- [ ] **Task 041: 신고 / 차단 기능**
+- [ ] **Task 044: 신고 / 차단 기능**
   - `reports` 테이블: 신고 사유 ENUM (SPAM / INAPPROPRIATE / ABUSE / OTHER)
   - `blocks` 테이블: 차단한 사용자 피드/댓글 자동 필터링
   - `POST /api/reports` — 체크인 또는 댓글 신고
@@ -485,7 +517,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 체크인 카드 케밥 메뉴에 "신고하기" / "차단하기" 옵션 추가
   - 어드민 모더레이션 화면 (신고 목록, 처리 상태 관리)
 
-- [ ] **Task 042: Refresh Token Rotation**
+- [ ] **Task 045: Refresh Token Rotation**
   - 갱신 시 새 리프레시 토큰 재발급 + 구 토큰 DB/Redis에 블랙리스트 등록
   - 탈취된 구 토큰 재사용 감지 시 해당 계정 전체 세션 무효화
   - `refresh_tokens` 테이블 또는 Redis TTL 기반 저장소 선택
