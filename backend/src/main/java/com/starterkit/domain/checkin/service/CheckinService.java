@@ -86,6 +86,7 @@ public class CheckinService {
                                 .category(req.category())
                                 .title(req.title())
                                 .description(req.description())
+                                .isSimple(req.isSimple())
                                 .build();
                 if (req.photoObjectKeys() != null) {
                         for (int i = 0; i < req.photoObjectKeys().size(); i++) {
@@ -147,7 +148,7 @@ public class CheckinService {
                 if (followingIds != null) {
                         // 팔로우 피드: 팔로잉 목록이 없으면 빈 결과 반환
                         if (followingIds.isEmpty()) {
-                                return new TodayFeedResponse(List.of(), 0);
+                                return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]));
                         }
                         checkins = checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds);
                 } else {
@@ -155,7 +156,7 @@ public class CheckinService {
                 }
 
                 if (checkins.isEmpty()) {
-                        return new TodayFeedResponse(List.of(), 0);
+                        return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]));
                 }
 
                 List<Long> checkinIds = checkins.stream().map(Checkin::getId).toList();
@@ -196,7 +197,11 @@ public class CheckinService {
                                                 commentCountMap.getOrDefault(c.getId(), 0L),
                                                 s3BaseUrl()))
                                 .toList();
-                return new TodayFeedResponse(responses, sameCategoryUserCount);
+
+                // 단순 체크인 집계 (activitySummary)
+                List<ActivitySummaryItem> activitySummary = buildActivitySummary(range[0], range[1]);
+
+                return new TodayFeedResponse(responses, sameCategoryUserCount, activitySummary);
         }
 
         public List<CheckinResponse> getMyCheckins(String email, String date) {
@@ -353,6 +358,24 @@ public class CheckinService {
                                 presignedRequest.url().toString(),
                                 objectKey,
                                 300);
+        }
+
+        private List<ActivitySummaryItem> buildActivitySummary(LocalDateTime start, LocalDateTime end) {
+                List<Object[]> rows = checkinRepository.findSimpleCheckinSummary(start, end);
+                // category → nicknames (순서 유지, 중복 허용 — 사용자당 여러 체크인 가능)
+                Map<Category, List<String>> grouped = new LinkedHashMap<>();
+                for (Object[] row : rows) {
+                        Category cat = (Category) row[0];
+                        String nickname = (String) row[1];
+                        grouped.computeIfAbsent(cat, k -> new ArrayList<>()).add(nickname);
+                }
+                return grouped.entrySet().stream()
+                        .map(e -> {
+                                List<String> nicknames = e.getValue();
+                                List<String> preview = nicknames.stream().distinct().limit(3).toList();
+                                return new ActivitySummaryItem(e.getKey(), nicknames.size(), preview);
+                        })
+                        .toList();
         }
 
         private User findUserByEmail(String email) {

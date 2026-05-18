@@ -24,12 +24,13 @@ export function usePhotoUploadUrl() {
 export function useCreateCheckin() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: { category: string; title: string; content: string; photoObjectKeys?: string[] }) =>
+    mutationFn: (data: { category: string; title: string; content: string; photoObjectKeys?: string[]; isSimple?: boolean }) =>
       api.post('/checkins', {
         category: data.category,
         title: data.title,
         description: data.content,
         photoObjectKeys: data.photoObjectKeys,
+        isSimple: data.isSimple ?? false,
       }).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkins', 'today'] })

@@ -15,6 +15,11 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
     @EntityGraph(attributePaths = "user")
     List<Checkin> findAllByOrderByCreatedAtDesc();
 
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT c FROM Checkin c WHERE c.createdAt BETWEEN :start AND :end ORDER BY c.createdAt DESC")
+    List<Checkin> findAllByDateRangeOrderByCreatedAtDesc(@Param("start") LocalDateTime start,
+                                                         @Param("end") LocalDateTime end);
+
     List<Checkin> findByUserIdAndCreatedAtBetweenOrderByCreatedAtAsc(Long userId, LocalDateTime start, LocalDateTime end);
 
     List<Checkin> findByUserIdAndCreatedAtBetweenOrderByCreatedAtDesc(Long userId, LocalDateTime start, LocalDateTime end);
@@ -67,8 +72,22 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
     @Query("SELECT l.checkin.id, l.reactionType FROM Like l WHERE l.checkin.id IN :checkinIds AND l.user.id = :userId")
     List<Object[]> findReactionsByUserIdAndCheckinIds(@Param("checkinIds") List<Long> checkinIds, @Param("userId") Long userId);
 
-    // 가족 피드: 특정 사용자들의 체크인 조회
+    // 가족 피드: 특정 사용자들의 전체 체크인 조회 (날짜 제한 없음)
     @EntityGraph(attributePaths = "user")
     @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds ORDER BY c.createdAt DESC")
     List<Checkin> findByUserIdsOrderByCreatedAtDesc(@Param("userIds") List<Long> userIds);
+
+    // 팔로우 피드: 특정 사용자들의 오늘 체크인 조회
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds AND c.createdAt BETWEEN :start AND :end ORDER BY c.createdAt DESC")
+    List<Checkin> findByUserIdsAndDateRangeOrderByCreatedAtDesc(@Param("userIds") List<Long> userIds,
+                                                                @Param("start") LocalDateTime start,
+                                                                @Param("end") LocalDateTime end);
+
+    // 단순 체크인 집계: 카테고리별 참여자 수 + 닉네임 (최신순 3명)
+    @Query("SELECT c.category, c.user.nickname FROM Checkin c " +
+           "WHERE c.isSimple = true AND c.createdAt BETWEEN :start AND :end " +
+           "ORDER BY c.createdAt DESC")
+    List<Object[]> findSimpleCheckinSummary(@Param("start") LocalDateTime start,
+                                            @Param("end") LocalDateTime end);
 }

@@ -31,10 +31,10 @@ public class Checkin {
     @Column(nullable = false, length = 20)
     private Category category;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 30)
     private String title;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 300)
     private String description;
 
     @Column(name = "photo_object_key", length = 300)
@@ -44,6 +44,10 @@ public class Checkin {
     @OrderBy("sortOrder ASC")
     @Builder.Default
     private List<CheckinPhoto> photos = new ArrayList<>();
+
+    @Column(name = "is_simple", nullable = false)
+    @Builder.Default
+    private boolean isSimple = false;
 
     @Column(name = "view_count", nullable = false)
     @Builder.Default

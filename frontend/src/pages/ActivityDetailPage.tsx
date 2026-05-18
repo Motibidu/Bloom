@@ -246,7 +246,7 @@ export default function ActivityDetailPage() {
                         className="text-sm font-medium"
                         style={{ color: `oklch(0.60 0.04 220)` }}
                       >
-                        칭찬 카드를 보냈어요 <span aria-hidden="true">🎴</span>
+                        칭찬 카드를 보냈어요 <span aria-hidden="true">💌</span>
                       </p>
                     </div>
                   ) : (
@@ -393,7 +393,7 @@ export default function ActivityDetailPage() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <span aria-hidden="true">🎴</span>
+                <span aria-hidden="true">💌</span>
                 {createComment.isPending ? '보내는 중...' : '카드 보내기'}
               </button>
             </div>

@@ -8,8 +8,8 @@ import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
 import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
 import { useAuthStore } from '@/store/authStore'
-import { AUTO_TITLES } from '@/lib/categories'
-import type { Category } from '@/types'
+import { AUTO_TITLES, CATEGORY_META } from '@/lib/categories'
+import type { Category, ActivitySummaryItem } from '@/types'
 
 // ── Warm Blue 테마 상수 ────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -43,6 +43,7 @@ export default function FeedPage() {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const formRef = useRef<HTMLElement>(null)
 
   const [checkinMode, setCheckinMode] = useState<'simple' | 'detail'>(() => {
     return (localStorage.getItem('checkinMode') as 'simple' | 'detail') ?? 'simple'
@@ -112,6 +113,7 @@ export default function FeedPage() {
         title: title.trim(),
         content: content.trim(),
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
+        isSimple: checkinMode === 'simple',
       })
       handleCloseForm()
     } catch {
@@ -188,7 +190,10 @@ export default function FeedPage() {
   }
 
   const sameCategoryUserCount: number = feed?.sameCategoryUserCount ?? 0
-  const checkins = feed?.checkins ?? []
+  const activitySummary = feed?.activitySummary ?? []
+  const checkins = (feed?.checkins ?? []).filter(
+    (c: any) => !c.isSimple || c.userId === currentUser?.id
+  )
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
@@ -326,6 +331,7 @@ export default function FeedPage() {
       ))}
       {canWriteFeed && isFormOpen && (
         <section
+          ref={formRef}
           aria-label="활동 기록 작성"
           className="rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
           style={{ border: `2px solid ${mA(0.20)}` }}
@@ -476,14 +482,14 @@ export default function FeedPage() {
                     제목
                   </label>
                   <span className="text-base font-medium text-foreground/50" aria-live="polite">
-                    {title.length}/50
+                    {title.length}/30
                   </span>
                 </div>
                 <Input
                   id="activity-title"
                   className="text-lg px-4 py-3 rounded-xl border-2 h-auto focus-visible:ring-0"
                   style={title.length > 0 ? { borderColor: mA(0.45) } : undefined}
-                  maxLength={50}
+                  maxLength={30}
                   placeholder="활동 제목을 입력해 주세요"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
@@ -497,7 +503,7 @@ export default function FeedPage() {
                     내용
                   </label>
                   <span className="text-base font-medium text-foreground/50" aria-live="polite">
-                    {content.length}/100
+                    {content.length}/300
                   </span>
                 </div>
                 <Textarea
@@ -505,7 +511,7 @@ export default function FeedPage() {
                   className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
                   style={content.length > 0 ? { borderColor: mA(0.45) } : undefined}
                   rows={4}
-                  maxLength={100}
+                  maxLength={300}
                   placeholder="오늘 활동을 간단히 설명해 주세요"
                   value={content}
                   onChange={e => setContent(e.target.value)}
@@ -660,6 +666,43 @@ export default function FeedPage() {
             </button>
           </div>
 
+          {/* 오늘 활동 집계 섹션 */}
+          {activitySummary.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-bold mb-3" style={{ color: dark }}>오늘 함께 활동한 이웃</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+                {activitySummary.map((item: ActivitySummaryItem) => {
+                  const { icon: Icon, label } = CATEGORY_META[item.category]
+                  return (
+                    <div
+                      key={item.category}
+                      className="shrink-0 snap-start flex items-center gap-2 px-4 rounded-2xl min-h-[52px]"
+                      style={{ background: mA(0.08), border: `1px solid ${mA(0.15)}` }}
+                    >
+                      <Icon size={18} style={{ color: dark }} aria-hidden="true" />
+                      <span className="text-base font-black" style={{ color: dark }}>{label}</span>
+                      <span className="text-base font-bold" style={{ color: dark }}>{item.count}명</span>
+                      {item.previewNicknames.length > 0 && (
+                        <div className="flex -space-x-1.5 ml-1">
+                          {item.previewNicknames.map((nick) => (
+                            <div
+                              key={nick}
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white ring-2 ring-white"
+                              style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
+                              aria-label={nick}
+                            >
+                              {nick[0]}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* 섹션 헤더 */}
           {(feedTab === 'all' || feedTab === 'following') && (
             <>
@@ -697,6 +740,13 @@ export default function FeedPage() {
                       key={checkin.id}
                       checkin={checkin}
                       onClick={() => navigate(`/checkin/${checkin.id}`)}
+                      onAlsoCheckin={() => {
+                        setSelectedCategory(checkin.category as Category)
+                        setIsFormOpen(true)
+                        setTimeout(() => {
+                          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }, 50)
+                      }}
                     />
                   ))}
                 </div>

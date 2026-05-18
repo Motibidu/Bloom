@@ -9,7 +9,8 @@ import java.util.List;
 
 public record CreateCheckinRequest(
         @NotNull Category category,
-        @NotBlank @Size(max = 50) String title,
-        @NotBlank @Size(max = 100) String description,
-        @Size(max = 3) List<String> photoObjectKeys) {
+        @NotBlank @Size(max = 30) String title,
+        @NotBlank @Size(max = 300) String description,
+        @Size(max = 3) List<String> photoObjectKeys,
+        boolean isSimple) {
 }

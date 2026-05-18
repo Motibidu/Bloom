@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, MessageCircle, MoreVertical } from 'lucide-react'
+import { Eye, MessageCircle, MoreVertical, PlusCircle } from 'lucide-react'
 import { CATEGORY_META } from '@/lib/categories'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
 import { useLikeToggle } from '@/hooks/useCheckin'
@@ -30,6 +30,7 @@ interface Props {
   onDelete?: () => void
   onPhotoClick?: (index: number) => void
   commentCount?: number
+  onAlsoCheckin?: () => void
 }
 
 export default function CheckInCard({
@@ -40,6 +41,7 @@ export default function CheckInCard({
   onDelete,
   onPhotoClick,
   commentCount,
+  onAlsoCheckin,
 }: Props) {
   const { icon: Icon, label } = CATEGORY_META[checkin.category]
   const likeToggle = useLikeToggle(checkin.id)
@@ -158,21 +160,23 @@ export default function CheckInCard({
       {/* 구분선 */}
       <hr className="mx-6 border-none h-px" style={{ background: mA(0.18) }} />
 
-      {/* 본문 */}
-      <div className={`pl-7 pr-5 pt-4 pb-5 flex-1 ${showFullContent ? 'min-h-[200px]' : 'min-h-[160px]'}`}>
-        <h3
-          className="text-xl font-black text-foreground mb-2 leading-snug"
-          style={{ textWrap: 'balance' } as React.CSSProperties}
-        >
-          {checkin.title}
-        </h3>
-        <p className={`text-base text-foreground/75 leading-relaxed ${showFullContent ? '' : 'line-clamp-3'}`}>
-          {checkin.description}
-        </p>
-      </div>
+      {/* 본문 + 사진 wrapper */}
+      <div className={`flex-1 flex flex-col ${showFullContent ? 'min-h-[200px]' : 'min-h-[160px]'}`}>
+        {/* 본문 */}
+        <div className="pl-7 pr-5 pt-4 pb-5">
+          <h3
+            className="text-xl font-black text-foreground mb-2 leading-snug"
+            style={{ textWrap: 'balance' } as React.CSSProperties}
+          >
+            {checkin.title}
+          </h3>
+          <p className={`text-base text-foreground/75 leading-relaxed ${showFullContent ? '' : 'line-clamp-3'}`}>
+            {checkin.description}
+          </p>
+        </div>
 
-      {/* 사진 */}
-      {checkin.photoUrls && checkin.photoUrls.length > 0 && (
+        {/* 사진 */}
+        {checkin.photoUrls && checkin.photoUrls.length > 0 && (
         <div className="px-5 pb-5">
           {checkin.photoUrls.length === 1 ? (
             <img
@@ -203,7 +207,8 @@ export default function CheckInCard({
             </div>
           )}
         </div>
-      )}
+        )}
+      </div>
 
       {/* 하단 반응 바 */}
       <div
@@ -229,6 +234,21 @@ export default function CheckInCard({
           <MessageCircle size={22} aria-hidden="true" />
           <span className="text-base font-bold" aria-hidden="true">{commentCount ?? checkin.commentCount}</span>
         </div>
+
+        {onAlsoCheckin && (
+          <button
+            type="button"
+            className="relative z-10 flex items-center gap-1.5 min-h-[44px] px-2 rounded-xl font-bold text-base transition-colors"
+            style={{ color: dark }}
+            onClick={(e) => { e.stopPropagation(); onAlsoCheckin() }}
+            aria-label="나도 했어요 — 같은 카테고리로 즉시 기록"
+            onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <PlusCircle size={22} aria-hidden="true" />
+            <span>나도 했어요</span>
+          </button>
+        )}
 
         <span
           className="flex items-center gap-1.5 min-h-[44px] px-1"

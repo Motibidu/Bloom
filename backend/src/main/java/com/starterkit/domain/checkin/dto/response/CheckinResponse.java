@@ -22,7 +22,8 @@ public record CheckinResponse(
         Map<String, Long> reactionCounts,
         long commentCount,
         long viewCount,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        boolean isSimple) {
 
     /**
      * reactionCounts 없는 팩토리 (내부 조회용 간략 버전).
@@ -30,6 +31,7 @@ public record CheckinResponse(
     public static CheckinResponse of(Checkin c, long likeCount, boolean likedByMe, long commentCount, String s3BaseUrl) {
         return of(c, likeCount, likedByMe, null, Map.of(), commentCount, s3BaseUrl);
     }
+
 
     /**
      * 리액션 집계 포함 팩토리 (피드/상세 조회용).
@@ -48,6 +50,6 @@ public record CheckinResponse(
                 c.getCategory(), c.getTitle(), c.getDescription(), urls,
                 likeCount, likedByMe, myReactionType,
                 reactionCounts != null ? reactionCounts : Map.of(),
-                commentCount, c.getViewCount(), c.getCreatedAt());
+                commentCount, c.getViewCount(), c.getCreatedAt(), c.isSimple());
     }
 }

@@ -22,6 +22,13 @@ export interface CheckIn {
   commentCount: number
   viewCount: number
   createdAt: string
+  isSimple: boolean
+}
+
+export interface ActivitySummaryItem {
+  category: Category
+  count: number
+  previewNicknames: string[]
 }
 
 export interface Comment {
@@ -37,6 +44,7 @@ export interface Comment {
 export interface TodayFeedResponse {
   checkins: CheckIn[]
   sameCategoryUserCount: number
+  activitySummary: ActivitySummaryItem[]
 }
 
 export interface CalendarDayEntry {
