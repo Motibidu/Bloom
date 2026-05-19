@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 12.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://your-staging-domain.com"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_WEBVIEW_URL": "https://your-production-domain.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
