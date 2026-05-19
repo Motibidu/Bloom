@@ -599,162 +599,157 @@ export default function FeedPage() {
       )}
 
       {/* ── 피드 목록 ────────────────────────────────────────────────────────── */}
-      {checkins.length === 0 ? (
-        <div className="flex flex-col items-center gap-7 py-20 px-4 text-center">
-          {/* 아이콘 배경 */}
-          <div
-            className="w-28 h-28 rounded-3xl flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.14)})` }}
-            aria-hidden="true"
-          >
-            <ClipboardList size={52} style={{ color: main }} />
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-2xl font-black text-foreground">
-              아직 오늘의 활동이 없어요
-            </h3>
-            <p className="text-lg font-medium text-muted-foreground leading-relaxed max-w-xs mx-auto">
-              첫 번째로 오늘 활동을 기록해 보세요! 작은 기록이 큰 추억이 됩니다.
-            </p>
-          </div>
-
+      <section aria-label="오늘의 활동 피드">
+        {/* 피드 탭 — 항상 표시 */}
+        <div
+          className="flex gap-2 mb-6"
+          role="tablist"
+          aria-label="피드 유형 선택"
+        >
           <button
-            type="button"
-            onClick={() => setIsFormOpen(true)}
-            className="h-16 px-12 text-xl font-black rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ ...btnPrimary, '--tw-ring-color': main } as React.CSSProperties}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
+            role="tab"
+            aria-selected={feedTab === 'all'}
+            onClick={() => setFeedTab('all')}
+            className="flex items-center gap-2 min-h-[48px] px-6 rounded-2xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{
+              background: feedTab === 'all' ? grad : mA(0.08),
+              color: feedTab === 'all' ? 'white' : dark,
+              '--tw-ring-color': main,
+            } as React.CSSProperties}
           >
-            지금 기록하기
+            전체 피드
+          </button>
+          <button
+            role="tab"
+            aria-selected={feedTab === 'following'}
+            onClick={() => setFeedTab('following')}
+            className="flex items-center gap-2 min-h-[48px] px-6 rounded-2xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{
+              background: feedTab === 'following' ? grad : mA(0.08),
+              color: feedTab === 'following' ? 'white' : dark,
+              '--tw-ring-color': main,
+            } as React.CSSProperties}
+          >
+            팔로우 피드
           </button>
         </div>
-      ) : (
-        <section aria-label="오늘의 활동 피드">
-          {/* 피드 탭 */}
-          <div
-            className="flex gap-2 mb-6"
-            role="tablist"
-            aria-label="피드 유형 선택"
-          >
-            <button
-              role="tab"
-              aria-selected={feedTab === 'all'}
-              onClick={() => setFeedTab('all')}
-              className="flex items-center gap-2 min-h-[48px] px-6 rounded-2xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                background: feedTab === 'all' ? grad : mA(0.08),
-                color: feedTab === 'all' ? 'white' : dark,
-                '--tw-ring-color': main,
-              } as React.CSSProperties}
-            >
-              전체 피드
-            </button>
-            <button
-              role="tab"
-              aria-selected={feedTab === 'following'}
-              onClick={() => setFeedTab('following')}
-              className="flex items-center gap-2 min-h-[48px] px-6 rounded-2xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                background: feedTab === 'following' ? grad : mA(0.08),
-                color: feedTab === 'following' ? 'white' : dark,
-                '--tw-ring-color': main,
-              } as React.CSSProperties}
-            >
-              팔로우 피드
-            </button>
-          </div>
 
-          {/* 오늘 활동 집계 섹션 */}
-          {activitySummary.length > 0 && (
-            <div className="mb-6">
-              <p className="text-sm font-bold mb-3" style={{ color: dark }}>오늘 함께 활동한 이웃</p>
-              <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
-                {activitySummary.map((item: ActivitySummaryItem) => {
-                  const { icon: Icon, label } = CATEGORY_META[item.category]
-                  return (
-                    <div
-                      key={item.category}
-                      className="shrink-0 snap-start flex items-center gap-2 px-4 rounded-2xl min-h-[52px]"
-                      style={{ background: mA(0.08), border: `1px solid ${mA(0.15)}` }}
-                    >
-                      <Icon size={18} style={{ color: dark }} aria-hidden="true" />
-                      <span className="text-base font-black" style={{ color: dark }}>{label}</span>
-                      <span className="text-base font-bold" style={{ color: dark }}>{item.count}명</span>
-                      {item.previewNicknames.length > 0 && (
-                        <div className="flex -space-x-1.5 ml-1">
-                          {item.previewNicknames.map((nick) => (
-                            <div
-                              key={nick}
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white ring-2 ring-white"
-                              style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
-                              aria-label={nick}
-                            >
-                              {nick[0]}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+        {/* 오늘 활동 집계 섹션 */}
+        {activitySummary.length > 0 && (
+          <div className="mb-6">
+            <p className="text-sm font-bold mb-3" style={{ color: dark }}>오늘 함께 활동한 이웃</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+              {activitySummary.map((item: ActivitySummaryItem) => {
+                const { icon: Icon, label } = CATEGORY_META[item.category]
+                return (
+                  <div
+                    key={item.category}
+                    className="shrink-0 snap-start flex items-center gap-2 px-4 rounded-2xl min-h-[52px]"
+                    style={{ background: mA(0.08), border: `1px solid ${mA(0.15)}` }}
+                  >
+                    <Icon size={18} style={{ color: dark }} aria-hidden="true" />
+                    <span className="text-base font-black" style={{ color: dark }}>{label}</span>
+                    <span className="text-base font-bold" style={{ color: dark }}>{item.count}명</span>
+                    {item.previewNicknames.length > 0 && (
+                      <div className="flex -space-x-1.5 ml-1">
+                        {item.previewNicknames.map((nick) => (
+                          <div
+                            key={nick}
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white ring-2 ring-white"
+                            style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
+                            aria-label={nick}
+                          >
+                            {nick[0]}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* 섹션 헤더 */}
-          {(feedTab === 'all' || feedTab === 'following') && (
-            <>
-              <div className="flex items-center gap-4 mb-7">
-                <h2 className="text-2xl font-black text-foreground shrink-0">
-                  오늘의 활동들
-                </h2>
-                <div
-                  className="flex-1 h-0.5 rounded-full"
-                  style={{ background: `linear-gradient(90deg, ${mA(0.35)}, ${lA(0.15)}, transparent)` }}
-                  aria-hidden="true"
-                />
-                <span
-                  className="text-sm font-black px-3 py-1.5 rounded-full shrink-0 text-white"
-                  style={{ background: grad }}
-                >
-                  {checkins.length}개
-                </span>
+        {/* 섹션 헤더 */}
+        <div className="flex items-center gap-4 mb-7">
+          <h2 className="text-2xl font-black text-foreground shrink-0">
+            오늘의 활동들
+          </h2>
+          <div
+            className="flex-1 h-0.5 rounded-full"
+            style={{ background: `linear-gradient(90deg, ${mA(0.35)}, ${lA(0.15)}, transparent)` }}
+            aria-hidden="true"
+          />
+          <span
+            className="text-sm font-black px-3 py-1.5 rounded-full shrink-0 text-white"
+            style={{ background: grad }}
+          >
+            {checkins.length}개
+          </span>
+        </div>
+
+        {/* 피드 콘텐츠 */}
+        {checkins.length === 0 ? (
+          feedTab === 'following' ? (
+            <div
+              className="rounded-2xl px-6 py-10 flex flex-col items-center gap-4 text-center"
+              style={{ background: mA(0.05), border: `1px dashed ${mA(0.20)}` }}
+            >
+              <span className="text-4xl" aria-hidden="true">👥</span>
+              <p className="text-lg font-black text-foreground">팔로우한 분들의 활동이 없어요</p>
+              <p className="text-base font-medium text-muted-foreground">
+                사람 찾기에서 이웃을 팔로우해보세요
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-7 py-20 px-4 text-center">
+              <div
+                className="w-28 h-28 rounded-3xl flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.14)})` }}
+                aria-hidden="true"
+              >
+                <ClipboardList size={52} style={{ color: main }} />
               </div>
-              {checkins.length === 0 && feedTab === 'following' ? (
-                <div
-                  className="rounded-2xl px-6 py-10 flex flex-col items-center gap-4 text-center"
-                  style={{ background: mA(0.05), border: `1px dashed ${mA(0.20)}` }}
-                >
-                  <span className="text-4xl" aria-hidden="true">👥</span>
-                  <p className="text-lg font-black text-foreground">팔로우한 분들의 오늘 활동이 없어요</p>
-                  <p className="text-base font-medium text-muted-foreground">
-                    사람 찾기에서 이웃을 팔로우해보세요
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6 w-full max-w-4xl mx-auto">
-                  {checkins.map((checkin: any) => (
-                    <CheckInCard
-                      key={checkin.id}
-                      checkin={checkin}
-                      onClick={() => navigate(`/checkin/${checkin.id}`)}
-                      onAlsoCheckin={() => {
-                        setSelectedCategory(checkin.category as Category)
-                        setIsFormOpen(true)
-                        setTimeout(() => {
-                          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                        }, 50)
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      )}
+              <div className="space-y-3">
+                <h3 className="text-2xl font-black text-foreground">
+                  아직 활동이 없어요
+                </h3>
+                <p className="text-lg font-medium text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                  첫 번째로 오늘 활동을 기록해 보세요! 작은 기록이 큰 추억이 됩니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(true)}
+                className="h-16 px-12 text-xl font-black rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{ ...btnPrimary, '--tw-ring-color': main } as React.CSSProperties}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                지금 기록하기
+              </button>
+            </div>
+          )
+        ) : (
+          <div className="space-y-6 w-full max-w-4xl mx-auto">
+            {checkins.map((checkin: any) => (
+              <CheckInCard
+                key={checkin.id}
+                checkin={checkin}
+                onClick={() => navigate(`/checkin/${checkin.id}`)}
+                onAlsoCheckin={() => {
+                  setSelectedCategory(checkin.category as Category)
+                  setIsFormOpen(true)
+                  setTimeout(() => {
+                    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }, 50)
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   )
 }
