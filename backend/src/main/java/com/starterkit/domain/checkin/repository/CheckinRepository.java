@@ -2,6 +2,7 @@ package com.starterkit.domain.checkin.repository;
 
 import com.starterkit.domain.checkin.entity.Category;
 import com.starterkit.domain.checkin.entity.Checkin;
+import com.starterkit.domain.user.entity.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -31,6 +32,14 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
                                         @Param("end") LocalDateTime end,
                                         @Param("categories") List<Category> categories,
                                         @Param("userId") Long userId);
+
+    @Query("SELECT DISTINCT c.user FROM Checkin c " +
+           "WHERE c.createdAt BETWEEN :start AND :end " +
+           "AND c.category IN :categories AND c.user.id <> :userId")
+    List<User> findDistinctUsersByCategoriesToday(@Param("userId") Long userId,
+                                                  @Param("start") LocalDateTime start,
+                                                  @Param("end") LocalDateTime end,
+                                                  @Param("categories") List<Category> categories);
 
     @Query("SELECT DISTINCT c.category FROM Checkin c " +
            "WHERE c.user.id = :userId AND c.createdAt BETWEEN :start AND :end")

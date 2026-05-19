@@ -5,6 +5,7 @@ import com.starterkit.domain.checkin.dto.request.PhotoUploadUrlRequest;
 import com.starterkit.domain.checkin.dto.response.*;
 import com.starterkit.domain.checkin.service.CheckinService;
 import com.starterkit.domain.follow.service.FollowService;
+import com.starterkit.domain.user.dto.response.UserSearchResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,13 @@ public class CheckinController {
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CreateCheckinRequest request) {
         return ResponseEntity.ok(checkinService.create(userDetails.getUsername(), request));
+    }
+
+    @GetMapping("/today/same-category-users")
+    @Operation(summary = "오늘 같은 카테고리를 기록한 사용자 목록 조회")
+    public ResponseEntity<List<UserSearchResponse>> getSameCategoryUsers(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(checkinService.getSameCategoryUsers(userDetails.getUsername()));
     }
 
     @GetMapping("/today")

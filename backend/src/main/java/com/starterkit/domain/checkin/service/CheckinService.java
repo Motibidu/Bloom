@@ -7,8 +7,10 @@ import com.starterkit.domain.checkin.entity.Category;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.comment.repository.CommentRepository;
+import com.starterkit.domain.follow.repository.FollowRepository;
 import com.starterkit.domain.like.entity.ReactionType;
 import com.starterkit.domain.like.repository.LikeRepository;
+import com.starterkit.domain.user.dto.response.UserSearchResponse;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
@@ -45,6 +47,7 @@ public class CheckinService {
         private final UserRepository userRepository;
         private final CommentRepository commentRepository;
         private final LikeRepository likeRepository;
+        private final FollowRepository followRepository;
         private final S3Client s3Client;
         private final S3Presigner s3Presigner;
 
@@ -148,7 +151,7 @@ public class CheckinService {
                 if (followingIds != null) {
                         // 팔로우 피드: 팔로잉 목록이 없으면 빈 결과 반환
                         if (followingIds.isEmpty()) {
-                                return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]));
+                                return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]), 0);
                         }
                         checkins = checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds);
                 } else {
@@ -156,7 +159,7 @@ public class CheckinService {
                 }
 
                 if (checkins.isEmpty()) {
-                        return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]));
+                        return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]), 0);
                 }
 
                 List<Long> checkinIds = checkins.stream().map(Checkin::getId).toList();
@@ -201,7 +204,7 @@ public class CheckinService {
                 // 단순 체크인 집계 (activitySummary)
                 List<ActivitySummaryItem> activitySummary = buildActivitySummary(range[0], range[1]);
 
-                return new TodayFeedResponse(responses, sameCategoryUserCount, activitySummary);
+                return new TodayFeedResponse(responses, sameCategoryUserCount, activitySummary, responses.size());
         }
 
         public List<CheckinResponse> getMyCheckins(String email, String date) {
@@ -376,6 +379,22 @@ public class CheckinService {
                                 return new ActivitySummaryItem(e.getKey(), nicknames.size(), preview);
                         })
                         .toList();
+        }
+
+        public List<UserSearchResponse> getSameCategoryUsers(String email) {
+                User me = findUserByEmail(email);
+                LocalDateTime[] range = todayKstRange();
+                List<Category> myCategories = checkinRepository.findMyCategoriesToday(me.getId(), range[0], range[1]);
+                if (myCategories.isEmpty()) {
+                        return List.of();
+                }
+                List<User> users = checkinRepository.findDistinctUsersByCategoriesToday(me.getId(), range[0], range[1], myCategories);
+                return users.stream().map(u -> {
+                        long followerCount = followRepository.countByFollowingId(u.getId());
+                        long followingCount = followRepository.countByFollowerId(u.getId());
+                        boolean isFollowing = followRepository.existsByFollowerIdAndFollowingId(me.getId(), u.getId());
+                        return UserSearchResponse.of(u, followerCount, followingCount, isFollowing);
+                }).toList();
         }
 
         private User findUserByEmail(String email) {

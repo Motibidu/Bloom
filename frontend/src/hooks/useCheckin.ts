@@ -58,6 +58,15 @@ export function useCheckinDetail(id: number) {
   })
 }
 
+// 같은 카테고리 활동 사용자 목록 (클릭 시 수동 fetch)
+export function useSameCategoryUsers() {
+  return useQuery({
+    queryKey: ['checkins', 'same-category-users'],
+    queryFn: () => api.get('/checkins/today/same-category-users').then(r => r.data),
+    enabled: false,
+  })
+}
+
 // 리액션 토글 (옵티미스틱 업데이트)
 // reactionType: undefined 이면 기존 리액션 취소, 값이 있으면 해당 리액션 등록
 export function useLikeToggle(checkinId: number) {

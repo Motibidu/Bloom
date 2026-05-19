@@ -1,12 +1,14 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles, Zap, AlignLeft } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/shadcn/sheet'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
-import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
+import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl, useSameCategoryUsers } from '@/hooks/useCheckin'
+import { useFollowToggle } from '@/hooks/useFollow'
 import { useAuthStore } from '@/store/authStore'
 import { AUTO_TITLES, CATEGORY_META } from '@/lib/categories'
 import type { Category, ActivitySummaryItem } from '@/types'
@@ -33,6 +35,57 @@ function formatTodayKo(): string {
   return `${month}월 ${day}일 (${weekdays[now.getDay()]})`
 }
 
+function getParticipationMessage(count: number): string {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) return `오전에만 벌써 ${count}명이 활동을 기록했어요`
+  if (hour >= 12 && hour < 18) return `오늘 오후에 벌써 ${count}명이 활동을 기록했어요`
+  return `오늘 하루 ${count}명이 활동을 기록했어요`
+}
+
+function SameCategoryUserRow({ user, currentUserId, onFollowSuccess }: { user: any; currentUserId?: number; onFollowSuccess?: () => void }) {
+  const navigate = useNavigate()
+  const followToggle = useFollowToggle(user.id, user.isFollowing)
+
+  const handleFollow = () => {
+    followToggle.mutate(undefined, { onSuccess: onFollowSuccess })
+  }
+
+  return (
+    <li className="flex items-center gap-4">
+      <button
+        type="button"
+        aria-label={`${user.nickname} 프로필 보기`}
+        onClick={() => navigate(`/users/${user.id}`)}
+        className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2"
+        style={{ background: `linear-gradient(135deg, ${mA(0.2)}, ${lA(0.2)})` }}
+      >
+        <span className="font-black text-base" style={{ color: dark }}>{user.nickname?.[0] ?? '?'}</span>
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-base text-foreground truncate">{user.nickname}</p>
+        {user.bio && <p className="text-sm text-muted-foreground truncate">{user.bio}</p>}
+        <p className="text-xs text-muted-foreground">팔로워 {user.followerCount}명</p>
+      </div>
+
+      {currentUserId !== user.id && (
+        <button
+          type="button"
+          aria-label={user.isFollowing ? '팔로우 취소' : '팔로우'}
+          onClick={handleFollow}
+          disabled={followToggle.isPending}
+          className="min-w-[80px] h-10 rounded-xl text-sm font-bold px-4 shrink-0 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-60"
+          style={user.isFollowing
+            ? { background: mA(0.10), color: dark, border: `1px solid ${mA(0.25)}` }
+            : { background: grad, color: 'white' }}
+        >
+          {user.isFollowing ? <span className="flex items-center gap-1"><UserCheck size={14} />팔로잉</span> : '팔로우'}
+        </button>
+      )}
+    </li>
+  )
+}
+
 export default function FeedPage() {
   const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -50,9 +103,12 @@ export default function FeedPage() {
   })
   const [feedTab, setFeedTab] = useState<'all' | 'following'>('all')
 
+  const [sameCategorySheetOpen, setSameCategorySheetOpen] = useState(false)
+
   const { data: feed, isLoading, isError } = useTodayFeed(feedTab)
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
+  const { data: sameCategoryUsers, refetch: fetchSameCategoryUsers, isFetching: isFetchingUsers } = useSameCategoryUsers()
   const currentUser = useAuthStore((s) => s.user)
   const canWriteFeed = currentUser?.canWriteFeed ?? false
 
@@ -190,6 +246,7 @@ export default function FeedPage() {
   }
 
   const sameCategoryUserCount: number = feed?.sameCategoryUserCount ?? 0
+  const totalCheckinCount: number = feed?.totalCheckinCount ?? 0
   const activitySummary = feed?.activitySummary ?? []
   const checkins = (feed?.checkins ?? []).filter(
     (c: any) => !c.isSimple || c.userId === currentUser?.id
@@ -240,12 +297,26 @@ export default function FeedPage() {
         </div>
       </header>
 
+      {/* ── 참여 온도 ────────────────────────────────────────────────────── */}
+      {totalCheckinCount > 0 && (
+        <p
+          className="text-base font-bold px-5 py-3 rounded-2xl w-fit"
+          style={{ background: mA(0.08), color: dark, border: `1px solid ${mA(0.18)}` }}
+        >
+          🌡️ {getParticipationMessage(totalCheckinCount)}
+        </p>
+      )}
+
       {/* ── 같은 카테고리 활동자 배너 ─────────────────────────────────────── */}
       {sameCategoryUserCount > 0 && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="rounded-2xl px-6 py-5 flex items-center gap-4 lp-badge-in"
+        <button
+          type="button"
+          aria-label={`나와 같은 활동을 한 ${sameCategoryUserCount}명 보기`}
+          onClick={() => {
+            setSameCategorySheetOpen(true)
+            fetchSameCategoryUsers()
+          }}
+          className="w-full rounded-2xl px-6 py-5 flex items-center gap-4 lp-badge-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           style={{
             background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.08)})`,
             border: `1px solid ${mA(0.20)}`,
@@ -267,14 +338,34 @@ export default function FeedPage() {
             이 있어요!
           </p>
 
-          <Sparkles
-            size={22}
-            className="shrink-0 lp-float"
-            style={{ color: light }}
-            aria-hidden="true"
-          />
-        </div>
+          <ChevronRight size={22} className="shrink-0" style={{ color: light }} aria-hidden="true" />
+        </button>
       )}
+
+      {/* ── 같은 카테고리 사용자 바텀시트 ──────────────────────────────────── */}
+      <Sheet open={sameCategorySheetOpen} onOpenChange={setSameCategorySheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto px-6 pb-8">
+          <SheetHeader className="mb-6">
+            <SheetTitle className="text-xl font-black" style={{ color: dark }}>
+              나와 같은 활동을 한 이웃
+            </SheetTitle>
+          </SheetHeader>
+
+          {isFetchingUsers ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${main} transparent transparent transparent` }} />
+            </div>
+          ) : (sameCategoryUsers ?? []).length === 0 ? (
+            <p className="text-center text-base text-muted-foreground py-10">아직 같은 활동을 한 이웃이 없어요.</p>
+          ) : (
+            <ul className="space-y-4">
+              {(sameCategoryUsers ?? []).map((u: any) => (
+                <SameCategoryUserRow key={u.id} user={u} currentUserId={currentUser?.id} onFollowSuccess={fetchSameCategoryUsers} />
+              ))}
+            </ul>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* ── 체크인 작성 영역 (GUEST 제외) ──────────────────────────────────── */}
       {!canWriteFeed && (
