@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
+import { isNativeApp, registerPushToken } from '@/lib/native-bridge'
+import { registerFcmWeb } from '@/lib/push-notification'
 import Layout from '@/components/layout/Layout'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
@@ -44,6 +46,11 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     api.post<{ accessToken: string }>('/auth/refresh')
       .then(({ data }) => {
         setAccessToken(data.accessToken)
+        if (isNativeApp()) {
+          registerPushToken()
+        } else {
+          registerFcmWeb()
+        }
       })
       .catch(() => {
         logout()

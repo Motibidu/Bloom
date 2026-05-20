@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, X, ImagePlus, PenLine, ClipboardList, Sparkles, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/shadcn/sheet'

@@ -24,6 +24,7 @@
     },
     "android": {
       "package": "com.bloom.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -35,18 +36,24 @@
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "webviewUrl": "http://172.30.1.78:5173"
+      "webviewUrl": "http://172.30.1.78:5173",
+      "eas": {
+        "projectId": "4d083002-3b96-4594-b46f-0322a1e04088"
+      }
     },
     "plugins": [
       "expo-contacts",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-notifications"
     ]
   }
 }

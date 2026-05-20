@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
+import { isNativeApp, registerPushToken, flushPendingFcmToken } from '@/lib/native-bridge'
+import { registerFcmWeb } from '@/lib/push-notification'
 import type { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
 
 export function useLogin() {
@@ -15,6 +17,11 @@ export function useLogin() {
       setAccessToken(data.accessToken)
       const userRes = await api.get('/users/me')
       setUser(userRes.data)
+      if (isNativeApp()) {
+        flushPendingFcmToken()
+      } else {
+        registerFcmWeb()
+      }
       navigate('/')
     },
   })

@@ -47,6 +47,9 @@ dependencies {
     // Mail
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
+    // Firebase Admin SDK (FCM 푸시 알림)
+    implementation("com.google.firebase:firebase-admin:9.3.0")
+
     // Actuator
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 

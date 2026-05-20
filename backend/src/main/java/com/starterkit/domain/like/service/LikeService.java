@@ -7,6 +7,7 @@ import com.starterkit.domain.like.dto.response.LikeResponse;
 import com.starterkit.domain.like.entity.Like;
 import com.starterkit.domain.like.entity.ReactionType;
 import com.starterkit.domain.like.repository.LikeRepository;
+import com.starterkit.domain.notification.service.NotificationService;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
@@ -28,6 +29,7 @@ public class LikeService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final CheckinRepository checkinRepository;
+    private final NotificationService notificationService;
 
     /**
      * 리액션 토글 (upsert).
@@ -74,6 +76,14 @@ public class LikeService {
                     .build());
             liked = true;
             resultReactionType = incoming;
+        }
+
+        if (liked && !checkin.getUser().getId().equals(user.getId())) {
+            notificationService.sendPush(
+                    checkin.getUser().getId(),
+                    "나도 했어요!",
+                    user.getNickname() + "님이 활동에 공감했어요"
+            );
         }
 
         Map<String, Long> reactionCounts = buildReactionCounts(checkinId);

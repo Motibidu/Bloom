@@ -6,6 +6,7 @@ import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
 import com.starterkit.domain.comment.dto.response.CommentResponse;
 import com.starterkit.domain.comment.entity.Comment;
 import com.starterkit.domain.comment.repository.CommentRepository;
+import com.starterkit.domain.notification.service.NotificationService;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
@@ -24,6 +25,7 @@ public class CommentService {
     private final CheckinRepository checkinRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public List<CommentResponse> getComments(Long checkinId) {
         checkinRepository.findById(checkinId)
@@ -50,6 +52,16 @@ public class CommentService {
                 .praiseCardType(req.praiseCardType())
                 .build();
 
-        return CommentResponse.from(commentRepository.save(comment));
+        CommentResponse response = CommentResponse.from(commentRepository.save(comment));
+
+        if (!checkin.getUser().getId().equals(user.getId())) {
+            notificationService.sendPush(
+                    checkin.getUser().getId(),
+                    "새 댓글",
+                    user.getNickname() + "님이 댓글을 남겼어요"
+            );
+        }
+
+        return response;
     }
 }

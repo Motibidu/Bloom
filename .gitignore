@@ -30,6 +30,8 @@ tasks/
 
 # Secrets
 backend/src/main/resources/application-dev.yml
+backend/src/main/resources/firebase-service-account.json
+frontend/.env.local
 
 # Logs
 backend/server.log

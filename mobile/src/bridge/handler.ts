@@ -1,3 +1,4 @@
+import { MutableRefObject } from 'react'
 import * as Contacts from 'expo-contacts'
 import * as ImagePicker from 'expo-image-picker'
 import { BridgeContact, NativeToWebMsg, WebToNativeMsg } from './types'
@@ -5,6 +6,7 @@ import { BridgeContact, NativeToWebMsg, WebToNativeMsg } from './types'
 export async function handleBridgeMessage(
   msg: WebToNativeMsg,
   sendToWeb: (response: NativeToWebMsg) => void,
+  fcmTokenRef?: MutableRefObject<string | null>,
 ): Promise<void> {
   const { requestId } = msg
 
@@ -47,20 +49,12 @@ export async function handleBridgeMessage(
       }
 
       case 'REQUEST_PUSH_TOKEN': {
-        // expo-notifications는 Expo Go에서 지원 안 됨 — development build 전용
-        try {
-          const Notifications = await import('expo-notifications')
-          const { status } = await Notifications.requestPermissionsAsync({
-            ios: { allowAlert: true, allowBadge: true, allowSound: true },
-          })
-          if (status !== 'granted') {
-            sendToWeb({ type: 'BRIDGE_ERROR', requestId, error: '알림 권한이 거부되었습니다' })
-            return
-          }
-          const tokenData = await Notifications.getExpoPushTokenAsync()
-          sendToWeb({ type: 'PUSH_TOKEN_RESULT', requestId, payload: tokenData.data })
-        } catch {
-          sendToWeb({ type: 'BRIDGE_ERROR', requestId, error: '푸시 알림은 development build에서만 지원됩니다' })
+        // 앱 시작 시 미리 발급된 토큰을 즉시 응답
+        const cachedToken = fcmTokenRef?.current
+        if (cachedToken) {
+          sendToWeb({ type: 'PUSH_TOKEN_RESULT', requestId, payload: cachedToken })
+        } else {
+          sendToWeb({ type: 'BRIDGE_ERROR', requestId, error: 'FCM 토큰 준비 중입니다. 잠시 후 다시 시도해주세요.' })
         }
         break
       }

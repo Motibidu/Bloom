@@ -1,10 +1,38 @@
 import api from './api'
 
+const PENDING_TOKEN_KEY = 'pending_fcm_token'
+
+async function savePushToken(token: string): Promise<void> {
+  console.log('[native-bridge] savePushToken 시도')
+  await api.post('/push-tokens', { token })
+    .then(() => {
+      console.log('[native-bridge] FCM 토큰 즉시 저장 성공')
+      localStorage.removeItem(PENDING_TOKEN_KEY)
+    })
+    .catch((e) => {
+      console.warn('[native-bridge] 즉시 저장 실패, 로컬 임시저장:', e?.response?.status)
+      localStorage.setItem(PENDING_TOKEN_KEY, token)
+    })
+}
+
+export async function flushPendingFcmToken(): Promise<void> {
+  const token = localStorage.getItem(PENDING_TOKEN_KEY)
+  console.log('[native-bridge] flushPendingFcmToken 호출, token:', token ? token.slice(0, 20) + '...' : 'null')
+  if (!token) return
+  await api.post('/push-tokens', { token })
+    .then(() => {
+      console.log('[native-bridge] FCM 토큰 서버 저장 성공')
+      localStorage.removeItem(PENDING_TOKEN_KEY)
+    })
+    .catch((e) => console.warn('[native-bridge] FCM 토큰 재시도 실패:', e))
+}
+
 declare global {
   interface Window {
     ReactNativeWebView?: {
       postMessage: (message: string) => void
     }
+    __nativeFcmToken?: string
   }
 }
 
@@ -28,6 +56,13 @@ function initListener(): void {
   window.addEventListener('message', (e: MessageEvent) => {
     try {
       const msg = JSON.parse(e.data as string)
+
+      // 앱 자동 발급 토큰 — pending 없이 바로 저장
+      if (msg.type === 'PUSH_TOKEN_RESULT' && msg.requestId === 'auto') {
+        savePushToken(msg.payload as string)
+        return
+      }
+
       const p = pending.get(msg.requestId)
       if (!p) return
       if (msg.type === 'BRIDGE_ERROR') {
@@ -85,9 +120,7 @@ export async function registerPushToken(): Promise<void> {
       })
       postBridgeMessage('REQUEST_PUSH_TOKEN', requestId)
     })
-    await api.post('/push-tokens', { token }).catch(() => {
-      console.warn('[native-bridge] push-tokens 엔드포인트 미구현 — 토큰 등록 건너뜀')
-    })
+    await savePushToken(token)
   } catch (e) {
     console.warn('[native-bridge] FCM 토큰 요청 실패:', e)
   }
@@ -95,4 +128,16 @@ export async function registerPushToken(): Promise<void> {
 
 if (isNativeApp()) {
   initListener()
+
+  // 앱이 주입한 FCM 토큰 수신
+  window.addEventListener('native-fcm-token', (e: Event) => {
+    const token = (e as CustomEvent<string>).detail
+    console.log('[native-bridge] native-fcm-token 이벤트 수신:', token.slice(0, 20) + '...')
+    savePushToken(token)
+  })
+
+  // 이미 주입된 토큰이 있으면 즉시 처리 (페이지 이동 후 재마운트 케이스)
+  if (window.__nativeFcmToken) {
+    savePushToken(window.__nativeFcmToken)
+  }
 }

@@ -2,6 +2,7 @@ package com.starterkit.domain.follow.service;
 
 import com.starterkit.domain.follow.entity.Follow;
 import com.starterkit.domain.follow.repository.FollowRepository;
+import com.starterkit.domain.notification.service.NotificationService;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.domain.user.dto.response.UserSearchResponse;
@@ -20,6 +21,7 @@ public class FollowService {
 
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public void follow(Long targetUserId, UserDetails userDetails) {
@@ -35,6 +37,12 @@ public class FollowService {
                 .follower(follower)
                 .following(following)
                 .build());
+
+        notificationService.sendPush(
+                following.getId(),
+                "새 팔로워",
+                follower.getNickname() + "님이 팔로우했어요"
+        );
     }
 
     @Transactional

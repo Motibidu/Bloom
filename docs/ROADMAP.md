@@ -450,18 +450,12 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 웹앱 코드에 `isNativeApp()` 헬퍼 함수 추가: `window.ReactNativeWebView !== undefined` 감지로 웹/앱 환경 자동 분기
   - App Store (iOS) / Play Store (Android) 심사 준비 및 배포
 
-- [ ] **Task 037: 웹 푸시 알림 (Web Push API / FCM)**
-  - Web Push API 구현 (웹 환경):
-    - Service Worker 등록 (`/sw.js`)
-    - `PushManager.subscribe()`로 구독 정보 서버 저장
-    - `POST /api/push-subscriptions` — 구독 정보 저장
-    - `web-push` 라이브러리(백엔드)로 서버 발송
-  - FCM 네이티브 푸시 (React Native 앱 환경):
-    - Task 036의 JS Bridge를 통해 FCM 토큰 수신
-    - `POST /api/push-tokens` — FCM 토큰 저장
-    - Firebase Admin SDK(백엔드)로 서버 발송
-  - 알림 트리거: 가족 그룹 참여, 내 체크인에 좋아요/댓글, 팔로우 알림
-  - Phase 6 Task 028의 이메일 알림을 웹 푸시로 대체
+- [x] **Task 037: 웹 푸시 알림 (FCM 통합)** ✅
+  - FCM JS SDK로 웹/앱 통합 발송 (firebase-messaging-sw.js 서비스워커)
+  - `POST /api/push-tokens` — FCM 토큰 저장 (웹/앱 공통)
+  - Firebase Admin SDK(백엔드)로 모든 플랫폼 단일 발송
+  - 알림 트리거: 내 체크인에 좋아요/댓글, 팔로우 알림
+  - Web Push(VAPID) → FCM 통합 마이그레이션 완료 (nl.martijndwars:web-push 제거)
 
 - [ ] **Task 038: 카카오 로그인 연동**
   - 카카오 친구 API(Task 032) 사용을 위한 전제조건
