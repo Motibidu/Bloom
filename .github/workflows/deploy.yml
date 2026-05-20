@@ -2,60 +2,56 @@ name: Deploy
 
 on:
   push:
-    branches: [main]
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: false
-          tags: bloom-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: false
-          tags: bloom-frontend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # TODO: Task 023 AWS 인프라 구축 완료 후 활성화
-  # Required Secrets: EC2_HOST, EC2_USER, EC2_SSH_KEY,
-  #                   DATABASE_URL, DB_USERNAME, DB_PASSWORD,
-  #                   JWT_SECRET, AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_S3_BUCKET
   deploy:
-    name: Deploy to EC2
+    name: Deploy to OCI
     runs-on: ubuntu-latest
-    needs: build
-    if: false  # AWS 인프라 준비 후 제거
 
     steps:
       - uses: actions/checkout@v4
 
-      # TODO: appleboy/ssh-action으로 EC2 접속
-      # - name: Deploy to EC2
-      #   uses: appleboy/ssh-action@v1
-      #   with:
-      #     host: ${{ secrets.EC2_HOST }}
-      #     username: ${{ secrets.EC2_USER }}
-      #     key: ${{ secrets.EC2_SSH_KEY }}
-      #     script: |
-      #       cd ~/bloom
-      #       docker compose pull
-      #       docker compose up -d
-      #       sleep 30
-      #       curl -f http://localhost/api/actuator/health || (docker compose rollback && exit 1)
+      - name: Deploy to OCI server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ubuntu
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            set -e
+
+            # 저장소 없으면 clone, 있으면 pull
+            if [ ! -d ~/bloom ]; then
+              git clone https://github.com/Motibidu/bloom.git ~/bloom
+            fi
+
+            cd ~/bloom
+            git pull origin master
+
+            # .env 파일 생성
+            cat > .env << 'ENVEOF'
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
+            AWS_REGION=ap-northeast-2
+            AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+            CORS_ALLOWED_ORIGINS=http://${{ secrets.OCI_HOST }}
+            ENVEOF
+
+            # 빌드 및 재시작
+            docker compose up -d --build
+
+            # 헬스 체크 (최대 2분 대기)
+            echo "Waiting for services to be healthy..."
+            for i in $(seq 1 24); do
+              if curl -sf http://localhost/api/actuator/health > /dev/null 2>&1; then
+                echo "Health check passed!"
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Health check failed after 2 minutes"
+            exit 1
