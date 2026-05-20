@@ -47,7 +47,7 @@ jobs:
             # 헬스 체크 (최대 2분 대기)
             echo "Waiting for services to be healthy..."
             for i in $(seq 1 24); do
-              if curl -sf http://localhost/api/actuator/health > /dev/null 2>&1; then
+              if curl -sf http://localhost/actuator/health > /dev/null 2>&1; then
                 echo "Health check passed!"
                 exit 0
               fi
