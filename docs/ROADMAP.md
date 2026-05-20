@@ -270,7 +270,7 @@ MVP 외부 공개를 위한 배포 파이프라인과 인프라를 구축합니�
   - `.env.example` 작성: `DB_PASSWORD`, `JWT_SECRET`, `AWS_S3_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`
   - Nginx 설정: `/api` → backend:8080, `/` → frontend:80 리버스 프록시
 
-- [ ] **Task 023: Oracle Cloud 인프라 구축**
+- [x] **Task 023: Oracle Cloud 인프라 구축**
   - OCI Compute 인스턴스 프로비저닝 (Ubuntu 22.04, Always Free Tier), Docker 및 Docker Compose 설치
   - OCI VCN(Virtual Cloud Network) 생성 + 보안 목록(Security List) 설정 (80, 443, 22 포트 허용)
   - MySQL HeatWave (또는 Compute 내 Docker MySQL 8.x) 구성, Compute 내부 접근만 허용
