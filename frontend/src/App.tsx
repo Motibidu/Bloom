@@ -18,6 +18,8 @@ import FamilyPage from '@/pages/FamilyPage'
 import FamilyInvitePage from '@/pages/FamilyInvitePage'
 import DiscoverPage from '@/pages/DiscoverPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import KakaoCallbackPage from '@/pages/KakaoCallbackPage'
+import KakaoOnboardingPage from '@/pages/KakaoOnboardingPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -79,6 +81,7 @@ export default function App() {
             path="/register"
             element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>}
           />
+          <Route path="/kakao-callback" element={<KakaoCallbackPage />} />
 
           {/* 로그인 필요 라우트 — Layout(Header) 포함 */}
           <Route
@@ -92,6 +95,7 @@ export default function App() {
             <Route path="discover" element={<DiscoverPage />} />
             <Route path="me" element={<MyActivityPage />} />
             <Route path="me/report" element={<MonthlyReportPage />} />
+            <Route path="kakao-onboarding" element={<KakaoOnboardingPage />} />
           </Route>
 
           <Route path="*" element={<NotFoundPage />} />

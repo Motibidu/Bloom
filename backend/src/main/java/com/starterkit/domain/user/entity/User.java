@@ -30,11 +30,14 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = true, unique = true, length = 50)
     private String nickname;
 
     @Column(length = 50)
     private String bio;
+
+    @Column(name = "kakao_id", unique = true)
+    private Long kakaoId;
 
     @Column(name = "birth_year", nullable = false)
     private Integer birthYear;

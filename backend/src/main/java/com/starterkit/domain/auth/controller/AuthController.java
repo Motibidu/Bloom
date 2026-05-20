@@ -1,9 +1,12 @@
 package com.starterkit.domain.auth.controller;
 
+import com.starterkit.domain.auth.dto.request.KakaoLoginRequest;
+import com.starterkit.domain.auth.dto.request.KakaoNicknameRequest;
 import com.starterkit.domain.auth.dto.request.LoginRequest;
 import com.starterkit.domain.auth.dto.request.RegisterRequest;
 import com.starterkit.domain.auth.dto.response.AuthResponse;
 import com.starterkit.domain.auth.service.AuthService;
+import com.starterkit.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -62,6 +66,25 @@ public class AuthController {
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         response.addHeader("Set-Cookie",
                 "refreshToken=; HttpOnly; Path=/api/auth/refresh; Max-Age=0; SameSite=Strict");
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/kakao")
+    @Operation(summary = "카카오 로그인 — 인가 코드로 자체 JWT 발급")
+    public ResponseEntity<AuthResponse> kakaoLogin(
+            @Valid @RequestBody KakaoLoginRequest request,
+            HttpServletResponse response) {
+        AuthResponse authResponse = authService.kakaoLogin(request.code());
+        setRefreshTokenCookie(response, authResponse.refreshToken());
+        return ResponseEntity.ok(AuthResponse.withoutRefreshToken(authResponse));
+    }
+
+    @PatchMapping("/kakao/nickname")
+    @Operation(summary = "카카오 신규 가입 닉네임 설정")
+    public ResponseEntity<Void> setKakaoNickname(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody KakaoNicknameRequest request) {
+        authService.setKakaoNickname(currentUser.getId(), request.nickname(), request.birthYear());
         return ResponseEntity.noContent().build();
     }
 

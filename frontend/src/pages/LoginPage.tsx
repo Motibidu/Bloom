@@ -18,6 +18,13 @@ export default function LoginPage() {
     login.mutate(data)
   }
 
+  const handleKakaoLogin = () => {
+    const restApiKey = import.meta.env.VITE_KAKAO_REST_API_KEY
+    const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI || 'http://localhost:5173/kakao-callback'
+    const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${restApiKey}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code`
+    window.location.href = kakaoAuthUrl
+  }
+
   const getErrorMessage = () => {
     if (!login.error) return null
     const axiosError = login.error as AxiosError<{ message: string }>
@@ -113,6 +120,34 @@ export default function LoginPage() {
             aria-label={login.isPending ? '로그인하는 중이에요' : '로그인하기'}
           >
             {login.isPending ? '로그인하는 중이에요...' : '로그인하기'}
+          </button>
+
+          {/* 구분선 */}
+          <div className="flex items-center gap-3 pt-2">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-sm text-muted-foreground">또는</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {/* 카카오 로그인 버튼 */}
+          <button
+            type="button"
+            onClick={handleKakaoLogin}
+            className="w-full h-16 text-xl font-black rounded-2xl flex items-center justify-center gap-3
+                       transition-opacity hover:opacity-90 active:opacity-80
+                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            style={{ background: '#FEE500', color: '#000' }}
+            aria-label="카카오로 시작하기"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M12 3C6.477 3 2 6.582 2 11c0 2.81 1.77 5.27 4.42 6.78L5.5 21l4.25-2.8c.74.1 1.49.15 2.25.15 5.523 0 10-3.582 10-8S17.523 3 12 3z"
+                fill="#000"
+              />
+            </svg>
+            카카오로 시작하기
           </button>
 
           {/* 회원가입 안내 */}

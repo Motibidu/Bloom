@@ -457,7 +457,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 알림 트리거: 내 체크인에 좋아요/댓글, 팔로우 알림
   - Web Push(VAPID) → FCM 통합 마이그레이션 완료 (nl.martijndwars:web-push 제거)
 
-- [ ] **Task 038: 카카오 로그인 연동**
+- [x] **Task 038: 카카오 로그인 연동** ✅
   - 카카오 친구 API(Task 032) 사용을 위한 전제조건
   - **백엔드**:
     - `users` 테이블에 `kakao_id` 컬럼 추가 (UNIQUE, NULL 허용)
