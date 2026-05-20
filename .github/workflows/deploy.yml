@@ -38,7 +38,10 @@ jobs:
             AWS_REGION=ap-northeast-2
             AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
             AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
-            CORS_ALLOWED_ORIGINS=http://${{ secrets.OCI_HOST }}
+            CORS_ALLOWED_ORIGINS=https://pcgear.store
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            KAKAO_REDIRECT_URI=https://pcgear.store/kakao-callback
             ENVEOF
 
             # 빌드 및 재시작
@@ -47,7 +50,7 @@ jobs:
             # 헬스 체크 (최대 2분 대기)
             echo "Waiting for services to be healthy..."
             for i in $(seq 1 24); do
-              if curl -sf http://localhost/actuator/health > /dev/null 2>&1; then
+              if curl -sf https://pcgear.store/actuator/health > /dev/null 2>&1; then
                 echo "Health check passed!"
                 exit 0
               fi
