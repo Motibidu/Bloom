@@ -300,7 +300,7 @@ export default function FeedPage() {
       {/* ── 참여 온도 ────────────────────────────────────────────────────── */}
       {totalCheckinCount > 0 && (
         <p
-          className="text-base font-bold px-5 py-3 rounded-2xl w-fit"
+          className="text-base font-bold px-5 py-3 rounded-2xl w-fit whitespace-nowrap"
           style={{ background: mA(0.08), color: dark, border: `1px solid ${mA(0.18)}` }}
         >
           🌡️ {getParticipationMessage(totalCheckinCount)}

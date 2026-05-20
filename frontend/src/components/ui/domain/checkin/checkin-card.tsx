@@ -212,57 +212,61 @@ export default function CheckInCard({
 
       {/* 하단 반응 바 */}
       <div
-        className="px-5 flex items-center gap-4 relative mt-auto"
+        className="px-5 flex items-center relative mt-auto"
         style={{
           borderTop: `1px solid ${mA(0.10)}`,
           background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,
         }}
       >
-        <ReactionPicker
-          checkinId={checkin.id}
-          myReactionType={checkin.myReactionType ?? null}
-          reactionCounts={checkin.reactionCounts ?? {}}
-          onReact={(reactionType) => likeToggle.mutate({ reactionType })}
-          disabled={likeToggle.isPending}
-        />
+        {/* 왼쪽: 반응·댓글·나도했어요·조회수 */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <ReactionPicker
+            checkinId={checkin.id}
+            myReactionType={checkin.myReactionType ?? null}
+            reactionCounts={checkin.reactionCounts ?? {}}
+            onReact={(reactionType) => likeToggle.mutate({ reactionType })}
+            disabled={likeToggle.isPending}
+          />
 
-        <div
-          className="flex items-center gap-1.5 min-h-[44px] px-1"
-          style={{ color: `oklch(0.55 0.05 220)` }}
-          aria-label={`댓글 ${commentCount ?? checkin.commentCount}개`}
-        >
-          <MessageCircle size={22} aria-hidden="true" />
-          <span className="text-base font-bold" aria-hidden="true">{commentCount ?? checkin.commentCount}</span>
+          <div
+            className="flex items-center gap-1 min-h-[44px] shrink-0"
+            style={{ color: `oklch(0.55 0.05 220)` }}
+            aria-label={`댓글 ${commentCount ?? checkin.commentCount}개`}
+          >
+            <MessageCircle size={20} aria-hidden="true" />
+            <span className="text-sm font-bold" aria-hidden="true">{commentCount ?? checkin.commentCount}</span>
+          </div>
+
+          {onAlsoCheckin && (
+            <button
+              type="button"
+              className="relative z-10 flex items-center gap-1 min-h-[44px] px-2 rounded-xl font-bold text-sm transition-colors whitespace-nowrap shrink-0"
+              style={{ color: dark }}
+              onClick={(e) => { e.stopPropagation(); onAlsoCheckin() }}
+              aria-label="나도 했어요 — 같은 카테고리로 즉시 기록"
+              onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <PlusCircle size={18} aria-hidden="true" />
+              <span>나도 했어요</span>
+            </button>
+          )}
+
+          <span
+            className="flex items-center gap-1 min-h-[44px] shrink-0"
+            style={{ color: `oklch(0.65 0.03 220)` }}
+          >
+            <Eye size={20} aria-hidden="true" />
+            <span className="text-sm font-bold">
+              <span className="sr-only">조회 </span>
+              {checkin.viewCount}
+              <span className="sr-only">회</span>
+            </span>
+          </span>
         </div>
 
-        {onAlsoCheckin && (
-          <button
-            type="button"
-            className="relative z-10 flex items-center gap-1.5 min-h-[44px] px-2 rounded-xl font-bold text-base transition-colors"
-            style={{ color: dark }}
-            onClick={(e) => { e.stopPropagation(); onAlsoCheckin() }}
-            aria-label="나도 했어요 — 같은 카테고리로 즉시 기록"
-            onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-          >
-            <PlusCircle size={22} aria-hidden="true" />
-            <span>나도 했어요</span>
-          </button>
-        )}
-
-        <span
-          className="flex items-center gap-1.5 min-h-[44px] px-1"
-          style={{ color: `oklch(0.65 0.03 220)` }}
-        >
-          <Eye size={22} aria-hidden="true" />
-          <span className="text-base font-bold">
-            <span className="sr-only">조회 </span>
-            {checkin.viewCount}
-            <span className="sr-only">회</span>
-          </span>
-        </span>
-
-        <div className="flex-1 flex justify-end items-center pointer-events-none" aria-hidden="true">
+        {/* 오른쪽: 카테고리 아이콘 */}
+        <div className="shrink-0 flex items-center pointer-events-none pl-4" aria-hidden="true">
           <Icon size={28} style={{ color: lA(0.18) }} />
         </div>
       </div>
