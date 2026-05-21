@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Eye, MessageCircle, MoreVertical, PlusCircle, Pencil, Trash2, X, Check, Flag, ShieldOff } from 'lucide-react'
+import { Eye, MessageCircle, MoreVertical, PlusCircle, Pencil, Trash2, X, Check, Flag, ShieldOff, CheckCircle2 } from 'lucide-react'
 import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/categories'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
 import { useLikeToggle, useUpdateCheckin } from '@/hooks/useCheckin'
 import { useCreateReport } from '@/hooks/useReport'
 import { useBlockUser } from '@/hooks/useBlock'
+import { useToast } from '@/hooks/useToast'
 import type { CheckIn, Category } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -278,9 +279,11 @@ const REASON_LABELS: Record<string, string> = {
 function ReportModal({
   checkinId,
   onClose,
+  onSuccess,
 }: {
   checkinId: number
   onClose: () => void
+  onSuccess: () => void
 }) {
   const [selected, setSelected] = useState<string | null>(null)
   const createReport = useCreateReport()
@@ -290,6 +293,7 @@ function ReportModal({
     if (!selected) return
     await createReport.mutateAsync({ targetType: 'CHECKIN', targetId: checkinId, reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER' })
     onClose()
+    onSuccess()
   }
 
   return (
@@ -366,10 +370,12 @@ function BlockConfirmModal({
   targetUserId,
   nickname,
   onClose,
+  onSuccess,
 }: {
   targetUserId: number
   nickname: string
   onClose: () => void
+  onSuccess: () => void
 }) {
   const blockUser = useBlockUser()
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -377,6 +383,7 @@ function BlockConfirmModal({
   const handleConfirm = async () => {
     await blockUser.mutateAsync(targetUserId)
     onClose()
+    onSuccess()
   }
 
   return (
@@ -444,6 +451,7 @@ export default function CheckInCard({
 }: Props) {
   const { icon: Icon, label } = CATEGORY_META[checkin.category]
   const likeToggle = useLikeToggle(checkin.id)
+  const { toasts, show: showToast, dismiss } = useToast()
   const [menuOpen, setMenuOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -688,7 +696,11 @@ export default function CheckInCard({
 
       {/* 신고 모달 */}
       {reportOpen && createPortal(
-        <ReportModal checkinId={checkin.id} onClose={() => setReportOpen(false)} />,
+        <ReportModal
+          checkinId={checkin.id}
+          onClose={() => setReportOpen(false)}
+          onSuccess={() => showToast('신고가 접수되었습니다.')}
+        />,
         document.body
       )}
 
@@ -698,7 +710,28 @@ export default function CheckInCard({
           targetUserId={checkin.userId}
           nickname={checkin.nickname}
           onClose={() => setBlockOpen(false)}
+          onSuccess={() => showToast(`${checkin.nickname}님을 차단했습니다.`)}
         />,
+        document.body
+      )}
+
+      {/* Toast 알림 */}
+      {toasts.length > 0 && createPortal(
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none">
+          {toasts.map(t => (
+            <div
+              key={t.id}
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2.5 px-5 py-3.5 rounded-2xl text-base font-bold text-white pointer-events-auto"
+              style={{ background: 'oklch(0.30 0.05 220 / 0.92)', boxShadow: '0 4px 20px oklch(0 0 0 / 0.25)', backdropFilter: 'blur(8px)' }}
+              onClick={() => dismiss(t.id)}
+            >
+              <CheckCircle2 size={20} aria-hidden="true" style={{ color: 'oklch(0.76 0.12 220)' }} />
+              {t.message}
+            </div>
+          ))}
+        </div>,
         document.body
       )}
 
