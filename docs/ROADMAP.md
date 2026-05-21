@@ -473,31 +473,31 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
 
 서비스 운영 중 발견되는 불편함을 해소하고, 보안 및 성능을 강화합니다.
 
-- [ ] **Task 039: 체크인 수정 및 삭제**
+- [x] **Task 039: 체크인 수정 및 삭제**
   - `PATCH /api/checkins/{id}` — 설명 및 카테고리 수정 (작성자 권한 검증)
   - `DELETE /api/checkins/{id}` — 체크인 삭제 + S3 사진 일괄 삭제 (작성자 권한 검증)
   - 피드/상세 페이지에서 본인 체크인에 수정/삭제 버튼 표시 (케밥 메뉴 또는 하단 시트)
   - Playwright MCP로 수정 → 반영 확인 → 삭제 → 피드에서 제거 확인 E2E 검증
 
-- [ ] **Task 040: 프로필 수정**
+- [x] **Task 040: 프로필 수정**
   - `PATCH /api/users/me` 엔드포인트 (닉네임, 자기소개 변경, 닉네임 UNIQUE 검증 포함)
   - 나의 활동 페이지 상단 또는 별도 `/me/edit` 라우트에 프로필 편집 UI
   - React Hook Form + 실시간 닉네임 중복 확인 디바운스 적용
   - 수정 성공 시 `useCurrentUser` 캐시 무효화 + 성공 토스트
 
-- [ ] **Task 041: 프로필 이미지 업로드**
+- [x] **Task 041: 프로필 이미지 업로드**
   - `User` 엔티티에 `profile_image_object_key` 컬럼 추가
   - `POST /api/users/me/profile-image-url` — 프로필 이미지용 presigned URL 발급 (경로: `profiles/{userId}/{uuid}.jpg`)
   - `PATCH /api/users/me` 에 `profileImageObjectKey` 필드 추가
   - 프로필 편집 UI에 이미지 변경 버튼 + 원형 미리보기 + S3 업로드 플로우
 
-- [ ] **Task 042: 실시간 알림 (좋아요 / 댓글)**
+- [x] **Task 042: 실시간 알림 (좋아요 / 댓글)**
   - SSE(Server-Sent Events) 기반 알림 스트림: `GET /api/notifications/stream`
   - `notifications` 테이블: `id`, `user_id`, `type` (LIKE / COMMENT / FOLLOW / FAMILY_JOIN), `actor_id`, `target_id`, `is_read`, `created_at`
   - 헤더 알림 아이콘에 읽지 않은 알림 수 뱃지 표시
   - 알림 목록 드롭다운: 최근 20개, 클릭 시 해당 체크인 상세로 이동 + `is_read` 처리
 
-- [ ] **Task 043: 피드 무한스크롤 페이지네이션**
+- [x] **Task 043: 피드 무한스크롤 페이지네이션**
   - `GET /api/checkins/today`: 커서 기반 페이지네이션 (`?cursor=lastCheckinId&limit=20`) 추가
   - `GET /api/checkins/following`: 동일 페이지네이션 적용
   - 프론트엔드: `useInfiniteQuery` + `IntersectionObserver`로 무한스크롤 구현
