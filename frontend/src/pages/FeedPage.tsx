@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
-import { useTodayFeed, useCreateCheckin, usePhotoUploadUrl, useSameCategoryUsers } from '@/hooks/useCheckin'
+import { useInfiniteTodayFeed, useCreateCheckin, usePhotoUploadUrl, useSameCategoryUsers, useDeleteCheckin } from '@/hooks/useCheckin'
 import { useFollowToggle } from '@/hooks/useFollow'
 import { useAuthStore } from '@/store/authStore'
 import { AUTO_TITLES, CATEGORY_META } from '@/lib/categories'
@@ -40,6 +40,36 @@ function getParticipationMessage(count: number): string {
   if (hour >= 5 && hour < 12) return `오전에만 벌써 ${count}명이 활동을 기록했어요`
   if (hour >= 12 && hour < 18) return `오늘 오후에 벌써 ${count}명이 활동을 기록했어요`
   return `오늘 하루 ${count}명이 활동을 기록했어요`
+}
+
+// 피드 카드 래퍼 — 삭제 hook을 카드별로 개별 인스턴스화
+function FeedCheckinCard({
+  checkin,
+  currentUserId,
+  onNavigate,
+  onAlsoCheckin,
+}: {
+  checkin: any
+  currentUserId?: number
+  onNavigate: () => void
+  onAlsoCheckin: () => void
+}) {
+  const isOwner = currentUserId != null && checkin.userId === currentUserId
+  const deleteCheckin = useDeleteCheckin(checkin.id)
+
+  const handleDelete = isOwner
+    ? () => deleteCheckin.mutate()
+    : undefined
+
+  return (
+    <CheckInCard
+      checkin={checkin}
+      onClick={onNavigate}
+      isOwner={isOwner}
+      onDelete={handleDelete}
+      onAlsoCheckin={onAlsoCheckin}
+    />
+  )
 }
 
 function SameCategoryUserRow({ user, currentUserId, onFollowSuccess }: { user: any; currentUserId?: number; onFollowSuccess?: () => void }) {
@@ -105,7 +135,38 @@ export default function FeedPage() {
 
   const [sameCategorySheetOpen, setSameCategorySheetOpen] = useState(false)
 
-  const { data: feed, isLoading, isError } = useTodayFeed(feedTab)
+  const {
+    data: infiniteFeed,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteTodayFeed(feedTab)
+
+  // IntersectionObserver — 하단 센티넬 감지 시 다음 페이지 로드
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const onIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage()
+      }
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  )
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    // Layout의 스크롤 컨테이너(main.overflow-y-auto)를 root로 지정
+    const scrollContainer = el.closest('main.overflow-y-auto') ?? null
+    const observer = new IntersectionObserver(onIntersect, {
+      root: scrollContainer,
+      rootMargin: '300px',
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [onIntersect])
+
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
   const { data: sameCategoryUsers, refetch: fetchSameCategoryUsers, isFetching: isFetchingUsers } = useSameCategoryUsers()
@@ -245,12 +306,14 @@ export default function FeedPage() {
     )
   }
 
-  const sameCategoryUserCount: number = feed?.sameCategoryUserCount ?? 0
-  const totalCheckinCount: number = feed?.totalCheckinCount ?? 0
-  const activitySummary = feed?.activitySummary ?? []
-  const checkins = (feed?.checkins ?? []).filter(
-    (c: any) => !c.isSimple || c.userId === currentUser?.id
-  )
+  // infinite query — 첫 페이지에서 집계값 추출, 전체 페이지 체크인 flatMap
+  const firstPage = infiniteFeed?.pages?.[0]
+  const sameCategoryUserCount: number = firstPage?.sameCategoryUserCount ?? 0
+  const totalCheckinCount: number = firstPage?.totalCheckinCount ?? 0
+  const activitySummary = firstPage?.activitySummary ?? []
+  const checkins = (infiniteFeed?.pages ?? [])
+    .flatMap((p) => p.checkins)
+    .filter((c: any) => !c.isSimple || c.userId === currentUser?.id)
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
@@ -825,10 +888,11 @@ export default function FeedPage() {
         ) : (
           <div className="space-y-6 w-full max-w-4xl mx-auto">
             {checkins.map((checkin: any) => (
-              <CheckInCard
+              <FeedCheckinCard
                 key={checkin.id}
                 checkin={checkin}
-                onClick={() => navigate(`/checkin/${checkin.id}`)}
+                currentUserId={currentUser?.id}
+                onNavigate={() => navigate(`/checkin/${checkin.id}`)}
                 onAlsoCheckin={() => {
                   setSelectedCategory(checkin.category as Category)
                   setIsFormOpen(true)
@@ -838,6 +902,50 @@ export default function FeedPage() {
                 }}
               />
             ))}
+
+            {/* 스켈레톤 로딩 카드 — 다음 페이지 로드 중 표시 */}
+            {isFetchingNextPage && (
+              <>
+                {[0, 1].map((i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="rounded-2xl bg-card p-5 space-y-4 animate-pulse"
+                    style={{ border: `1px solid ${mA(0.10)}` }}
+                    aria-hidden="true"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full" style={{ background: mA(0.12) }} />
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 rounded-full w-24" style={{ background: mA(0.12) }} />
+                        <div className="h-3 rounded-full w-16" style={{ background: mA(0.08) }} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-4 rounded-full w-full" style={{ background: mA(0.10) }} />
+                      <div className="h-4 rounded-full w-4/5" style={{ background: mA(0.08) }} />
+                      <div className="h-4 rounded-full w-3/5" style={{ background: mA(0.06) }} />
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="h-8 rounded-xl w-16" style={{ background: mA(0.10) }} />
+                      <div className="h-8 rounded-xl w-16" style={{ background: mA(0.08) }} />
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* 인터섹션 센티넬 — 화면 진입 시 다음 페이지 로드 트리거 */}
+            <div ref={sentinelRef} className="h-4" aria-hidden="true" />
+
+            {/* 마지막 페이지 안내 */}
+            {!hasNextPage && checkins.length > 0 && (
+              <p
+                className="text-center text-sm font-semibold py-4"
+                style={{ color: mA(0.45) }}
+              >
+                모든 활동을 확인했어요
+              </p>
+            )}
           </div>
         )}
       </section>

@@ -81,6 +81,24 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
     @Query("SELECT l.checkin.id, l.reactionType FROM Like l WHERE l.checkin.id IN :checkinIds AND l.user.id = :userId")
     List<Object[]> findReactionsByUserIdAndCheckinIds(@Param("checkinIds") List<Long> checkinIds, @Param("userId") Long userId);
 
+    /**
+     * 커서 기반 피드 조회 (날짜 필터 없음 — 의도된 설계).
+     * cursor가 null이면 최신순으로 limit개 반환.
+     * cursor가 있으면 해당 id보다 작은 체크인만 반환.
+     */
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT c FROM Checkin c WHERE (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    List<Checkin> findAllByCursorOrderByIdDesc(@Param("cursor") Long cursor, @Param("limit") int limit);
+
+    /**
+     * 팔로우 피드 커서 기반 조회
+     */
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    List<Checkin> findByUserIdsByCursorOrderByIdDesc(@Param("userIds") List<Long> userIds,
+                                                     @Param("cursor") Long cursor,
+                                                     @Param("limit") int limit);
+
     // 가족 피드: 특정 사용자들의 전체 체크인 조회 (날짜 제한 없음)
     @EntityGraph(attributePaths = "user")
     @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds ORDER BY c.createdAt DESC")

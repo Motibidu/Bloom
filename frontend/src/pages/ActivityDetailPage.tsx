@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle } from 'lucide-react'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import PraiseCardPicker, { PRAISE_CARDS } from '@/components/ui/domain/checkin/praise-card-picker'
 import { Textarea } from '@/components/ui/shadcn/textarea'
@@ -36,6 +36,7 @@ export default function ActivityDetailPage() {
   const [commentTab, setCommentTab] = useState<'text' | 'praise'>('text')
   const [selectedPraiseCard, setSelectedPraiseCard] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const currentUser = useAuthStore((s) => s.user)
 
@@ -45,8 +46,7 @@ export default function ActivityDetailPage() {
   const deleteCheckin = useDeleteCheckin(checkinId)
   const createComment = useCreateComment(checkinId)
 
-  const handleDelete = () => {
-    if (!window.confirm('이 활동을 삭제할까요?')) return
+  const handleDeleteConfirm = () => {
     deleteCheckin.mutate(undefined, {
       onSuccess: () => navigate('/'),
     })
@@ -141,10 +141,63 @@ export default function ActivityDetailPage() {
         checkin={checkin}
         showFullContent
         isOwner={isOwner}
-        onDelete={handleDelete}
+        onDelete={() => setDeleteConfirmOpen(true)}
         onPhotoClick={(i) => setLightboxIndex(i)}
         commentCount={commentList.length}
       />
+
+      {/* ── 삭제 확인 모달 ────────────────────────────────────────────────────── */}
+      {deleteConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: 'oklch(0 0 0 / 0.50)' }}
+          onClick={() => setDeleteConfirmOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="활동 삭제 확인"
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl px-7 py-8 space-y-6"
+            style={{ background: 'white', boxShadow: `0 8px 40px ${mA(0.25)}` }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: 'oklch(0.95 0.02 25)' }}
+                aria-hidden="true"
+              >
+                <AlertTriangle size={32} className="text-destructive" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-black text-foreground">활동을 삭제할까요?</h3>
+                <p className="text-base font-medium text-muted-foreground leading-relaxed">
+                  삭제한 활동은 복구할 수 없어요
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="flex-1 min-h-[52px] rounded-2xl text-lg font-black focus-visible:outline-none focus-visible:ring-2"
+                style={{ background: mA(0.08), color: dark }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleteCheckin.isPending}
+                className="flex-1 min-h-[52px] rounded-2xl text-lg font-black text-white focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+                style={{ background: 'oklch(0.55 0.18 25)' }}
+              >
+                {deleteCheckin.isPending ? '삭제 중...' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 댓글 영역 ──────────────────────────────────────────────────────────── */}
       <section aria-label="댓글" className="w-full space-y-5">
