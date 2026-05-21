@@ -505,7 +505,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 프론트엔드: `useInfiniteQuery` + `IntersectionObserver`로 무한스크롤 구현
   - 스켈레톤 로딩 카드 유지하며 자연스러운 추가 로딩 UX
 
-- [ ] **Task 044: 신고 / 차단 기능**
+- [x] **Task 044: 신고 / 차단 기능**
   - `reports` 테이블: 신고 사유 ENUM (SPAM / INAPPROPRIATE / ABUSE / OTHER)
   - `blocks` 테이블: 차단한 사용자 피드/댓글 자동 필터링
   - `POST /api/reports` — 체크인 또는 댓글 신고
@@ -513,7 +513,7 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 체크인 카드 케밥 메뉴에 "신고하기" / "차단하기" 옵션 추가
   - 어드민 모더레이션 화면 (신고 목록, 처리 상태 관리)
 
-- [ ] **Task 045: Refresh Token Rotation**
+- [x] **Task 045: Refresh Token Rotation**
   - 갱신 시 새 리프레시 토큰 재발급 + 구 토큰 DB/Redis에 블랙리스트 등록
   - 탈취된 구 토큰 재사용 감지 시 해당 계정 전체 세션 무효화
   - `refresh_tokens` 테이블 또는 Redis TTL 기반 저장소 선택
