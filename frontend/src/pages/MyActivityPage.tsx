@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, BarChart2, Pencil } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BarChart2, Pencil, ShieldOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/categories'
 import { useMyCalendar, useMyCheckins, useMyCategoryStats } from '@/hooks/useMyActivity'
@@ -83,6 +83,15 @@ export default function MyActivityPage() {
           >
             <BarChart2 size={20} aria-hidden="true" />
             월간 리포트
+          </button>
+          <button
+            onClick={() => navigate('/me/blocks')}
+            aria-label="차단 목록 보기"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
+          >
+            <ShieldOff size={18} aria-hidden="true" />
+            차단 목록
           </button>
         </div>
       </div>
