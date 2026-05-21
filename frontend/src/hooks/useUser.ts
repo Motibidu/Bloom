@@ -18,7 +18,7 @@ export function useUpdateProfile() {
       api.patch<User>('/users/me', data).then((r) => r.data),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['user', 'me'] })
-      // authStore의 user 객체도 갱신
+      queryClient.invalidateQueries({ queryKey: ['checkins', 'today'] })
       setUser(updated)
     },
   })

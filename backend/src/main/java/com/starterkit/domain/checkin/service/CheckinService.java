@@ -1,5 +1,6 @@
 package com.starterkit.domain.checkin.service;
 
+import com.starterkit.domain.block.service.BlockService;
 import com.starterkit.domain.checkin.dto.request.CreateCheckinRequest;
 import com.starterkit.domain.checkin.dto.request.PhotoUploadUrlRequest;
 import com.starterkit.domain.checkin.dto.request.UpdateCheckinRequest;
@@ -49,6 +50,7 @@ public class CheckinService {
         private final CommentRepository commentRepository;
         private final LikeRepository likeRepository;
         private final FollowRepository followRepository;
+        private final BlockService blockService;
         private final S3Client s3Client;
         private final S3Presigner s3Presigner;
 
@@ -163,15 +165,24 @@ public class CheckinService {
         public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds, Long cursor, int limit) {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();
+                List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
                 List<Checkin> checkins;
                 if (followingIds != null) {
                         // 팔로우 피드: 팔로잉 목록이 없으면 빈 결과 반환
                         if (followingIds.isEmpty()) {
                                 return TodayFeedResponse.of(List.of(), 0, buildActivitySummary(range[0], range[1]), 0, null, false);
                         }
-                        checkins = checkinRepository.findByUserIdsByCursorOrderByIdDesc(followingIds, cursor, limit + 1);
+                        if (!blockedIds.isEmpty()) {
+                                checkins = checkinRepository.findByUserIdsByCursorExcludingUsersOrderByIdDesc(followingIds, blockedIds, cursor, limit + 1);
+                        } else {
+                                checkins = checkinRepository.findByUserIdsByCursorOrderByIdDesc(followingIds, cursor, limit + 1);
+                        }
                 } else {
-                        checkins = checkinRepository.findAllByCursorOrderByIdDesc(cursor, limit + 1);
+                        if (!blockedIds.isEmpty()) {
+                                checkins = checkinRepository.findAllByCursorExcludingUsersOrderByIdDesc(blockedIds, cursor, limit + 1);
+                        } else {
+                                checkins = checkinRepository.findAllByCursorOrderByIdDesc(cursor, limit + 1);
+                        }
                 }
 
                 if (checkins.isEmpty()) {

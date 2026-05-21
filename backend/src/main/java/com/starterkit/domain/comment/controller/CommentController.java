@@ -27,8 +27,10 @@ public class CommentController {
 
     @GetMapping("/{id}/comments")
     @Operation(summary = "댓글 목록 조회")
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(commentService.getComments(id));
+    public ResponseEntity<List<CommentResponse>> getComments(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(commentService.getComments(id, userDetails));
     }
 
     @PostMapping("/{id}/comments")

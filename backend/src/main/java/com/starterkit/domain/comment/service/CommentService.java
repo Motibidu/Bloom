@@ -1,5 +1,6 @@
 package com.starterkit.domain.comment.service;
 
+import com.starterkit.domain.block.service.BlockService;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
@@ -26,10 +27,20 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final BlockService blockService;
 
-    public List<CommentResponse> getComments(Long checkinId) {
+    public List<CommentResponse> getComments(Long checkinId, UserDetails userDetails) {
         checkinRepository.findById(checkinId)
                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
+        if (!blockedIds.isEmpty()) {
+            return commentRepository.findByCheckinIdExcludingUsersOrderByCreatedAtDesc(checkinId, blockedIds)
+                    .stream()
+                    .map(CommentResponse::from)
+                    .toList();
+        }
         return commentRepository.findByCheckinIdOrderByCreatedAtDesc(checkinId)
                 .stream()
                 .map(CommentResponse::from)

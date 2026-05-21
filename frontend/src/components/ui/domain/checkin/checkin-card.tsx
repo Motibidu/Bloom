@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Eye, MessageCircle, MoreVertical, PlusCircle, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Eye, MessageCircle, MoreVertical, PlusCircle, Pencil, Trash2, X, Check, Flag, ShieldOff } from 'lucide-react'
 import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/categories'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
 import { useLikeToggle, useUpdateCheckin } from '@/hooks/useCheckin'
+import { useCreateReport } from '@/hooks/useReport'
+import { useBlockUser } from '@/hooks/useBlock'
 import type { CheckIn, Category } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -265,6 +267,171 @@ function DeleteConfirmModal({
   )
 }
 
+const REASON_LABELS: Record<string, string> = {
+  SPAM: '스팸/도배',
+  INAPPROPRIATE: '부적절한 콘텐츠',
+  ABUSE: '욕설/혐오 표현',
+  OTHER: '기타',
+}
+
+// ── 신고 모달 ────────────────────────────────────────────────────────────────
+function ReportModal({
+  checkinId,
+  onClose,
+}: {
+  checkinId: number
+  onClose: () => void
+}) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const createReport = useCreateReport()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const handleSubmit = async () => {
+    if (!selected) return
+    await createReport.mutateAsync({ targetType: 'CHECKIN', targetId: checkinId, reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER' })
+    onClose()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="활동 신고"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black text-foreground">신고 사유 선택</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="w-11 h-11 rounded-xl flex items-center justify-center"
+            style={{ background: mA(0.06), color: dark }}
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Object.entries(REASON_LABELS).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSelected(value)}
+              className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-base font-bold text-left transition-all"
+              style={{
+                background: selected === value ? mA(0.10) : mA(0.04),
+                border: `2px solid ${selected === value ? mA(0.40) : mA(0.10)}`,
+                color: dark,
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                style={{ borderColor: selected === value ? mA(1) : mA(0.30) }}
+              >
+                {selected === value && (
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: mA(1) }} />
+                )}
+              </div>
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!selected || createReport.isPending}
+          className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center disabled:opacity-40 transition-opacity"
+          style={{ background: 'oklch(0.55 0.18 20)' }}
+        >
+          {createReport.isPending ? (
+            <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-hidden="true" />
+          ) : '신고하기'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 차단 확인 모달 ────────────────────────────────────────────────────────────
+function BlockConfirmModal({
+  targetUserId,
+  nickname,
+  onClose,
+}: {
+  targetUserId: number
+  nickname: string
+  onClose: () => void
+}) {
+  const blockUser = useBlockUser()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const handleConfirm = async () => {
+    await blockUser.mutateAsync(targetUserId)
+    onClose()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="사용자 차단 확인"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="text-center space-y-2 pt-2">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'oklch(0.95 0.02 20)' }}
+            aria-hidden="true"
+          >
+            <ShieldOff size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+          </div>
+          <h2 className="text-xl font-black text-foreground">{nickname}님을 차단할까요?</h2>
+          <p className="text-base text-foreground/60">차단하면 이 분의 활동이 피드에서 보이지 않아요.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={blockUser.isPending}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white disabled:opacity-40 transition-opacity"
+            style={{ background: 'oklch(0.55 0.18 20)' }}
+          >
+            {blockUser.isPending ? (
+              <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin mx-auto" aria-hidden="true" />
+            ) : '차단하기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CheckInCard({
   checkin,
   onClick,
@@ -280,6 +447,8 @@ export default function CheckInCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
 
   const isClickable = !!onClick
 
@@ -402,6 +571,50 @@ export default function CheckInCard({
               )}
             </div>
           )}
+
+          {/* 신고/차단 케밥 메뉴 (비소유자 전용) */}
+          {!isOwner && (
+            <div className="relative z-10">
+              <button
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
+                aria-label="더 보기 메뉴"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+                className="inline-flex items-center justify-center w-11 h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [-webkit-tap-highlight-color:transparent]"
+                style={{ color: dark, background: menuOpen ? mA(0.10) : 'transparent' }}
+              >
+                <MoreVertical size={20} aria-hidden="true" />
+              </button>
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setMenuOpen(false)} />
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-12 z-20 min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
+                    style={{ background: 'white', border: `1px solid ${mA(0.15)}`, boxShadow: `0 8px 24px ${mA(0.18)}` }}
+                  >
+                    <button
+                      role="menuitem"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setReportOpen(true) }}
+                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                      style={{ color: 'oklch(0.55 0.18 20)' }}
+                    >
+                      <Flag size={16} aria-hidden="true" />
+                      신고하기
+                    </button>
+                    <button
+                      role="menuitem"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setBlockOpen(true) }}
+                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                    >
+                      <ShieldOff size={16} aria-hidden="true" />
+                      차단하기
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -469,6 +682,22 @@ export default function CheckInCard({
         <DeleteConfirmModal
           onConfirm={() => { setDeleteConfirmOpen(false); onDelete?.() }}
           onClose={() => setDeleteConfirmOpen(false)}
+        />,
+        document.body
+      )}
+
+      {/* 신고 모달 */}
+      {reportOpen && createPortal(
+        <ReportModal checkinId={checkin.id} onClose={() => setReportOpen(false)} />,
+        document.body
+      )}
+
+      {/* 차단 확인 모달 */}
+      {blockOpen && createPortal(
+        <BlockConfirmModal
+          targetUserId={checkin.userId}
+          nickname={checkin.nickname}
+          onClose={() => setBlockOpen(false)}
         />,
         document.body
       )}
