@@ -326,11 +326,15 @@ export default function CheckInCard({
       <div className="pl-5 pr-5 pt-4 pb-2">
         <div className="flex items-center gap-3">
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-black"
-            style={{ background: grad, color: 'white', boxShadow: `0 2px 8px ${mA(0.25)}` }}
+            className="w-12 h-12 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-lg font-black"
+            style={checkin.profileImageUrl ? { boxShadow: `0 2px 8px ${mA(0.25)}` } : { background: grad, color: 'white', boxShadow: `0 2px 8px ${mA(0.25)}` }}
             aria-label={`${checkin.nickname} 아바타`}
           >
-            <span aria-hidden="true">{checkin.nickname[0]}</span>
+            {checkin.profileImageUrl ? (
+              <img src={checkin.profileImageUrl} alt={`${checkin.nickname} 프로필`} className="w-full h-full object-cover" />
+            ) : (
+              <span aria-hidden="true">{checkin.nickname[0]}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-1">
             <div className="flex items-center gap-2">

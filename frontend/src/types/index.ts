@@ -11,6 +11,7 @@ export interface CheckIn {
   id: number
   userId: number
   nickname: string
+  profileImageUrl?: string | null
   category: Category
   title: string
   description: string
