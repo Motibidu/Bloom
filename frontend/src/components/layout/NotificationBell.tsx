@@ -147,7 +147,7 @@ export default function NotificationBell() {
       markAsRead.mutate(n.id)
     }
     setOpen(false)
-    navigate(`/checkins/${n.checkinId}`)
+    navigate(`/checkin/${n.checkinId}`)
   }
 
   function handleMarkAll() {
