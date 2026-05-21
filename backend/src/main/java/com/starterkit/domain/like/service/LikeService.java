@@ -79,10 +79,14 @@ public class LikeService {
         }
 
         if (liked && !checkin.getUser().getId().equals(user.getId())) {
-            notificationService.sendPush(
+            String msg = user.getNickname() + "님이 활동에 공감했어요";
+            notificationService.sendPush(checkin.getUser().getId(), "나도 했어요!", msg);
+            notificationService.sendInApp(
                     checkin.getUser().getId(),
-                    "나도 했어요!",
-                    user.getNickname() + "님이 활동에 공감했어요"
+                    user.getNickname(),
+                    com.starterkit.domain.notification.entity.NotificationType.LIKE,
+                    checkinId,
+                    msg
             );
         }
 

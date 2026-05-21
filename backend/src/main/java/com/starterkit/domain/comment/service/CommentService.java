@@ -55,10 +55,14 @@ public class CommentService {
         CommentResponse response = CommentResponse.from(commentRepository.save(comment));
 
         if (!checkin.getUser().getId().equals(user.getId())) {
-            notificationService.sendPush(
+            String msg = user.getNickname() + "님이 댓글을 남겼어요";
+            notificationService.sendPush(checkin.getUser().getId(), "새 댓글", msg);
+            notificationService.sendInApp(
                     checkin.getUser().getId(),
-                    "새 댓글",
-                    user.getNickname() + "님이 댓글을 남겼어요"
+                    user.getNickname(),
+                    com.starterkit.domain.notification.entity.NotificationType.COMMENT,
+                    checkinId,
+                    msg
             );
         }
 

@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getMessaging, getToken } from 'firebase/messaging'
+import { getMessaging, getToken, onMessage } from 'firebase/messaging'
 import api from './api'
+import { queryClient } from './queryClient'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -38,6 +39,11 @@ export async function registerFcmWeb(): Promise<void> {
 
     console.log('[fcm] FCM 토큰:', token)
     await api.post('/push-tokens', { token })
+
+    // 포그라운드 수신 시 알림 캐시 갱신 (시스템 알림바 표시 억제)
+    onMessage(messaging, () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    })
   } catch (e) {
     console.warn('[fcm] FCM 토큰 등록 실패:', e)
   }
