@@ -158,7 +158,7 @@ export default function FeedPage() {
     const el = sentinelRef.current
     if (!el) return
     // Layout의 스크롤 컨테이너(main.overflow-y-auto)를 root로 지정
-    const scrollContainer = el.closest('main.overflow-y-auto') ?? null
+    const scrollContainer = el.closest('.overflow-y-auto') ?? null
     const observer = new IntersectionObserver(onIntersect, {
       root: scrollContainer,
       rootMargin: '300px',

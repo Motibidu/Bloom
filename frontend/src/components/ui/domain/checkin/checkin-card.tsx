@@ -458,6 +458,18 @@ export default function CheckInCard({
   const [reportOpen, setReportOpen] = useState(false)
   const [blockOpen, setBlockOpen] = useState(false)
 
+  const menuBtnRef = useRef<HTMLButtonElement>(null)
+  const [menuPos, setMenuPos] = useState<React.CSSProperties>({})
+
+  const openMenu = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!menuOpen && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect()
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    }
+    setMenuOpen(prev => !prev)
+  }
+
   const isClickable = !!onClick
 
   return (
@@ -534,11 +546,12 @@ export default function CheckInCard({
             </time>
           </div>
 
-          {/* 수정/삭제 케밥 메뉴 (소유자 전용) */}
-          {isOwner && (
+          {/* 케밥 메뉴 (소유자: 수정/삭제 / 비소유자: 신고/차단) */}
+          {(isOwner || !isOwner) && (
             <div className="relative z-10">
               <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
+                ref={menuBtnRef}
+                onClick={openMenu}
                 aria-label="더 보기 메뉴"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
@@ -547,79 +560,69 @@ export default function CheckInCard({
               >
                 <MoreVertical size={20} aria-hidden="true" />
               </button>
-              {menuOpen && (
+              {menuOpen && createPortal(
                 <>
-                  <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setMenuOpen(false)} />
+                  <div
+                    className="fixed inset-0 z-[90]"
+                    aria-hidden="true"
+                    onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }}
+                  />
                   <div
                     role="menu"
-                    className="absolute right-0 top-12 z-20 min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
-                    style={{ background: 'white', border: `1px solid ${mA(0.15)}`, boxShadow: `0 8px 24px ${mA(0.18)}` }}
+                    className="fixed z-[91] min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
+                    style={{
+                      ...menuPos,
+                      background: 'white',
+                      border: `1px solid ${mA(0.15)}`,
+                      boxShadow: `0 8px 24px ${mA(0.18)}`,
+                    }}
                   >
-                    <button
-                      role="menuitem"
-                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setEditOpen(true) }}
-                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
-                      style={{ color: dark }}
-                    >
-                      <Pencil size={16} aria-hidden="true" />
-                      수정하기
-                    </button>
-                    {onDelete && (
-                      <button
-                        role="menuitem"
-                        onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setDeleteConfirmOpen(true) }}
-                        className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                        삭제하기
-                      </button>
+                    {isOwner ? (
+                      <>
+                        <button
+                          role="menuitem"
+                          onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setEditOpen(true) }}
+                          className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                          style={{ color: dark }}
+                        >
+                          <Pencil size={16} aria-hidden="true" />
+                          수정하기
+                        </button>
+                        {onDelete && (
+                          <button
+                            role="menuitem"
+                            onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setDeleteConfirmOpen(true) }}
+                            className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                          >
+                            <Trash2 size={16} aria-hidden="true" />
+                            삭제하기
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          role="menuitem"
+                          onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setReportOpen(true) }}
+                          className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                          style={{ color: 'oklch(0.55 0.18 20)' }}
+                        >
+                          <Flag size={16} aria-hidden="true" />
+                          신고하기
+                        </button>
+                        <button
+                          role="menuitem"
+                          onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setBlockOpen(true) }}
+                          className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                        >
+                          <ShieldOff size={16} aria-hidden="true" />
+                          차단하기
+                        </button>
+                      </>
                     )}
                   </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* 신고/차단 케밥 메뉴 (비소유자 전용) */}
-          {!isOwner && (
-            <div className="relative z-10">
-              <button
-                onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
-                aria-label="더 보기 메뉴"
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                className="inline-flex items-center justify-center w-11 h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [-webkit-tap-highlight-color:transparent]"
-                style={{ color: dark, background: menuOpen ? mA(0.10) : 'transparent' }}
-              >
-                <MoreVertical size={20} aria-hidden="true" />
-              </button>
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setMenuOpen(false)} />
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-12 z-20 min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
-                    style={{ background: 'white', border: `1px solid ${mA(0.15)}`, boxShadow: `0 8px 24px ${mA(0.18)}` }}
-                  >
-                    <button
-                      role="menuitem"
-                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setReportOpen(true) }}
-                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
-                      style={{ color: 'oklch(0.55 0.18 20)' }}
-                    >
-                      <Flag size={16} aria-hidden="true" />
-                      신고하기
-                    </button>
-                    <button
-                      role="menuitem"
-                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setBlockOpen(true) }}
-                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
-                    >
-                      <ShieldOff size={16} aria-hidden="true" />
-                      차단하기
-                    </button>
-                  </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
           )}
