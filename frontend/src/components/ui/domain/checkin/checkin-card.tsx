@@ -286,14 +286,21 @@ function ReportModal({
   onSuccess: () => void
 }) {
   const [selected, setSelected] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const createReport = useCreateReport()
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const handleSubmit = async () => {
     if (!selected) return
-    await createReport.mutateAsync({ targetType: 'CHECKIN', targetId: checkinId, reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER' })
-    onClose()
-    onSuccess()
+    setErrorMsg(null)
+    try {
+      await createReport.mutateAsync({ targetType: 'CHECKIN', targetId: checkinId, reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER' })
+      onClose()
+      onSuccess()
+    } catch (err: any) {
+      const msg = err?.response?.data?.message
+      setErrorMsg(msg ?? '신고 처리 중 오류가 발생했습니다.')
+    }
   }
 
   return (
@@ -349,6 +356,9 @@ function ReportModal({
             </button>
           ))}
         </div>
+        {errorMsg && (
+          <p className="text-base font-bold text-center" style={{ color: 'oklch(0.50 0.20 20)' }}>{errorMsg}</p>
+        )}
         <button
           type="button"
           onClick={handleSubmit}
