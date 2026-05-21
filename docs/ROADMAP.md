@@ -492,10 +492,12 @@ Phase 6 완료 후 사용자 피드백을 반영하여 소셜 연결 기능을 �
   - 프로필 편집 UI에 이미지 변경 버튼 + 원형 미리보기 + S3 업로드 플로우
 
 - [x] **Task 042: 실시간 알림 (좋아요 / 댓글)**
-  - SSE(Server-Sent Events) 기반 알림 스트림: `GET /api/notifications/stream`
-  - `notifications` 테이블: `id`, `user_id`, `type` (LIKE / COMMENT / FOLLOW / FAMILY_JOIN), `actor_id`, `target_id`, `is_read`, `created_at`
-  - 헤더 알림 아이콘에 읽지 않은 알림 수 뱃지 표시
+  - FCM(Firebase Cloud Messaging) 기반 푸시 알림 — 앱(WebView) 포그라운드/백그라운드 모두 지원
+  - 포그라운드 수신 시 `onMessage()` 핸들러에서 React Query 캐시 무효화로 뱃지 즉시 갱신
+  - `notifications` 테이블: `id`, `user_id`, `type` (LIKE / COMMENT), `actor_nickname`, `checkin_id`, `message`, `is_read`, `created_at`
+  - 헤더 알림 아이콘에 읽지 않은 알림 수 뱃지 표시 (60초 폴링 fallback)
   - 알림 목록 드롭다운: 최근 20개, 클릭 시 해당 체크인 상세로 이동 + `is_read` 처리
+  - SSE 제거 — FCM 단일 채널로 통합
 
 - [x] **Task 043: 피드 무한스크롤 페이지네이션**
   - `GET /api/checkins/today`: 커서 기반 페이지네이션 (`?cursor=lastCheckinId&limit=20`) 추가
