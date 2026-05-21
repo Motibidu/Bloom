@@ -20,6 +20,7 @@ import DiscoverPage from '@/pages/DiscoverPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import KakaoCallbackPage from '@/pages/KakaoCallbackPage'
 import KakaoOnboardingPage from '@/pages/KakaoOnboardingPage'
+import ProfileEditPage from '@/pages/ProfileEditPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -94,6 +95,7 @@ export default function App() {
             <Route path="family/invite" element={<FamilyInvitePage />} />
             <Route path="discover" element={<DiscoverPage />} />
             <Route path="me" element={<MyActivityPage />} />
+            <Route path="me/edit" element={<ProfileEditPage />} />
             <Route path="me/report" element={<MonthlyReportPage />} />
             <Route path="kakao-onboarding" element={<KakaoOnboardingPage />} />
           </Route>

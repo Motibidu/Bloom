@@ -2,11 +2,14 @@ package com.starterkit.domain.user.controller;
 
 import com.starterkit.domain.checkin.dto.response.MonthlyReportResponse;
 import com.starterkit.domain.checkin.service.CheckinService;
+import com.starterkit.domain.user.dto.request.UpdateProfileRequest;
+import com.starterkit.domain.user.dto.response.ProfileImageUploadUrlResponse;
 import com.starterkit.domain.user.dto.response.UserResponse;
 import com.starterkit.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +45,24 @@ public class UserController {
             @RequestParam int month,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(checkinService.getMonthlyReport(userDetails.getUsername(), year, month));
+    }
+
+    @PostMapping("/me/profile-image-url")
+    @Operation(summary = "프로필 이미지 업로드 Presigned URL 발급")
+    public ResponseEntity<ProfileImageUploadUrlResponse> getProfileImageUploadUrl(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        com.starterkit.domain.user.entity.User user =
+                userService.findUserEntityByEmail(email);
+        return ResponseEntity.ok(userService.generateProfileImageUploadUrl(user.getId()));
+    }
+
+    @PatchMapping("/me")
+    @Operation(summary = "내 프로필 수정", description = "닉네임, 자기소개를 수정합니다. 닉네임 중복 시 409 반환.")
+    public ResponseEntity<UserResponse> updateMe(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(userDetails.getUsername(), request));
     }
 
     @GetMapping("/check-nickname")

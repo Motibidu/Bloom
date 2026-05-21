@@ -1,4 +1,5 @@
 import { LogOut, UserRound, Smile } from 'lucide-react'
+import NotificationBell from '@/components/layout/NotificationBell'
 import { Link, useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback } from '@/components/ui/shadcn/avatar'
 import {
@@ -67,6 +68,9 @@ export default function Header() {
         >
           찾기
         </Link>
+
+        {/* 알림 벨 */}
+        <NotificationBell />
 
         {/* 프로필 아바타 드롭다운 */}
         <DropdownMenu>

@@ -4,4 +4,5 @@ export interface User {
   nickname: string
   bio?: string
   canWriteFeed: boolean
+  profileImageUrl?: string
 }
