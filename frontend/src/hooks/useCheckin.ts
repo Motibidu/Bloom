@@ -1,7 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
-// 오늘의 피드
+export interface TodayFeedPage {
+  checkins: any[]
+  sameCategoryUserCount: number
+  activitySummary: any[]
+  totalCheckinCount: number
+  nextCursor: number | null
+  hasMore: boolean
+}
+
+// 무한스크롤 피드 (커서 기반 페이지네이션)
+export function useInfiniteTodayFeed(feedType: 'all' | 'following' = 'all') {
+  return useInfiniteQuery<TodayFeedPage>({
+    queryKey: ['checkins', 'today', feedType, 'infinite'],
+    queryFn: ({ pageParam }) =>
+      api.get<TodayFeedPage>('/checkins/today', {
+        params: {
+          feedType,
+          cursor: pageParam ?? undefined,
+          limit: 20,
+        },
+      }).then(r => r.data),
+    initialPageParam: null as number | null,
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
+  })
+}
+
+// 오늘의 피드 (기존 단일 페이지 — 하위 호환용)
 export function useTodayFeed(feedType: 'all' | 'following' = 'all') {
   return useQuery({
     queryKey: ['checkins', 'today', feedType],
@@ -49,6 +75,19 @@ export function useDeleteCheckin(checkinId: number) {
   })
 }
 
+// 체크인 수정
+export function useUpdateCheckin(checkinId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { category: string; title?: string; description: string }) =>
+      api.patch(`/checkins/${checkinId}`, data).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkins', 'today'] })
+      queryClient.invalidateQueries({ queryKey: ['checkins', checkinId] })
+    },
+  })
+}
+
 // 체크인 상세
 export function useCheckinDetail(id: number) {
   return useQuery({
@@ -76,10 +115,14 @@ export function useLikeToggle(checkinId: number) {
       api.post(`/checkins/${checkinId}/likes`, reactionType ? { reactionType } : {}).then(r => r.data),
     onMutate: async ({ reactionType }) => {
       await queryClient.cancelQueries({ queryKey: ['checkins', checkinId] })
+      // infinite query 키 패턴 취소
       await queryClient.cancelQueries({ queryKey: ['checkins', 'today'] })
 
       const prevDetail = queryClient.getQueryData(['checkins', checkinId])
-      const prevFeed = queryClient.getQueryData(['checkins', 'today'])
+
+      // infinite query 캐시 백업 (all / following 두 가지 feedType)
+      const prevFeedAll = queryClient.getQueryData(['checkins', 'today', 'all', 'infinite'])
+      const prevFeedFollowing = queryClient.getQueryData(['checkins', 'today', 'following', 'infinite'])
 
       const updater = (old: any) => {
         const prevReaction = old.myReactionType as string | null
@@ -108,20 +151,31 @@ export function useLikeToggle(checkinId: number) {
         }
       }
 
+      // 상세 페이지 낙관적 업데이트
       queryClient.setQueryData(['checkins', checkinId], (old: any) => old ? updater(old) : old)
-      queryClient.setQueryData(['checkins', 'today'], (old: any) => {
-        if (!old?.checkins) return old
+
+      // infinite query 캐시 낙관적 업데이트 (pages 배열 구조)
+      const infiniteUpdater = (old: any) => {
+        if (!old?.pages) return old
         return {
           ...old,
-          checkins: old.checkins.map((c: any) => c.id === checkinId ? updater(c) : c),
+          pages: old.pages.map((page: TodayFeedPage) => ({
+            ...page,
+            checkins: page.checkins.map((c: any) =>
+              c.id === checkinId ? updater(c) : c
+            ),
+          })),
         }
-      })
+      }
+      queryClient.setQueryData(['checkins', 'today', 'all', 'infinite'], infiniteUpdater)
+      queryClient.setQueryData(['checkins', 'today', 'following', 'infinite'], infiniteUpdater)
 
-      return { prevDetail, prevFeed }
+      return { prevDetail, prevFeedAll, prevFeedFollowing }
     },
     onError: (_err, _vars, context: any) => {
       if (context?.prevDetail) queryClient.setQueryData(['checkins', checkinId], context.prevDetail)
-      if (context?.prevFeed) queryClient.setQueryData(['checkins', 'today'], context.prevFeed)
+      if (context?.prevFeedAll) queryClient.setQueryData(['checkins', 'today', 'all', 'infinite'], context.prevFeedAll)
+      if (context?.prevFeedFollowing) queryClient.setQueryData(['checkins', 'today', 'following', 'infinite'], context.prevFeedFollowing)
     },
     onSettled: () => {
       // 상세 페이지는 invalidate 하지 않음 — GET /checkins/{id}가 viewCount를 증가시키기 때문

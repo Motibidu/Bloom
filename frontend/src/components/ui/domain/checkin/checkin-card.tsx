@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { Eye, MessageCircle, MoreVertical, PlusCircle } from 'lucide-react'
-import { CATEGORY_META } from '@/lib/categories'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { Eye, MessageCircle, MoreVertical, PlusCircle, Pencil, Trash2, X, Check } from 'lucide-react'
+import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/categories'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
-import { useLikeToggle } from '@/hooks/useCheckin'
-import type { CheckIn } from '@/types'
+import { useLikeToggle, useUpdateCheckin } from '@/hooks/useCheckin'
+import type { CheckIn, Category } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
@@ -33,6 +34,237 @@ interface Props {
   onAlsoCheckin?: () => void
 }
 
+// ── 수정 모달 ────────────────────────────────────────────────────────────────
+function EditModal({
+  checkin,
+  onClose,
+}: {
+  checkin: CheckIn
+  onClose: () => void
+}) {
+  const [editCategory, setEditCategory] = useState<Category>(checkin.category)
+  const [editTitle, setEditTitle] = useState(checkin.title)
+  const [editDesc, setEditDesc] = useState(checkin.description)
+  const updateCheckin = useUpdateCheckin(checkin.id)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 모달 열릴 때 textarea 포커스
+  useEffect(() => {
+    const t = setTimeout(() => textareaRef.current?.focus(), 80)
+    return () => clearTimeout(t)
+  }, [])
+
+  const handleSubmit = async () => {
+    if (!editTitle.trim() || !editDesc.trim()) return
+    await updateCheckin.mutateAsync({ category: editCategory, title: editTitle.trim(), description: editDesc.trim() })
+    onClose()
+  }
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === overlayRef.current) onClose()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label="체크인 수정"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl flex flex-col max-h-[88dvh]"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 고정 헤더 */}
+        <div className="px-6 pt-5 pb-4 shrink-0">
+          <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: mA(0.20) }} aria-hidden="true" />
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black text-foreground">활동 수정하기</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="수정 취소"
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: mA(0.06), color: dark }}
+            >
+              <X size={20} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        {/* 스크롤 영역 */}
+        <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-5">
+          {/* 카테고리 선택 */}
+          <div className="space-y-2">
+            <p className="text-base font-bold" style={{ color: dark }}>카테고리</p>
+            <div className="grid grid-cols-4 gap-2">
+              {CATEGORY_ORDER.map(cat => {
+                const { icon: CatIcon, label } = CATEGORY_META[cat]
+                const isSelected = editCategory === cat
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setEditCategory(cat)}
+                    aria-pressed={isSelected}
+                    aria-label={label}
+                    className="flex flex-col items-center gap-1 min-h-[60px] rounded-2xl px-2 py-3 transition-all focus-visible:outline-none focus-visible:ring-2"
+                    style={{
+                      background: isSelected ? `linear-gradient(135deg, ${main}, ${light})` : mA(0.06),
+                      border: isSelected ? 'none' : `1px solid ${mA(0.12)}`,
+                      color: isSelected ? 'white' : dark,
+                      boxShadow: isSelected ? `0 4px 12px ${mA(0.30)}` : 'none',
+                      transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                    }}
+                  >
+                    <CatIcon size={20} aria-hidden="true" />
+                    <span className="text-xs font-bold leading-none">{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* 제목 입력 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="edit-title" className="text-base font-bold" style={{ color: dark }}>
+                제목
+              </label>
+              <span className="text-sm font-medium text-foreground/50" aria-live="polite">
+                {editTitle.length}/50
+              </span>
+            </div>
+            <input
+              id="edit-title"
+              type="text"
+              maxLength={50}
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
+              placeholder="활동 제목을 입력해 주세요"
+              className="w-full rounded-2xl px-4 py-3 text-base text-foreground leading-relaxed outline-none border-2 transition-colors"
+              style={{
+                borderColor: editTitle.length > 0 ? mA(0.45) : mA(0.15),
+                background: mA(0.03),
+              }}
+            />
+          </div>
+
+          {/* 설명 입력 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="edit-description" className="text-base font-bold" style={{ color: dark }}>
+                내용
+              </label>
+              <span className="text-sm font-medium text-foreground/50" aria-live="polite">
+                {editDesc.length}/300
+              </span>
+            </div>
+            <textarea
+              ref={textareaRef}
+              id="edit-description"
+              rows={4}
+              maxLength={300}
+              value={editDesc}
+              onChange={e => setEditDesc(e.target.value)}
+              placeholder="활동 내용을 입력해 주세요"
+              className="w-full resize-none rounded-2xl px-4 py-3 text-base text-foreground leading-relaxed outline-none border-2 transition-colors"
+              style={{
+                borderColor: editDesc.length > 0 ? mA(0.45) : mA(0.15),
+                background: mA(0.03),
+              }}
+            />
+          </div>
+
+          {/* 저장 버튼 */}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!editTitle.trim() || !editDesc.trim() || updateCheckin.isPending}
+            className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center gap-2 disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2"
+            style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
+            aria-label={updateCheckin.isPending ? '저장하는 중이에요' : '수정 저장하기'}
+          >
+            {updateCheckin.isPending ? (
+              <div className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-hidden="true" />
+            ) : (
+              <><Check size={20} aria-hidden="true" /><span>저장하기</span></>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 삭제 확인 모달 ──────────────────────────────────────────────────────────
+function DeleteConfirmModal({
+  onConfirm,
+  onClose,
+}: {
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === overlayRef.current) onClose()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label="활동 삭제 확인"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="text-center space-y-2 pt-2">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'oklch(0.95 0.02 20)' }}
+            aria-hidden="true"
+          >
+            <Trash2 size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+          </div>
+          <h2 className="text-xl font-black text-foreground">활동을 삭제할까요?</h2>
+          <p className="text-base text-foreground/60">삭제한 활동은 되돌릴 수 없어요.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.55 0.18 20)' }}
+          >
+            삭제하기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CheckInCard({
   checkin,
   onClick,
@@ -46,6 +278,8 @@ export default function CheckInCard({
   const { icon: Icon, label } = CATEGORY_META[checkin.category]
   const likeToggle = useLikeToggle(checkin.id)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const isClickable = !!onClick
 
@@ -119,18 +353,16 @@ export default function CheckInCard({
             </time>
           </div>
 
-          {/* 삭제 메뉴 (detail 페이지 소유자 전용) */}
-          {isOwner && onDelete && (
+          {/* 수정/삭제 케밥 메뉴 (소유자 전용) */}
+          {isOwner && (
             <div className="relative z-10">
               <button
-                onClick={() => setMenuOpen(prev => !prev)}
+                onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev) }}
                 aria-label="더 보기 메뉴"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
-                className="inline-flex items-center justify-center w-10 h-10 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center justify-center w-11 h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [-webkit-tap-highlight-color:transparent]"
                 style={{ color: dark, background: menuOpen ? mA(0.10) : 'transparent' }}
-                onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
-                onMouseLeave={e => { e.currentTarget.style.background = menuOpen ? mA(0.10) : 'transparent' }}
               >
                 <MoreVertical size={20} aria-hidden="true" />
               </button>
@@ -139,16 +371,28 @@ export default function CheckInCard({
                   <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setMenuOpen(false)} />
                   <div
                     role="menu"
-                    className="absolute right-0 top-11 z-20 min-w-[130px] rounded-2xl py-1 overflow-hidden"
+                    className="absolute right-0 top-12 z-20 min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
                     style={{ background: 'white', border: `1px solid ${mA(0.15)}`, boxShadow: `0 8px 24px ${mA(0.18)}` }}
                   >
                     <button
                       role="menuitem"
-                      onClick={() => { setMenuOpen(false); onDelete() }}
-                      className="w-full flex items-center gap-2 px-5 py-3.5 text-base font-bold text-destructive hover:bg-destructive/8 transition-colors text-left"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setEditOpen(true) }}
+                      className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                      style={{ color: dark }}
                     >
-                      삭제하기
+                      <Pencil size={16} aria-hidden="true" />
+                      수정하기
                     </button>
+                    {onDelete && (
+                      <button
+                        role="menuitem"
+                        onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setDeleteConfirmOpen(true) }}
+                        className="w-full flex items-center gap-2.5 px-5 py-3.5 text-base font-bold text-destructive transition-colors text-left [-webkit-tap-highlight-color:transparent]"
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                        삭제하기
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -209,6 +453,21 @@ export default function CheckInCard({
         </div>
         )}
       </div>
+
+      {/* 수정 모달 — overflow:hidden 제약 탈출을 위해 portal로 body에 렌더링 */}
+      {editOpen && createPortal(
+        <EditModal checkin={checkin} onClose={() => setEditOpen(false)} />,
+        document.body
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {deleteConfirmOpen && createPortal(
+        <DeleteConfirmModal
+          onConfirm={() => { setDeleteConfirmOpen(false); onDelete?.() }}
+          onClose={() => setDeleteConfirmOpen(false)}
+        />,
+        document.body
+      )}
 
       {/* 하단 반응 바 */}
       <div

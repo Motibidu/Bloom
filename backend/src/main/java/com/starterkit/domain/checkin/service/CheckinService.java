@@ -2,6 +2,7 @@ package com.starterkit.domain.checkin.service;
 
 import com.starterkit.domain.checkin.dto.request.CreateCheckinRequest;
 import com.starterkit.domain.checkin.dto.request.PhotoUploadUrlRequest;
+import com.starterkit.domain.checkin.dto.request.UpdateCheckinRequest;
 import com.starterkit.domain.checkin.dto.response.*;
 import com.starterkit.domain.checkin.entity.Category;
 import com.starterkit.domain.checkin.entity.Checkin;
@@ -106,6 +107,21 @@ public class CheckinService {
         }
 
         @Transactional
+        public CheckinResponse update(String email, Long id, UpdateCheckinRequest req) {
+                Checkin checkin = checkinRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+                User user = findUserByEmail(email);
+                if (!checkin.getUser().getId().equals(user.getId())) {
+                        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인의 체크인만 수정할 수 있습니다.");
+                }
+                checkin.update(req.category(), req.title(), req.description());
+                long likeCount = checkinRepository.countLikesByCheckinId(id);
+                boolean likedByMe = checkinRepository.existsLikeByCheckinIdAndUserId(id, user.getId());
+                long commentCount = checkinRepository.countCommentsByCheckinId(id);
+                return CheckinResponse.of(checkin, likeCount, likedByMe, commentCount, s3BaseUrl());
+        }
+
+        @Transactional
         public void delete(String email, Long id) {
                 Checkin checkin = checkinRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
@@ -144,23 +160,30 @@ public class CheckinService {
                 return CheckinResponse.of(checkin, likeCount, likedByMe, myReactionType, reactionCounts, commentCount, s3BaseUrl());
         }
 
-        public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds) {
+        public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds, Long cursor, int limit) {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();
                 List<Checkin> checkins;
                 if (followingIds != null) {
                         // 팔로우 피드: 팔로잉 목록이 없으면 빈 결과 반환
                         if (followingIds.isEmpty()) {
-                                return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]), 0);
+                                return TodayFeedResponse.of(List.of(), 0, buildActivitySummary(range[0], range[1]), 0, null, false);
                         }
-                        checkins = checkinRepository.findByUserIdsOrderByCreatedAtDesc(followingIds);
+                        checkins = checkinRepository.findByUserIdsByCursorOrderByIdDesc(followingIds, cursor, limit + 1);
                 } else {
-                        checkins = checkinRepository.findAllByOrderByCreatedAtDesc();
+                        checkins = checkinRepository.findAllByCursorOrderByIdDesc(cursor, limit + 1);
                 }
 
                 if (checkins.isEmpty()) {
-                        return new TodayFeedResponse(List.of(), 0, buildActivitySummary(range[0], range[1]), 0);
+                        return TodayFeedResponse.of(List.of(), 0, buildActivitySummary(range[0], range[1]), 0, null, false);
                 }
+
+                // limit+1 조회 후 hasMore 판단
+                boolean hasMore = checkins.size() > limit;
+                if (hasMore) {
+                        checkins = checkins.subList(0, limit);
+                }
+                Long nextCursor = hasMore ? checkins.get(checkins.size() - 1).getId() : null;
 
                 List<Long> checkinIds = checkins.stream().map(Checkin::getId).toList();
 
@@ -204,7 +227,7 @@ public class CheckinService {
                 // 단순 체크인 집계 (activitySummary)
                 List<ActivitySummaryItem> activitySummary = buildActivitySummary(range[0], range[1]);
 
-                return new TodayFeedResponse(responses, sameCategoryUserCount, activitySummary, responses.size());
+                return TodayFeedResponse.of(responses, sameCategoryUserCount, activitySummary, responses.size(), nextCursor, hasMore);
         }
 
         public List<CheckinResponse> getMyCheckins(String email, String date) {
