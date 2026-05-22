@@ -12,10 +12,8 @@ import {
 // ── 색상 토큰 ──────────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
-const light = 'oklch(0.76 0.12 220)'
 const red   = 'oklch(0.55 0.18 25)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
-const grad  = `linear-gradient(135deg, ${main}, ${light})`
 
 // ── 상대 시간 포매터 ──────────────────────────────────────────────────────
 function relativeTime(iso: string): string {
@@ -35,7 +33,7 @@ function NotificationRow({
   onRead,
 }: {
   notification: AppNotification
-  onRead: (n: SseNotification) => void
+  onRead: (n: AppNotification) => void
 }) {
   const Icon = notification.type === 'LIKE' ? Heart : MessageCircle
 
