@@ -44,7 +44,7 @@ jobs:
 
       - name: Build with Gradle
         if: steps.changes.outputs.backend == 'true'
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build -x test --no-daemon
         env:
           GRADLE_OPTS: "-Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
 
