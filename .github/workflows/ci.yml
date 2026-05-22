@@ -44,7 +44,9 @@ jobs:
 
       - name: Build with Gradle
         if: steps.changes.outputs.backend == 'true'
-        run: ./gradlew build --no-daemon
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build --no-daemon
 
   frontend:
     name: Frontend Build
