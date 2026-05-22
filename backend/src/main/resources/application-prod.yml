@@ -8,6 +8,9 @@ spring:
       ddl-auto: update
     show-sql: false
 
+sentry:
+  dsn: ${SENTRY_DSN:https://30b8b419abdaa2cc1a915fb2b9937b6d@o4511431330955264.ingest.us.sentry.io/4511431349895168}
+
 springdoc:
   swagger-ui:
     enabled: false
