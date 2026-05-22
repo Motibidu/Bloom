@@ -66,12 +66,15 @@ export function useKakaoLogin() {
 }
 
 export function useSetKakaoNickname() {
+  const { setUser } = useAuthStore()
   const navigate = useNavigate()
 
   return useMutation({
     mutationFn: (data: { nickname: string; birthYear: number }) =>
       api.patch('/auth/kakao/nickname', data).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      const userRes = await api.get('/users/me')
+      setUser(userRes.data)
       if (isNativeApp()) {
         flushPendingFcmToken()
       } else {
