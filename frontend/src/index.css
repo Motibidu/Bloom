@@ -28,6 +28,10 @@ body {
   line-height: 1.8;
 }
 
+button, [role="button"], a {
+  cursor: pointer;
+}
+
 @keyframes landing-fade-up {
   from {
     opacity: 0;

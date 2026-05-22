@@ -63,7 +63,10 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "로그아웃 — 리프레시 토큰 쿠키 삭제")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
+    public ResponseEntity<Void> logout(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
+        authService.logout(refreshToken);
         response.addHeader("Set-Cookie",
                 "refreshToken=; HttpOnly; Path=/api/auth/refresh; Max-Age=0; SameSite=Strict");
         return ResponseEntity.noContent().build();

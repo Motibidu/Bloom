@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BarChart2, Pencil, ShieldOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/categories'
 import { useMyCalendar, useMyCheckins, useMyCategoryStats } from '@/hooks/useMyActivity'
@@ -65,15 +65,35 @@ export default function MyActivityPage() {
     <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-foreground">나의 활동</h1>
-        <button
-          onClick={() => navigate('/me/report')}
-          aria-label="월간 리포트 보기"
-          className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
-          style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
-        >
-          <BarChart2 size={20} aria-hidden="true" />
-          월간 리포트
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/me/edit')}
+            aria-label="프로필 편집"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
+          >
+            <Pencil size={18} aria-hidden="true" />
+            프로필 편집
+          </button>
+          <button
+            onClick={() => navigate('/me/report')}
+            aria-label="월간 리포트 보기"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
+          >
+            <BarChart2 size={20} aria-hidden="true" />
+            월간 리포트
+          </button>
+          <button
+            onClick={() => navigate('/me/blocks')}
+            aria-label="차단 목록 보기"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-base min-h-[48px] transition-colors [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.62 0.15 220 / 0.1)', color: 'oklch(0.48 0.15 220)' }}
+          >
+            <ShieldOff size={18} aria-hidden="true" />
+            차단 목록
+          </button>
+        </div>
       </div>
 
       {/* 캘린더 섹션 */}

@@ -4,7 +4,9 @@ import com.starterkit.domain.auth.dto.request.LoginRequest;
 import com.starterkit.domain.auth.dto.request.RegisterRequest;
 import com.starterkit.domain.auth.dto.response.AuthResponse;
 import com.starterkit.domain.auth.dto.response.KakaoUserInfo;
+import com.starterkit.domain.auth.entity.RefreshToken;
 import com.starterkit.domain.auth.exception.TokenRefreshException;
+import com.starterkit.domain.auth.repository.RefreshTokenRepository;
 import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.exception.NicknameDuplicateException;
 import com.starterkit.domain.user.exception.UserAlreadyExistsException;
@@ -31,6 +33,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,6 +48,7 @@ public class AuthService implements UserDetailsService {
     private final JwtTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final RestTemplate restTemplate;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${app.kakao.rest-api-key:}")
     private String kakaoRestApiKey;
@@ -54,16 +59,21 @@ public class AuthService implements UserDetailsService {
     @Value("${app.kakao.redirect-uri:http://localhost:5173/kakao-callback}")
     private String kakaoRedirectUri;
 
+    @Value("${app.jwt.refresh-token-expiration-ms}")
+    private long refreshTokenExpirationMs;
+
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        @Lazy AuthenticationManager authenticationManager,
-                       RestTemplate restTemplate) {
+                       RestTemplate restTemplate,
+                       RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
         this.restTemplate = restTemplate;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Override
@@ -88,21 +98,54 @@ public class AuthService implements UserDetailsService {
                 .birthYear(req.birthYear())
                 .build();
         userRepository.save(user);
-        return generateTokenPair(user.getEmail());
+
+        AuthResponse pair = generateTokenPair(user.getEmail());
+        saveRefreshToken(pair.refreshToken(), user);
+        return pair;
     }
 
     public AuthResponse login(LoginRequest req) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.email(), req.password()));
-        return generateTokenPair(req.email());
+
+        User user = (User) loadUserByUsername(req.email());
+        AuthResponse pair = generateTokenPair(req.email());
+        saveRefreshToken(pair.refreshToken(), user);
+        return pair;
     }
 
-    public AuthResponse refresh(String refreshToken) {
-        if (refreshToken == null || !tokenProvider.validateToken(refreshToken)) {
+    public AuthResponse refresh(String rawToken) {
+        if (rawToken == null || !tokenProvider.validateToken(rawToken)) {
             throw new TokenRefreshException("Invalid or expired refresh token");
         }
-        String email = tokenProvider.getUsernameFromToken(refreshToken);
-        return generateTokenPair(email);
+
+        String hash = tokenProvider.hashToken(rawToken);
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(hash)
+                .orElseThrow(() -> new TokenRefreshException("Invalid refresh token"));
+
+        if (stored.isRevoked()) {
+            // 재사용 감지 — 해당 유저의 모든 세션 폐기
+            refreshTokenRepository.revokeAllByUserId(stored.getUser().getId());
+            log.warn("[Security] Refresh token reuse detected for userId={}", stored.getUser().getId());
+            throw new TokenRefreshException("Refresh token reuse detected — all sessions revoked");
+        }
+
+        // 구 토큰 폐기
+        stored.setRevoked(true);
+
+        User user = stored.getUser();
+        AuthResponse newPair = generateTokenPair(user.getEmail());
+        saveRefreshToken(newPair.refreshToken(), user);
+        return newPair;
+    }
+
+    public void logout(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return;
+        }
+        String hash = tokenProvider.hashToken(rawToken);
+        refreshTokenRepository.findByTokenHash(hash)
+                .ifPresent(rt -> rt.setRevoked(true));
     }
 
     public AuthResponse kakaoLogin(String code) {
@@ -111,15 +154,21 @@ public class AuthService implements UserDetailsService {
 
         Optional<User> byKakaoId = userRepository.findByKakaoId(kakaoUser.id());
         if (byKakaoId.isPresent()) {
-            return generateTokenPair(byKakaoId.get().getEmail());
+            User user = byKakaoId.get();
+            AuthResponse pair = generateTokenPair(user.getEmail());
+            saveRefreshToken(pair.refreshToken(), user);
+            return pair;
         }
 
         String kakaoEmail = kakaoUser.getEmail();
         if (kakaoEmail != null) {
             Optional<User> byEmail = userRepository.findByEmail(kakaoEmail);
             if (byEmail.isPresent()) {
-                byEmail.get().setKakaoId(kakaoUser.id());
-                return generateTokenPair(byEmail.get().getEmail());
+                User user = byEmail.get();
+                user.setKakaoId(kakaoUser.id());
+                AuthResponse pair = generateTokenPair(user.getEmail());
+                saveRefreshToken(pair.refreshToken(), user);
+                return pair;
             }
         }
 
@@ -134,6 +183,7 @@ public class AuthService implements UserDetailsService {
         userRepository.save(newUser);
 
         AuthResponse tokenPair = generateTokenPair(newUser.getEmail());
+        saveRefreshToken(tokenPair.refreshToken(), newUser);
         return new AuthResponse(tokenPair.accessToken(), tokenPair.refreshToken(), tokenPair.tokenType(), true);
     }
 
@@ -148,6 +198,17 @@ public class AuthService implements UserDetailsService {
         }
         user.setNickname(nickname);
         user.setBirthYear(birthYear);
+    }
+
+    private void saveRefreshToken(String rawToken, User user) {
+        String hash = tokenProvider.hashToken(rawToken);
+        LocalDateTime expiresAt = LocalDateTime.now().plus(refreshTokenExpirationMs, ChronoUnit.MILLIS);
+        RefreshToken rt = RefreshToken.builder()
+                .tokenHash(hash)
+                .user(user)
+                .expiresAt(expiresAt)
+                .build();
+        refreshTokenRepository.save(rt);
     }
 
     private String exchangeKakaoToken(String code) {

@@ -42,6 +42,9 @@ public class User implements UserDetails {
     @Column(name = "birth_year", nullable = false)
     private Integer birthYear;
 
+    @Column(name = "profile_image_object_key")
+    private String profileImageObjectKey;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

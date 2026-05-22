@@ -1,6 +1,7 @@
 import { LogOut, UserRound, Smile } from 'lucide-react'
+import NotificationBell from '@/components/layout/NotificationBell'
 import { Link, useNavigate } from 'react-router-dom'
-import { Avatar, AvatarFallback } from '@/components/ui/shadcn/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/shadcn/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,9 @@ export default function Header() {
           찾기
         </Link>
 
+        {/* 알림 벨 */}
+        <NotificationBell />
+
         {/* 프로필 아바타 드롭다운 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -75,7 +79,10 @@ export default function Header() {
               className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               aria-label="프로필 메뉴"
             >
-              <Avatar className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="w-12 h-12 cursor-pointer hover:opacity-80 transition-opacity" style={{ boxShadow: '0 2px 8px oklch(0.62 0.15 220 / 0.25)' }}>
+                {user?.profileImageUrl && (
+                  <AvatarImage src={user.profileImageUrl} alt={`${user.nickname} 프로필`} className="object-cover" />
+                )}
                 <AvatarFallback
                   className="text-base font-semibold text-white"
                   style={{ background: warmBlueGradient }}

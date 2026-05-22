@@ -2,6 +2,7 @@ package com.starterkit.domain.checkin.controller;
 
 import com.starterkit.domain.checkin.dto.request.CreateCheckinRequest;
 import com.starterkit.domain.checkin.dto.request.PhotoUploadUrlRequest;
+import com.starterkit.domain.checkin.dto.request.UpdateCheckinRequest;
 import com.starterkit.domain.checkin.dto.response.*;
 import com.starterkit.domain.checkin.service.CheckinService;
 import com.starterkit.domain.follow.service.FollowService;
@@ -44,14 +45,17 @@ public class CheckinController {
     }
 
     @GetMapping("/today")
-    @Operation(summary = "오늘의 피드 조회 (KST 기준)")
+    @Operation(summary = "피드 조회 (커서 기반 페이지네이션)")
     public ResponseEntity<TodayFeedResponse> getToday(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "all") String feedType) {
+            @RequestParam(defaultValue = "all") String feedType,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "20") int limit) {
         List<Long> followingIds = "following".equals(feedType)
                 ? followService.getFollowingIds(userDetails)
                 : null;
-        return ResponseEntity.ok(checkinService.getTodayFeed(userDetails.getUsername(), followingIds));
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+        return ResponseEntity.ok(checkinService.getTodayFeed(userDetails.getUsername(), followingIds, cursor, safeLimit));
     }
 
     @GetMapping("/my/calendar")
@@ -86,6 +90,15 @@ public class CheckinController {
             @Valid @RequestBody PhotoUploadUrlRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(checkinService.generatePhotoUploadUrl(request, userDetails));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "체크인 수정 (카테고리·설명만 수정 가능)")
+    public ResponseEntity<CheckinResponse> update(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("id") Long id,
+            @Valid @RequestBody UpdateCheckinRequest request) {
+        return ResponseEntity.ok(checkinService.update(userDetails.getUsername(), id, request));
     }
 
     @DeleteMapping("/{id}")

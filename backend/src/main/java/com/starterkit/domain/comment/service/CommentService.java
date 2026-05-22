@@ -1,5 +1,6 @@
 package com.starterkit.domain.comment.service;
 
+import com.starterkit.domain.block.service.BlockService;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
@@ -26,10 +27,20 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final BlockService blockService;
 
-    public List<CommentResponse> getComments(Long checkinId) {
+    public List<CommentResponse> getComments(Long checkinId, UserDetails userDetails) {
         checkinRepository.findById(checkinId)
                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
+        if (!blockedIds.isEmpty()) {
+            return commentRepository.findByCheckinIdExcludingUsersOrderByCreatedAtDesc(checkinId, blockedIds)
+                    .stream()
+                    .map(CommentResponse::from)
+                    .toList();
+        }
         return commentRepository.findByCheckinIdOrderByCreatedAtDesc(checkinId)
                 .stream()
                 .map(CommentResponse::from)
@@ -55,10 +66,14 @@ public class CommentService {
         CommentResponse response = CommentResponse.from(commentRepository.save(comment));
 
         if (!checkin.getUser().getId().equals(user.getId())) {
-            notificationService.sendPush(
+            String msg = user.getNickname() + "님이 댓글을 남겼어요";
+            notificationService.sendPush(checkin.getUser().getId(), "새 댓글", msg);
+            notificationService.sendInApp(
                     checkin.getUser().getId(),
-                    "새 댓글",
-                    user.getNickname() + "님이 댓글을 남겼어요"
+                    user.getNickname(),
+                    com.starterkit.domain.notification.entity.NotificationType.COMMENT,
+                    checkinId,
+                    msg
             );
         }
 

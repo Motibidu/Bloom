@@ -64,4 +64,10 @@ public class Checkin {
     public void incrementViewCount() {
         this.viewCount++;
     }
+
+    public void update(Category category, String title, String description) {
+        if (category != null) this.category = category;
+        if (title != null) this.title = title;
+        if (description != null) this.description = description;
+    }
 }

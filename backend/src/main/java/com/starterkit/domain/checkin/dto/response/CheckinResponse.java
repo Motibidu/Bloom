@@ -12,6 +12,7 @@ public record CheckinResponse(
         Long id,
         Long userId,
         String nickname,
+        String profileImageUrl,
         Category category,
         String title,
         String description,
@@ -45,8 +46,12 @@ public record CheckinResponse(
         if (urls.isEmpty() && c.getPhotoObjectKey() != null) {
             urls = List.of(s3BaseUrl + "/" + c.getPhotoObjectKey());
         }
+        String profileImgUrl = c.getUser().getProfileImageObjectKey() != null
+                ? s3BaseUrl + "/" + c.getUser().getProfileImageObjectKey()
+                : null;
         return new CheckinResponse(
                 c.getId(), c.getUser().getId(), c.getUser().getNickname(),
+                profileImgUrl,
                 c.getCategory(), c.getTitle(), c.getDescription(), urls,
                 likeCount, likedByMe, myReactionType,
                 reactionCounts != null ? reactionCounts : Map.of(),
