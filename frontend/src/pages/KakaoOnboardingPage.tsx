@@ -117,6 +117,7 @@ export default function KakaoOnboardingPage() {
                 min: { value: 1900, message: '올바른 출생연도를 입력하세요' },
                 max: { value: 2010, message: '올바른 출생연도를 입력하세요' },
                 valueAsNumber: true,
+                validate: (v) => (new Date().getFullYear() - v) >= 50 || '이 서비스는 50세 이상만 이용 가능해요',
               })}
             />
             {errors.birthYear && (
