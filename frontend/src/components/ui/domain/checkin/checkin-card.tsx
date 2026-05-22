@@ -7,6 +7,16 @@ import { useLikeToggle, useUpdateCheckin } from '@/hooks/useCheckin'
 import { useCreateReport } from '@/hooks/useReport'
 import { useBlockUser } from '@/hooks/useBlock'
 import { useToast } from '@/hooks/useToast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/shadcn/alert-dialog'
 import type { CheckIn, Category } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -48,6 +58,7 @@ function EditModal({
   const [editCategory, setEditCategory] = useState<Category>(checkin.category)
   const [editTitle, setEditTitle] = useState(checkin.title)
   const [editDesc, setEditDesc] = useState(checkin.description)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const updateCheckin = useUpdateCheckin(checkin.id)
   const overlayRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -58,8 +69,12 @@ function EditModal({
     return () => clearTimeout(t)
   }, [])
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!editTitle.trim() || !editDesc.trim()) return
+    setConfirmOpen(true)
+  }
+
+  const handleConfirm = async () => {
     await updateCheckin.mutateAsync({ category: editCategory, title: editTitle.trim(), description: editDesc.trim() })
     onClose()
   }
@@ -69,6 +84,7 @@ function EditModal({
   }
 
   return (
+    <>
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
@@ -202,6 +218,28 @@ function EditModal({
         </div>
       </div>
     </div>
+
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>활동을 수정하시겠어요?</AlertDialogTitle>
+          <AlertDialogDescription>
+            수정한 내용으로 저장됩니다.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirm}
+            className="text-white border-0"
+            style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
+          >
+            수정하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 
@@ -586,6 +624,7 @@ export default function CheckInCard({
                       border: `1px solid ${mA(0.15)}`,
                       boxShadow: `0 8px 24px ${mA(0.18)}`,
                     }}
+                    onClick={e => e.stopPropagation()}
                   >
                     {isOwner ? (
                       <>
