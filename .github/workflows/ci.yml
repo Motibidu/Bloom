@@ -39,18 +39,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
+          key: ${{ runner.os }}-gradle-v2-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-v2-
 
       - name: Build with Gradle
         if: steps.changes.outputs.backend == 'true'
-        run: |
-          echo "PWD: $(pwd)"
-          echo "gradlew exists: $(ls -la gradlew)"
-          echo "wrapper jar exists: $(ls -la gradle/wrapper/gradle-wrapper.jar)"
-          file gradlew
-          java -cp gradle/wrapper/gradle-wrapper.jar org.gradle.wrapper.GradleWrapperMain --version
-          ./gradlew build --no-daemon
+        run: ./gradlew build --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.internal.launcher.welcomeMessageEnabled=false"
 
   frontend:
     name: Frontend Build
