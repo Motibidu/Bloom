@@ -111,7 +111,19 @@ export default function App() {
         </Routes>
         </AuthInitializer>
       </BrowserRouter>
-      <Toaster position="top-center" richColors />
+      <Toaster
+        position="top-center"
+        richColors
+        toastOptions={{
+          style: {
+            fontSize: '1.0625rem',
+            fontWeight: '600',
+            padding: '16px 20px',
+            minHeight: '56px',
+            borderRadius: '16px',
+          },
+        }}
+      />
     </QueryClientProvider>
   )
 }
