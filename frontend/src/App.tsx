@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/lib/api'
+import type { AxiosError } from 'axios'
 import { isNativeApp, registerPushToken } from '@/lib/native-bridge'
 import { registerFcmWeb } from '@/lib/push-notification'
 import Layout from '@/components/layout/Layout'
@@ -59,8 +60,11 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
           registerFcmWeb()
         }
       })
-      .catch(() => {
-        logout()
+      .catch((err: AxiosError) => {
+        // 리프레시 토큰 만료(401)일 때만 로그아웃, 네트워크 오류 등은 유지
+        if (err.response?.status === 401) {
+          logout()
+        }
       })
       .finally(() => setReady(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
