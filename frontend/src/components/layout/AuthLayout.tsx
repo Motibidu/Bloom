@@ -1,12 +1,9 @@
 import { type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { Smile } from 'lucide-react'
+import Header from '@/components/layout/Header'
 
 interface AuthLayoutProps {
   children: ReactNode
 }
-
-const warmBlueGradient = 'linear-gradient(135deg, oklch(0.62 0.15 220), oklch(0.76 0.12 220))'
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
@@ -27,32 +24,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         aria-hidden="true"
       />
 
-      {/* 헤더 */}
-      <header className="h-20 bg-white/80 backdrop-blur-md border-b border-border flex items-center px-6 shrink-0 relative z-10">
-        <Link to="/landing" className="flex items-center gap-3">
-          {/* 로고 아이콘 박스 */}
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: warmBlueGradient }}
-            aria-hidden="true"
-          >
-            <Smile size={22} className="text-white" aria-hidden="true" />
-          </div>
-          {/* 브랜드 이름 */}
-          <span
-            className="text-xl font-extrabold"
-            style={{
-              fontFamily: "'Noto Serif KR', serif",
-              backgroundImage: warmBlueGradient,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            오늘 뭐 했어요?
-          </span>
-        </Link>
-      </header>
+      <Header variant="auth" />
 
       {/* 콘텐츠 영역 */}
       <div className="flex flex-1 items-center justify-center px-4 py-10 relative z-10">

@@ -14,6 +14,7 @@ import {
   CalendarDays,
   Smile,
 } from 'lucide-react'
+import Header from '@/components/layout/Header'
 import type { LucideIcon } from 'lucide-react'
 
 // ─── 카테고리 뱃지 데이터 ──────────────────────────────────────────────────────
@@ -215,44 +216,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
 
-      {/* ── 헤더 ──────────────────────────────────────────────────────────── */}
-      <header className="h-16 sm:h-20 border-b border-gray-100 bg-white/90 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-2 shrink-0">
-          <div
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={coralBtn}
-          >
-            <Smile size={18} className="text-white" aria-hidden="true" />
-          </div>
-          <span
-            className="text-base sm:text-xl font-black tracking-tight whitespace-nowrap"
-            style={{ ...serifStyle, ...gradientText }}
-          >
-            오늘 뭐 했어요?
-          </span>
-        </div>
-
-        <nav aria-label="주요 메뉴" className="flex items-center gap-2 shrink-0">
-          <Link to="/login">
-            <button
-              className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap
-                         text-foreground/70 hover:text-foreground transition-colors
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            >
-              로그인
-            </button>
-          </Link>
-          <Link to="/register">
-            <button
-              className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={coralBtn}
-            >
-              회원가입
-            </button>
-          </Link>
-        </nav>
-      </header>
+      <Header variant="landing" />
 
       <main>
 
