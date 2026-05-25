@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import api from '@/lib/api'
 import { useAuthStore } from '@/store/authStore'
 import { isNativeApp, flushPendingFcmToken } from '@/lib/native-bridge'
@@ -34,7 +35,7 @@ export function useRegister() {
     mutationFn: (data: RegisterRequest) =>
       api.post('/auth/register', data).then((r) => r.data),
     onSuccess: () => {
-      // 회원가입 성공 후 로그인 페이지로 이동
+      toast.success('회원가입이 완료되었어요! 로그인해 주세요.')
       navigate('/login')
     },
   })
