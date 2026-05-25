@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { useEffect, useRef, useState } from 'react'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
@@ -22,6 +23,8 @@ import KakaoCallbackPage from '@/pages/KakaoCallbackPage'
 import KakaoOnboardingPage from '@/pages/KakaoOnboardingPage'
 import ProfileEditPage from '@/pages/ProfileEditPage'
 import BlockListPage from '@/pages/BlockListPage'
+import PrivacyPage from '@/pages/PrivacyPage'
+import TermsPage from '@/pages/TermsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -84,6 +87,8 @@ export default function App() {
             element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>}
           />
           <Route path="/kakao-callback" element={<KakaoCallbackPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* 로그인 필요 라우트 — Layout(Header) 포함 */}
           <Route
@@ -106,6 +111,19 @@ export default function App() {
         </Routes>
         </AuthInitializer>
       </BrowserRouter>
+      <Toaster
+        position="top-center"
+        richColors
+        toastOptions={{
+          style: {
+            fontSize: '1.0625rem',
+            fontWeight: '600',
+            padding: '16px 20px',
+            minHeight: '56px',
+            borderRadius: '16px',
+          },
+        }}
+      />
     </QueryClientProvider>
   )
 }
