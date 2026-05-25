@@ -39,8 +39,17 @@ public class User implements UserDetails {
     @Column(name = "kakao_id", unique = true)
     private Long kakaoId;
 
+    @Column(length = 30)
+    private String name;
+
     @Column(name = "birth_year", nullable = false)
     private Integer birthYear;
+
+    @Column(name = "birth_month")
+    private Integer birthMonth;
+
+    @Column(name = "birth_day")
+    private Integer birthDay;
 
     @Column(name = "profile_image_object_key")
     private String profileImageObjectKey;

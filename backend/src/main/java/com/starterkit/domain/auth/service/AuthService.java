@@ -3,6 +3,7 @@ package com.starterkit.domain.auth.service;
 import com.starterkit.domain.auth.dto.request.LoginRequest;
 import com.starterkit.domain.auth.dto.request.RegisterRequest;
 import com.starterkit.domain.auth.dto.response.AuthResponse;
+import com.starterkit.domain.auth.exception.EmailVerificationException;
 import com.starterkit.domain.auth.dto.response.KakaoUserInfo;
 import com.starterkit.domain.auth.entity.RefreshToken;
 import com.starterkit.domain.auth.exception.TokenRefreshException;
@@ -49,6 +50,7 @@ public class AuthService implements UserDetailsService {
     private final AuthenticationManager authenticationManager;
     private final RestTemplate restTemplate;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final EmailVerificationService emailVerificationService;
 
     @Value("${app.kakao.rest-api-key:}")
     private String kakaoRestApiKey;
@@ -67,13 +69,15 @@ public class AuthService implements UserDetailsService {
                        JwtTokenProvider tokenProvider,
                        @Lazy AuthenticationManager authenticationManager,
                        RestTemplate restTemplate,
-                       RefreshTokenRepository refreshTokenRepository) {
+                       RefreshTokenRepository refreshTokenRepository,
+                       EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
         this.restTemplate = restTemplate;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @Override
@@ -83,6 +87,9 @@ public class AuthService implements UserDetailsService {
     }
 
     public AuthResponse register(RegisterRequest req) {
+        if (!emailVerificationService.isVerified(req.email())) {
+            throw new EmailVerificationException("이메일 인증이 완료되지 않았어요");
+        }
         if (userRepository.existsByEmail(req.email())) {
             throw new UserAlreadyExistsException("Email already registered: " + req.email());
         }
@@ -95,7 +102,10 @@ public class AuthService implements UserDetailsService {
                 .password(passwordEncoder.encode(req.password()))
                 .nickname(req.nickname())
                 .bio(req.bio())
+                .name(req.name())
                 .birthYear(req.birthYear())
+                .birthMonth(req.birthMonth())
+                .birthDay(req.birthDay())
                 .build();
         userRepository.save(user);
 

@@ -1,5 +1,6 @@
 package com.starterkit.global.exception.handler;
 
+import com.starterkit.domain.auth.exception.EmailVerificationException;
 import com.starterkit.domain.auth.exception.TokenRefreshException;
 import com.starterkit.domain.family.exception.AlreadyInFamilyException;
 import com.starterkit.domain.family.exception.FamilyNotFoundException;
@@ -39,6 +40,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNicknameDuplicate(NicknameDuplicateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(ex.getMessage(), "NICKNAME_DUPLICATE"));
+    }
+
+    @ExceptionHandler(EmailVerificationException.class)
+    public ResponseEntity<ErrorResponse> handleEmailVerification(EmailVerificationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(ex.getMessage(), "EMAIL_VERIFICATION_FAILED"));
     }
 
     @ExceptionHandler(TokenRefreshException.class)

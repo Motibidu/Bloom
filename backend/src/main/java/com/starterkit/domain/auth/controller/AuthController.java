@@ -1,11 +1,14 @@
 package com.starterkit.domain.auth.controller;
 
+import com.starterkit.domain.auth.dto.request.EmailSendRequest;
+import com.starterkit.domain.auth.dto.request.EmailVerifyRequest;
 import com.starterkit.domain.auth.dto.request.KakaoLoginRequest;
 import com.starterkit.domain.auth.dto.request.KakaoNicknameRequest;
 import com.starterkit.domain.auth.dto.request.LoginRequest;
 import com.starterkit.domain.auth.dto.request.RegisterRequest;
 import com.starterkit.domain.auth.dto.response.AuthResponse;
 import com.starterkit.domain.auth.service.AuthService;
+import com.starterkit.domain.auth.service.EmailVerificationService;
 import com.starterkit.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +30,7 @@ import java.util.Arrays;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService emailVerificationService;
 
     @Value("${app.jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
@@ -69,6 +73,22 @@ public class AuthController {
         authService.logout(refreshToken);
         response.addHeader("Set-Cookie",
                 "refreshToken=; HttpOnly; Path=/api/auth/refresh; Max-Age=0; SameSite=Strict");
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/email/send")
+    @Operation(summary = "이메일 인증 코드 발송")
+    public ResponseEntity<Void> sendEmailVerification(
+            @Valid @RequestBody EmailSendRequest request) {
+        emailVerificationService.sendCode(request.email());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/email/verify")
+    @Operation(summary = "이메일 인증 코드 검증")
+    public ResponseEntity<Void> verifyEmail(
+            @Valid @RequestBody EmailVerifyRequest request) {
+        emailVerificationService.verifyCode(request.email(), request.code());
         return ResponseEntity.noContent().build();
     }
 
