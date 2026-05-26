@@ -45,6 +45,7 @@ interface Props {
   onPhotoClick?: (index: number) => void
   commentCount?: number
   onAlsoCheckin?: () => void
+  canInteract?: boolean
 }
 
 // ── 수정 모달 ────────────────────────────────────────────────────────────────
@@ -496,6 +497,7 @@ export default function CheckInCard({
   onPhotoClick,
   commentCount,
   onAlsoCheckin,
+  canInteract = true,
 }: Props) {
   const { icon: Icon, label } = CATEGORY_META[checkin.category]
   const likeToggle = useLikeToggle(checkin.id)
@@ -797,13 +799,15 @@ export default function CheckInCard({
       >
         {/* 왼쪽: 반응·댓글·나도했어요·조회수 */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <ReactionPicker
-            checkinId={checkin.id}
-            myReactionType={checkin.myReactionType ?? null}
-            reactionCounts={checkin.reactionCounts ?? {}}
-            onReact={(reactionType) => likeToggle.mutate({ reactionType })}
-            disabled={likeToggle.isPending}
-          />
+          {canInteract && (
+            <ReactionPicker
+              checkinId={checkin.id}
+              myReactionType={checkin.myReactionType ?? null}
+              reactionCounts={checkin.reactionCounts ?? {}}
+              onReact={(reactionType) => likeToggle.mutate({ reactionType })}
+              disabled={likeToggle.isPending}
+            />
+          )}
 
           <div
             className="flex items-center gap-1 min-h-[44px] shrink-0"
@@ -814,7 +818,7 @@ export default function CheckInCard({
             <span className="text-sm font-bold" aria-hidden="true">{commentCount ?? checkin.commentCount}</span>
           </div>
 
-          {onAlsoCheckin && (
+          {canInteract && onAlsoCheckin && (
             <button
               type="button"
               className="relative z-10 flex items-center gap-1 min-h-[44px] px-2 rounded-xl font-bold text-sm transition-colors whitespace-nowrap shrink-0"

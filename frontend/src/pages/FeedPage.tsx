@@ -48,11 +48,13 @@ function FeedCheckinCard({
   currentUserId,
   onNavigate,
   onAlsoCheckin,
+  canInteract,
 }: {
   checkin: any
   currentUserId?: number
   onNavigate: () => void
   onAlsoCheckin: () => void
+  canInteract: boolean
 }) {
   const isOwner = currentUserId != null && checkin.userId === currentUserId
   const deleteCheckin = useDeleteCheckin(checkin.id)
@@ -67,7 +69,8 @@ function FeedCheckinCard({
       onClick={onNavigate}
       isOwner={isOwner}
       onDelete={handleDelete}
-      onAlsoCheckin={onAlsoCheckin}
+      onAlsoCheckin={canInteract ? onAlsoCheckin : undefined}
+      canInteract={canInteract}
     />
   )
 }
@@ -892,6 +895,7 @@ export default function FeedPage() {
                 key={checkin.id}
                 checkin={checkin}
                 currentUserId={currentUser?.id}
+                canInteract={canWriteFeed}
                 onNavigate={() => navigate(`/checkin/${checkin.id}`)}
                 onAlsoCheckin={() => {
                   setSelectedCategory(checkin.category as Category)

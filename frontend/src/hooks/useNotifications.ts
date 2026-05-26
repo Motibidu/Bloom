@@ -11,20 +11,22 @@ export interface AppNotification {
   createdAt: string
 }
 
-export function useNotifications() {
+export function useNotifications(enabled = true) {
   return useQuery<AppNotification[]>({
     queryKey: ['notifications'],
     queryFn: () => api.get<AppNotification[]>('/notifications').then((r) => r.data),
     staleTime: 30_000,
+    enabled,
   })
 }
 
-export function useUnreadCount() {
+export function useUnreadCount(enabled = true) {
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread'],
     queryFn: () => api.get<{ count: number }>('/notifications/unread-count').then((r) => r.data),
     staleTime: 0,
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
+    enabled,
   })
 }
 
