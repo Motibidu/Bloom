@@ -29,6 +29,8 @@ services:
       KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
       KAKAO_REDIRECT_URI: ${KAKAO_REDIRECT_URI:-http://localhost:5173/kakao-callback}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
     depends_on:
       mysql:
         condition: service_healthy
