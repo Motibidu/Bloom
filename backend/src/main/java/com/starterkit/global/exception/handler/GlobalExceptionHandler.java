@@ -8,6 +8,7 @@ import com.starterkit.domain.user.exception.NicknameDuplicateException;
 import com.starterkit.domain.user.exception.UserAlreadyExistsException;
 import com.starterkit.global.exception.ResourceNotFoundException;
 import com.starterkit.global.exception.dto.ErrorResponse;
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -110,6 +111,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
+        Sentry.captureException(ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("서버 내부 오류가 발생했습니다.", "INTERNAL_SERVER_ERROR"));
     }
