@@ -69,6 +69,17 @@ export function useJoinFamily() {
   })
 }
 
+export function useLeaveFamilyGroup() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, number>({
+    mutationFn: (groupId) =>
+      api.delete(`/families/${groupId}/members/me`).then(() => {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] })
+    },
+  })
+}
+
 export function useFamilyFeed(groupId: number | undefined) {
   return useQuery<FamilyFeedResponse>({
     queryKey: ['family', 'feed', groupId],

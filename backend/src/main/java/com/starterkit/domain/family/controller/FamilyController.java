@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,5 +54,14 @@ public class FamilyController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("id") Long groupId) {
         return ResponseEntity.ok(familyService.getFamilyFeed(userDetails.getUsername(), groupId));
+    }
+
+    @DeleteMapping("/{id}/members/me")
+    @Operation(summary = "가족 그룹 나가기", description = "그룹에서 탈퇴합니다. OWNER 탈퇴 시 그룹이 해산됩니다. FAMILY_VIEWER 탈퇴 시 일반 회원으로 전환됩니다.")
+    public ResponseEntity<Void> leaveFamily(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("id") Long groupId) {
+        familyService.leaveFamily(userDetails.getUsername(), groupId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

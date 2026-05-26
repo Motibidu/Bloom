@@ -10,6 +10,7 @@ import com.starterkit.domain.family.dto.response.FamilyGroupResponse;
 import com.starterkit.domain.family.dto.response.FamilyMemberResponse;
 import com.starterkit.domain.family.entity.FamilyGroup;
 import com.starterkit.domain.family.entity.FamilyMember;
+import com.starterkit.domain.family.entity.FamilyMemberRole;
 import com.starterkit.domain.family.exception.AlreadyInFamilyException;
 import com.starterkit.domain.family.exception.FamilyNotFoundException;
 import com.starterkit.domain.family.exception.InvalidInviteCodeException;
@@ -19,6 +20,7 @@ import com.starterkit.domain.like.entity.ReactionType;
 import com.starterkit.domain.like.repository.LikeRepository;
 import com.starterkit.domain.comment.repository.CommentRepository;
 import com.starterkit.domain.user.entity.User;
+import com.starterkit.domain.user.entity.UserRole;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -206,6 +208,30 @@ public class FamilyService {
                 .toList();
 
         return new FamilyFeedResponse(group.getId(), group.getName(), responses);
+    }
+
+    @Transactional
+    public void leaveFamily(String email, Long groupId) {
+        User user = findUserByEmail(email);
+
+        FamilyMember membership = familyMemberRepository.findByGroupId(groupId).stream()
+                .filter(fm -> fm.getUser().getId().equals(user.getId()))
+                .findFirst()
+                .orElseThrow(() -> new FamilyNotFoundException("해당 가족 그룹의 멤버가 아닙니다."));
+
+        if (membership.getRole() == FamilyMemberRole.OWNER) {
+            // OWNER 탈퇴 → 그룹 전체 해산
+            familyMemberRepository.deleteByGroupId(groupId);
+            familyGroupRepository.deleteById(groupId);
+        } else {
+            // GUEST 탈퇴 → 멤버만 삭제
+            familyMemberRepository.deleteByGroupIdAndUserId(groupId, user.getId());
+        }
+
+        // FAMILY_VIEWER였으면 일반 MEMBER로 전환
+        if (user.getRole() == UserRole.FAMILY_VIEWER) {
+            user.setRole(UserRole.MEMBER);
+        }
     }
 
     @Async

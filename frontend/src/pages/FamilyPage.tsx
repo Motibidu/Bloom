@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut } from 'lucide-react'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
-import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed } from '@/hooks/useFamily'
+import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
 // ── Warm Blue 테마 ─────────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -123,14 +124,104 @@ function FamilyFeed({ groupId }: { groupId: number }) {
   )
 }
 
+// ── 나가기 확인 다이얼로그 ───────────────────────────────────────────────────────
+function LeaveConfirmDialog({
+  open,
+  isOwner,
+  isPending,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean
+  isOwner: boolean
+  isPending: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  if (!open) return null
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="leave-dialog-title"
+    >
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} aria-hidden="true" />
+      <div className="relative w-full sm:max-w-sm mx-4 sm:mx-auto rounded-3xl bg-white p-7 flex flex-col gap-5 shadow-2xl mb-4 sm:mb-0">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
+          style={{ background: isOwner ? 'oklch(0.95 0.05 25)' : mA(0.08) }}
+          aria-hidden="true"
+        >
+          <LogOut size={28} style={{ color: isOwner ? 'oklch(0.55 0.2 25)' : dark }} />
+        </div>
+        <div className="text-center space-y-2">
+          <h2
+            id="leave-dialog-title"
+            className="text-xl font-black text-foreground"
+            style={serifStyle}
+          >
+            {isOwner ? '그룹을 해산할까요?' : '그룹을 나갈까요?'}
+          </h2>
+          <p className="text-base font-medium text-foreground/60 leading-relaxed">
+            {isOwner
+              ? '그룹을 해산하면 모든 멤버가 그룹에서 제거되고 복구할 수 없어요.'
+              : '그룹에서 나가면 가족 피드를 더 이상 볼 수 없어요.'}
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 min-h-[52px] rounded-2xl text-base font-bold border-2 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ borderColor: mA(0.25), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isPending}
+            className="flex-1 min-h-[52px] rounded-2xl text-base font-black text-white transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: isOwner ? 'oklch(0.55 0.2 25)' : grad }}
+          >
+            {isPending ? '처리 중...' : isOwner ? '해산하기' : '나가기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 그룹 있는 화면 ─────────────────────────────────────────────────────────────
-function FamilyGroupView({ groupId, name, inviteCode, members }: {
+function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
   groupId: number
   name: string
   inviteCode: string
   members: { userId: number; nickname: string; profileImageUrl: string | null }[]
+  isOwner: boolean
 }) {
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
+  const leaveFamily = useLeaveFamilyGroup()
+
+  const handleLeaveConfirm = async () => {
+    try {
+      await leaveFamily.mutateAsync(groupId)
+      toast.success(isOwner ? '가족 그룹을 해산했어요.' : '가족 그룹에서 나왔어요.')
+    } catch {
+      toast.error('처리에 실패했어요. 다시 시도해 주세요.')
+    } finally {
+      setLeaveDialogOpen(false)
+    }
+  }
+
   return (
+    <>
+    <LeaveConfirmDialog
+      open={leaveDialogOpen}
+      isOwner={isOwner}
+      isPending={leaveFamily.isPending}
+      onConfirm={handleLeaveConfirm}
+      onCancel={() => setLeaveDialogOpen(false)}
+    />
     <div className="flex flex-col gap-6">
       {/* 그룹 헤더 카드 */}
       <div
@@ -140,9 +231,20 @@ function FamilyGroupView({ groupId, name, inviteCode, members }: {
           boxShadow: `0 8px 32px ${mA(0.25)}`,
         }}
       >
-        <div className="flex items-center gap-2 mb-1">
-          <Home size={18} className="text-white/80" aria-hidden="true" />
-          <span className="text-white/80 text-sm font-bold">우리 가족</span>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Home size={18} className="text-white/80" aria-hidden="true" />
+            <span className="text-white/80 text-sm font-bold">우리 가족</span>
+          </div>
+          <button
+            onClick={() => setLeaveDialogOpen(true)}
+            className="flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-sm font-bold transition-opacity [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'rgba(255,255,255,0.18)', color: 'white' }}
+            aria-label={isOwner ? '그룹 해산' : '그룹 나가기'}
+          >
+            <LogOut size={15} aria-hidden="true" />
+            {isOwner ? '해산' : '나가기'}
+          </button>
         </div>
         <h1
           className="text-3xl font-black text-white mb-4 leading-tight"
@@ -203,6 +305,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members }: {
         <FamilyFeed groupId={groupId} />
       </div>
     </div>
+    </>
   )
 }
 
@@ -430,6 +533,15 @@ export default function FamilyPage() {
   // 404 → 그룹 없음
   const is404 = isError && (error as { response?: { status?: number } })?.response?.status === 404
 
+  const currentUserId = (() => {
+    try {
+      const raw = localStorage.getItem('auth-storage')
+      return raw ? (JSON.parse(raw)?.state?.user?.id ?? null) : null
+    } catch { return null }
+  })()
+  const myMembership = family?.members.find(m => m.userId === currentUserId)
+  const isOwner = myMembership?.role === 'OWNER'
+
   return (
     <main className="max-w-2xl mx-auto px-4 pb-28 pt-4">
       {family ? (
@@ -438,6 +550,7 @@ export default function FamilyPage() {
           name={family.name}
           inviteCode={family.inviteCode}
           members={family.members}
+          isOwner={isOwner}
         />
       ) : is404 || isError ? (
         <FamilyEmpty />

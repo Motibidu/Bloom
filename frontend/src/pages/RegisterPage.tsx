@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import { Input } from '@/components/ui/shadcn/input'
@@ -23,6 +23,9 @@ type FormValues = RegisterRequest & { passwordConfirm: string; agreeTerms: boole
 const STEPS = ['약관 동의', '계정 정보', '프로필'] as const
 
 export default function RegisterPage() {
+  const [searchParams] = useSearchParams()
+  const inviteCode = searchParams.get('inviteCode') ?? undefined
+
   const { register, handleSubmit, watch, formState: { errors }, setValue, trigger } = useForm<FormValues>({
     defaultValues: { agreeTerms: false },
   })
@@ -126,7 +129,7 @@ export default function RegisterPage() {
   const onSubmit = (data: FormValues) => {
     if (nicknameTaken || !isEmailVerified) return
     const { passwordConfirm: _, agreeTerms: __, ...registerData } = data
-    registerMutation.mutate(registerData)
+    registerMutation.mutate({ ...registerData, inviteCode })
   }
 
   const getErrorMessage = () => {
@@ -137,6 +140,7 @@ export default function RegisterPage() {
 
   const currentYear = new Date().getFullYear()
   const maxBirthYear = currentYear - 50
+  const isInvited = !!inviteCode
 
   return (
     <AuthLayout>
@@ -195,9 +199,16 @@ export default function RegisterPage() {
                 <p className="text-lg font-semibold text-foreground">
                   서비스 이용을 위해 아래 약관에 동의해 주세요.
                 </p>
-                <p className="text-base font-medium" style={{ color: dark }}>
-                  <span className="font-black">{maxBirthYear}년생 이상</span>만 이용할 수 있어요.
-                </p>
+                {!isInvited && (
+                  <p className="text-base font-medium" style={{ color: dark }}>
+                    <span className="font-black">{maxBirthYear}년생 이상</span>만 이용할 수 있어요.
+                  </p>
+                )}
+                {isInvited && (
+                  <p className="text-base font-medium" style={{ color: dark }}>
+                    가족 초대 코드로 가입하시면 나이 제한 없이 가입할 수 있어요.
+                  </p>
+                )}
               </div>
 
               <div
@@ -426,7 +437,9 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Label className="text-lg font-semibold text-foreground">생년월일</Label>
-                  <span className="text-sm text-muted-foreground font-medium">{maxBirthYear}년생부터 가입 가능해요</span>
+                  {!isInvited && (
+                    <span className="text-sm text-muted-foreground font-medium">{maxBirthYear}년생부터 가입 가능해요</span>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="relative">
@@ -437,11 +450,16 @@ export default function RegisterPage() {
                       {...register('birthYear', {
                         required: '연도를 선택하세요',
                         valueAsNumber: true,
-                        validate: (v) => v <= maxBirthYear || '이 서비스는 50세 이상만 이용 가능해요',
+                        validate: isInvited
+                          ? undefined
+                          : (v) => v <= maxBirthYear || '이 서비스는 50세 이상만 이용 가능해요',
                       })}
                     >
                       <option value="" disabled>연도</option>
-                      {Array.from({ length: maxBirthYear - 1900 + 1 }, (_, i) => maxBirthYear - i).map((y) => (
+                      {Array.from(
+                        { length: (isInvited ? currentYear : maxBirthYear) - 1900 + 1 },
+                        (_, i) => (isInvited ? currentYear : maxBirthYear) - i
+                      ).map((y) => (
                         <option key={y} value={y}>{y}년</option>
                       ))}
                     </select>

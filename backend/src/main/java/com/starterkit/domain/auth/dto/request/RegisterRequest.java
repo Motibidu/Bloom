@@ -1,5 +1,6 @@
 package com.starterkit.domain.auth.dto.request;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
 
 public record RegisterRequest(
@@ -14,5 +15,6 @@ public record RegisterRequest(
         @Size(max = 30) String name,
         @NotNull @Min(1900) Integer birthYear,
         @Min(1) @Max(12) Integer birthMonth,
-        @Min(1) @Max(31) Integer birthDay) {
+        @Min(1) @Max(31) Integer birthDay,
+        @Nullable String inviteCode) {
 }

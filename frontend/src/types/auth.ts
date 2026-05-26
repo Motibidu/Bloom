@@ -12,6 +12,7 @@ export interface RegisterRequest {
   birthYear: number
   birthMonth?: number
   birthDay?: number
+  inviteCode?: string
 }
 
 export interface AuthResponse {
