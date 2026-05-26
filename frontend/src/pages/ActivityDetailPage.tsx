@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle, Share2 } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import PraiseCardPicker, { PRAISE_CARDS } from '@/components/ui/domain/checkin/praise-card-picker'
@@ -158,8 +158,8 @@ export default function ActivityDetailPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 md:px-6 pt-5 pb-10 space-y-6">
 
-      {/* ── 상단 바: 뒤로가기 + 공유 ───────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 mb-4">
+      {/* ── 상단 바: 뒤로가기 ──────────────────────────────────────────────────── */}
+      <div className="flex items-center mb-4">
         <button
           onClick={() => navigate('/')}
           aria-label="피드로 돌아가기"
@@ -170,18 +170,6 @@ export default function ActivityDetailPage() {
         >
           <ArrowLeft size={20} aria-hidden="true" />
           <span className="text-base font-bold">피드로 돌아가기</span>
-        </button>
-
-        <button
-          onClick={() => handleShare(checkin)}
-          aria-label="이 활동 공유하기"
-          className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-white border-2 text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ borderColor: main, color: dark, '--tw-ring-color': main } as React.CSSProperties}
-          onMouseEnter={e => { e.currentTarget.style.background = mA(0.06) }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
-        >
-          <Share2 size={18} aria-hidden="true" />
-          <span>공유하기</span>
         </button>
       </div>
 
@@ -194,6 +182,25 @@ export default function ActivityDetailPage() {
         onPhotoClick={(i) => setLightboxIndex(i)}
         commentCount={commentList.length}
       />
+
+      {/* ── 카카오톡 공유 버튼 ────────────────────────────────────────────────── */}
+      <button
+        onClick={() => handleShare(checkin)}
+        aria-label="카카오톡으로 이 활동 공유하기"
+        className="w-full inline-flex items-center justify-center gap-2.5 min-h-[56px] rounded-2xl text-lg font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+      >
+        <img
+          src="/kakao/kakaotalk_sharing_btn_medium.png"
+          alt=""
+          width={28}
+          height={28}
+          aria-hidden="true"
+        />
+        <span>카카오톡으로 공유하기</span>
+      </button>
 
       {/* ── 삭제 확인 모달 ────────────────────────────────────────────────────── */}
       {deleteConfirmOpen && (
