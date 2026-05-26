@@ -54,6 +54,7 @@ jobs:
             VITE_FIREBASE_VAPID_KEY=${{ secrets.VITE_FIREBASE_VAPID_KEY }}
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
             MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             ENVEOF
 
             # 빌드 및 재시작
