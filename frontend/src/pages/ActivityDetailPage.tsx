@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle, Share2 } from 'lucide-react'
+import { toast } from 'sonner'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import PraiseCardPicker, { PRAISE_CARDS } from '@/components/ui/domain/checkin/praise-card-picker'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { useCheckinDetail, useDeleteCheckin } from '@/hooks/useCheckin'
 import { useComments, useCreateComment } from '@/hooks/useComment'
 import { useAuthStore } from '@/store/authStore'
+import { isKakaoShareReady } from '@/lib/kakao'
 import type { CheckIn, Comment } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -72,6 +74,39 @@ export default function ActivityDetailPage() {
     )
   }
 
+  const handleShare = async (c: CheckIn) => {
+    const url = `${window.location.origin}/share/checkin/${c.id}`
+    if (isKakaoShareReady()) {
+      const thumbnail = c.photoUrls?.[0]
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: c.title,
+          description: `${c.nickname}님의 오늘 활동`,
+          // 카카오 SDK는 imageUrl 키가 있으면서 값이 비어있으면 거부하므로 사진이 있을 때만 포함
+          ...(thumbnail ? { imageUrl: thumbnail } : {}),
+          link: { mobileWebUrl: url, webUrl: url },
+        },
+        buttons: [{ title: '활동 보러 가기', link: { mobileWebUrl: url, webUrl: url } }],
+      })
+      return
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: c.title, url })
+      } catch {
+        // 사용자가 공유 시트를 닫으면 무시
+      }
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('링크를 복사했어요')
+    } catch {
+      toast.error('링크 복사에 실패했어요')
+    }
+  }
+
   // ── 로딩 ─────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -123,18 +158,32 @@ export default function ActivityDetailPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 md:px-6 pt-5 pb-10 space-y-6">
 
-      {/* ── 뒤로가기 ─────────────────────────────────────────────────────────── */}
-      <button
-        onClick={() => navigate('/')}
-        aria-label="피드로 돌아가기"
-        className="inline-flex items-center gap-1.5 min-h-[44px] px-2 py-1 rounded-xl mb-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={{ color: dark, '--tw-ring-color': main } as React.CSSProperties}
-        onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-      >
-        <ArrowLeft size={20} aria-hidden="true" />
-        <span className="text-base font-bold">피드로 돌아가기</span>
-      </button>
+      {/* ── 상단 바: 뒤로가기 + 공유 ───────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <button
+          onClick={() => navigate('/')}
+          aria-label="피드로 돌아가기"
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-2 py-1 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ color: dark, '--tw-ring-color': main } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+        >
+          <ArrowLeft size={20} aria-hidden="true" />
+          <span className="text-base font-bold">피드로 돌아가기</span>
+        </button>
+
+        <button
+          onClick={() => handleShare(checkin)}
+          aria-label="이 활동 공유하기"
+          className="inline-flex items-center gap-2 min-h-[44px] px-4 rounded-xl bg-white border-2 text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ borderColor: main, color: dark, '--tw-ring-color': main } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.background = mA(0.06) }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
+        >
+          <Share2 size={18} aria-hidden="true" />
+          <span>공유하기</span>
+        </button>
+      </div>
 
       {/* ── 본문 카드 ─────────────────────────────────────────────────────────── */}
       <CheckInCard

@@ -27,6 +27,7 @@ import BlockListPage from '@/pages/BlockListPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import TermsPage from '@/pages/TermsPage'
 import InviteLandingPage from '@/pages/InviteLandingPage'
+import SharePreviewPage from '@/pages/SharePreviewPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -93,6 +94,7 @@ export default function App() {
           />
           <Route path="/kakao-callback" element={<KakaoCallbackPage />} />
           <Route path="/invite/:inviteCode" element={<InviteLandingPage />} />
+          <Route path="/share/checkin/:id" element={<SharePreviewPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
 

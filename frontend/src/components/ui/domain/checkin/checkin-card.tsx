@@ -46,6 +46,7 @@ interface Props {
   commentCount?: number
   onAlsoCheckin?: () => void
   canInteract?: boolean
+  showMenu?: boolean
 }
 
 // ── 수정 모달 ────────────────────────────────────────────────────────────────
@@ -498,6 +499,7 @@ export default function CheckInCard({
   commentCount,
   onAlsoCheckin,
   canInteract = true,
+  showMenu = true,
 }: Props) {
   const { icon: Icon, label } = CATEGORY_META[checkin.category]
   const likeToggle = useLikeToggle(checkin.id)
@@ -597,7 +599,7 @@ export default function CheckInCard({
           </div>
 
           {/* 케밥 메뉴 (소유자: 수정/삭제 / 비소유자: 신고/차단) */}
-          {(isOwner || !isOwner) && (
+          {showMenu && (
             <div className="relative z-10">
               <button
                 ref={menuBtnRef}
