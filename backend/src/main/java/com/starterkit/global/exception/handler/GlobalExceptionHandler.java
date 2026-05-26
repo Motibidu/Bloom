@@ -5,6 +5,7 @@ import com.starterkit.domain.auth.exception.TokenRefreshException;
 import com.starterkit.domain.family.exception.AlreadyInFamilyException;
 import com.starterkit.domain.family.exception.FamilyNotFoundException;
 import com.starterkit.domain.family.exception.InvalidInviteCodeException;
+import com.starterkit.domain.user.exception.AgeRestrictionException;
 import com.starterkit.domain.user.exception.NicknameDuplicateException;
 import com.starterkit.domain.user.exception.UserAlreadyExistsException;
 import com.starterkit.global.exception.ResourceNotFoundException;
@@ -28,6 +29,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(ex.getMessage(), "NOT_FOUND"));
+    }
+
+    @ExceptionHandler(AgeRestrictionException.class)
+    public ResponseEntity<ErrorResponse> handleAgeRestriction(AgeRestrictionException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(ex.getMessage(), "AGE_RESTRICTION"));
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)

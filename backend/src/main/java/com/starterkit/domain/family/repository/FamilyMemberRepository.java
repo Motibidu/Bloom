@@ -21,4 +21,8 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Long
     List<Long> findUserIdsByGroupId(@Param("groupId") Long groupId);
 
     long countByGroupId(Long groupId);
+
+    void deleteByGroupId(Long groupId);
+
+    void deleteByGroupIdAndUserId(Long groupId, Long userId);
 }

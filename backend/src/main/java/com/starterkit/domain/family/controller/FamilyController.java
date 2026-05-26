@@ -4,12 +4,14 @@ import com.starterkit.domain.family.dto.request.CreateFamilyRequest;
 import com.starterkit.domain.family.dto.request.JoinFamilyRequest;
 import com.starterkit.domain.family.dto.response.FamilyFeedResponse;
 import com.starterkit.domain.family.dto.response.FamilyGroupResponse;
+import com.starterkit.domain.family.dto.response.FamilyPreviewResponse;
 import com.starterkit.domain.family.service.FamilyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +25,13 @@ import org.springframework.web.bind.annotation.*;
 public class FamilyController {
 
     private final FamilyService familyService;
+
+    @GetMapping("/preview")
+    @Operation(summary = "초대 코드 미리보기", description = "비인증 상태에서 초대 코드의 그룹 정보를 조회합니다.")
+    public ResponseEntity<FamilyPreviewResponse> getPreview(
+            @RequestParam("inviteCode") String inviteCode) {
+        return ResponseEntity.ok(familyService.getPreview(inviteCode));
+    }
 
     @PostMapping
     @Operation(summary = "가족 그룹 생성", description = "가족 그룹을 생성하고 8자리 초대 코드를 반환합니다.")
@@ -53,5 +62,14 @@ public class FamilyController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("id") Long groupId) {
         return ResponseEntity.ok(familyService.getFamilyFeed(userDetails.getUsername(), groupId));
+    }
+
+    @DeleteMapping("/{id}/members/me")
+    @Operation(summary = "가족 그룹 나가기", description = "그룹에서 탈퇴합니다. OWNER 탈퇴 시 그룹이 해산됩니다. FAMILY_VIEWER 탈퇴 시 일반 회원으로 전환됩니다.")
+    public ResponseEntity<Void> leaveFamily(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("id") Long groupId) {
+        familyService.leaveFamily(userDetails.getUsername(), groupId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

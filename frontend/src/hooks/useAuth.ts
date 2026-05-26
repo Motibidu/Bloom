@@ -7,6 +7,18 @@ import { isNativeApp, flushPendingFcmToken } from '@/lib/native-bridge'
 import { registerFcmWeb } from '@/lib/push-notification'
 import type { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
 
+async function handleInviteCodeAfterAuth(): Promise<string | null> {
+  const inviteCode = sessionStorage.getItem('pendingInviteCode')
+  if (!inviteCode) return null
+  sessionStorage.removeItem('pendingInviteCode')
+  try {
+    await api.post('/families/join', { inviteCode })
+    return '/family'
+  } catch {
+    return null
+  }
+}
+
 export function useLogin() {
   const { setAccessToken, setUser } = useAuthStore()
   const navigate = useNavigate()
@@ -23,7 +35,8 @@ export function useLogin() {
       } else {
         registerFcmWeb()
       }
-      navigate('/')
+      const redirect = await handleInviteCodeAfterAuth()
+      navigate(redirect ?? '/')
     },
   })
 }
@@ -60,7 +73,8 @@ export function useKakaoLogin() {
         } else {
           registerFcmWeb()
         }
-        navigate('/')
+        const redirect = await handleInviteCodeAfterAuth()
+        navigate(redirect ?? '/')
       }
     },
   })
@@ -81,7 +95,8 @@ export function useSetKakaoNickname() {
       } else {
         registerFcmWeb()
       }
-      navigate('/')
+      const redirect = await handleInviteCodeAfterAuth()
+      navigate(redirect ?? '/')
     },
   })
 }

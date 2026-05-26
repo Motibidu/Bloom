@@ -44,8 +44,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/checkins/*/comments").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/families/preview").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated()
+                        // FAMILY_VIEWER 허용 엔드포인트
+                        .requestMatchers("/api/families/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
+                        .requestMatchers(HttpMethod.GET, "/api/checkins/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
+                        .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("MEMBER", "FAMILY_VIEWER")
+                        // 나머지는 MEMBER만 접근 가능
+                        .anyRequest().hasRole("MEMBER")
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)

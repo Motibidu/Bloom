@@ -8,6 +8,7 @@ import {
   useMarkAllAsRead,
   type AppNotification,
 } from '@/hooks/useNotifications'
+import { useAuthStore } from '@/store/authStore'
 
 // ── 색상 토큰 ──────────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -107,9 +108,10 @@ export default function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const navigate = useNavigate()
+  const canWriteFeed = useAuthStore((s) => s.user?.canWriteFeed ?? false)
 
-  const { data: unreadData } = useUnreadCount()
-  const { data: notifications = [] } = useNotifications()
+  const { data: unreadData } = useUnreadCount(canWriteFeed)
+  const { data: notifications = [] } = useNotifications(canWriteFeed)
   const markAsRead = useMarkAsRead()
   const markAllAsRead = useMarkAllAsRead()
 

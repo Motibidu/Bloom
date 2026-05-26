@@ -31,12 +31,28 @@ export interface FamilyGroupSummary {
   memberCount: number
 }
 
+export interface FamilyPreview {
+  groupName: string
+  memberCount: number
+  memberNicknames: string[]
+}
+
 export interface CreateFamilyRequest {
   name: string
 }
 
 export interface JoinFamilyRequest {
   inviteCode: string
+}
+
+export function useFamilyPreview(inviteCode: string) {
+  return useQuery<FamilyPreview>({
+    queryKey: ['family', 'preview', inviteCode],
+    queryFn: () =>
+      api.get<FamilyPreview>('/families/preview', { params: { inviteCode } }).then(r => r.data),
+    enabled: inviteCode.length > 0,
+    retry: false,
+  })
 }
 
 export function useMyFamily() {
@@ -65,6 +81,17 @@ export function useJoinFamily() {
       api.post<FamilyGroupSummary>('/families/join', data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['family', 'my'] })
+    },
+  })
+}
+
+export function useLeaveFamilyGroup() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, number>({
+    mutationFn: (groupId) =>
+      api.delete(`/families/${groupId}/members/me`).then(() => {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family'] })
     },
   })
 }

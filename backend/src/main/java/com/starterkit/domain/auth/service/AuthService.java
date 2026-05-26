@@ -8,7 +8,15 @@ import com.starterkit.domain.auth.dto.response.KakaoUserInfo;
 import com.starterkit.domain.auth.entity.RefreshToken;
 import com.starterkit.domain.auth.exception.TokenRefreshException;
 import com.starterkit.domain.auth.repository.RefreshTokenRepository;
+import com.starterkit.domain.family.entity.FamilyGroup;
+import com.starterkit.domain.family.entity.FamilyMember;
+import com.starterkit.domain.family.entity.FamilyMemberRole;
+import com.starterkit.domain.family.exception.InvalidInviteCodeException;
+import com.starterkit.domain.family.repository.FamilyGroupRepository;
+import com.starterkit.domain.family.repository.FamilyMemberRepository;
 import com.starterkit.domain.user.entity.User;
+import com.starterkit.domain.user.entity.UserRole;
+import com.starterkit.domain.user.exception.AgeRestrictionException;
 import com.starterkit.domain.user.exception.NicknameDuplicateException;
 import com.starterkit.domain.user.exception.UserAlreadyExistsException;
 import com.starterkit.domain.user.repository.UserRepository;
@@ -35,6 +43,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +60,8 @@ public class AuthService implements UserDetailsService {
     private final RestTemplate restTemplate;
     private final RefreshTokenRepository refreshTokenRepository;
     private final EmailVerificationService emailVerificationService;
+    private final FamilyGroupRepository familyGroupRepository;
+    private final FamilyMemberRepository familyMemberRepository;
 
     @Value("${app.kakao.rest-api-key:}")
     private String kakaoRestApiKey;
@@ -70,7 +81,9 @@ public class AuthService implements UserDetailsService {
                        @Lazy AuthenticationManager authenticationManager,
                        RestTemplate restTemplate,
                        RefreshTokenRepository refreshTokenRepository,
-                       EmailVerificationService emailVerificationService) {
+                       EmailVerificationService emailVerificationService,
+                       FamilyGroupRepository familyGroupRepository,
+                       FamilyMemberRepository familyMemberRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
@@ -78,6 +91,8 @@ public class AuthService implements UserDetailsService {
         this.restTemplate = restTemplate;
         this.refreshTokenRepository = refreshTokenRepository;
         this.emailVerificationService = emailVerificationService;
+        this.familyGroupRepository = familyGroupRepository;
+        this.familyMemberRepository = familyMemberRepository;
     }
 
     @Override
@@ -97,6 +112,23 @@ public class AuthService implements UserDetailsService {
             throw new NicknameDuplicateException("Nickname already taken: " + req.nickname());
         }
 
+        boolean hasInviteCode = req.inviteCode() != null && !req.inviteCode().isBlank();
+        int age = Year.now().getValue() - req.birthYear();
+        boolean isAgeEligible = age >= 50;
+
+        if (!hasInviteCode && !isAgeEligible) {
+            throw new AgeRestrictionException("1976년 이전 출생자만 가입할 수 있어요. 가족 초대 코드가 있다면 함께 입력해 주세요.");
+        }
+
+        // inviteCode가 있으면 유효성 먼저 검증
+        FamilyGroup invitedGroup = null;
+        if (hasInviteCode) {
+            invitedGroup = familyGroupRepository.findByInviteCode(req.inviteCode())
+                    .orElseThrow(() -> new InvalidInviteCodeException("유효하지 않은 초대 코드입니다."));
+        }
+
+        UserRole role = hasInviteCode && !isAgeEligible ? UserRole.FAMILY_VIEWER : UserRole.MEMBER;
+
         User user = User.builder()
                 .email(req.email())
                 .password(passwordEncoder.encode(req.password()))
@@ -106,8 +138,20 @@ public class AuthService implements UserDetailsService {
                 .birthYear(req.birthYear())
                 .birthMonth(req.birthMonth())
                 .birthDay(req.birthDay())
+                .role(role)
                 .build();
         userRepository.save(user);
+
+        // 초대 코드로 가입한 경우 해당 가족 그룹에 GUEST로 자동 등록
+        if (invitedGroup != null && !familyMemberRepository.existsByGroupIdAndUserId(invitedGroup.getId(), user.getId())) {
+            familyMemberRepository.save(
+                    FamilyMember.builder()
+                            .group(invitedGroup)
+                            .user(user)
+                            .role(FamilyMemberRole.GUEST)
+                            .build()
+            );
+        }
 
         AuthResponse pair = generateTokenPair(user.getEmail());
         saveRefreshToken(pair.refreshToken(), user);
