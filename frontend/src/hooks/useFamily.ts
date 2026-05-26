@@ -31,12 +31,28 @@ export interface FamilyGroupSummary {
   memberCount: number
 }
 
+export interface FamilyPreview {
+  groupName: string
+  memberCount: number
+  memberNicknames: string[]
+}
+
 export interface CreateFamilyRequest {
   name: string
 }
 
 export interface JoinFamilyRequest {
   inviteCode: string
+}
+
+export function useFamilyPreview(inviteCode: string) {
+  return useQuery<FamilyPreview>({
+    queryKey: ['family', 'preview', inviteCode],
+    queryFn: () =>
+      api.get<FamilyPreview>('/families/preview', { params: { inviteCode } }).then(r => r.data),
+    enabled: inviteCode.length > 0,
+    retry: false,
+  })
 }
 
 export function useMyFamily() {

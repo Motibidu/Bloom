@@ -26,6 +26,7 @@ import ProfileEditPage from '@/pages/ProfileEditPage'
 import BlockListPage from '@/pages/BlockListPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import TermsPage from '@/pages/TermsPage'
+import InviteLandingPage from '@/pages/InviteLandingPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -53,6 +54,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     }
     initRefresh()
       .then(() => {
+        if (!user.canWriteFeed) return  // FAMILY_VIEWER는 푸시 알림 불필요
         if (isNativeApp()) {
           registerPushToken()
         } else {
@@ -90,6 +92,7 @@ export default function App() {
             element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>}
           />
           <Route path="/kakao-callback" element={<KakaoCallbackPage />} />
+          <Route path="/invite/:inviteCode" element={<InviteLandingPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
 

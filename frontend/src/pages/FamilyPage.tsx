@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Share2 } from 'lucide-react'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
 import { useNavigate } from 'react-router-dom'
@@ -14,56 +14,100 @@ const grad  = `linear-gradient(135deg, ${main}, ${light})`
 
 const serifStyle: React.CSSProperties = { fontFamily: "'Noto Serif KR', serif" }
 
-// ── 초대 코드 복사 버튼 ────────────────────────────────────────────────────────
-function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
-  const [copied, setCopied] = useState(false)
+// ── 초대 코드 / 링크 공유 블록 ────────────────────────────────────────────────
+const INVITE_BASE_URL = 'https://pcgear.store/invite'
 
-  const handleCopy = () => {
+function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+
+  const inviteLink = `${INVITE_BASE_URL}/${inviteCode}`
+
+  const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopiedCode(true)
+      setTimeout(() => setCopiedCode(false), 2000)
     })
+  }
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '가족 초대',
+          text: '오늘 뭐 했어요? 서비스에 가족으로 초대합니다.',
+          url: inviteLink,
+        })
+      } catch {
+        // 공유 취소 시 무시
+      }
+    } else {
+      navigator.clipboard.writeText(inviteLink).then(() => {
+        setCopiedLink(true)
+        setTimeout(() => setCopiedLink(false), 2000)
+      })
+    }
   }
 
   return (
     <div
-      className="rounded-2xl p-4 flex items-center justify-between gap-3"
-      style={{
-        background: mA(0.06),
-        border: `1.5px solid ${mA(0.15)}`,
-      }}
+      className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{ background: mA(0.06), border: `1.5px solid ${mA(0.15)}` }}
     >
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold mb-0.5" style={{ color: dark }}>초대 코드</p>
-        <p
-          className="text-2xl font-black tracking-[0.2em] text-foreground"
-          style={serifStyle}
-          aria-label={`초대 코드 ${inviteCode}`}
+      {/* 코드 행 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold mb-0.5" style={{ color: dark }}>초대 코드</p>
+          <p
+            className="text-2xl font-black tracking-[0.2em] text-foreground"
+            style={serifStyle}
+            aria-label={`초대 코드 ${inviteCode}`}
+          >
+            {inviteCode}
+          </p>
+        </div>
+        <button
+          onClick={handleCopyCode}
+          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-all duration-200 [-webkit-tap-highlight-color:transparent]"
+          style={copiedCode
+            ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
+            : { background: mA(0.12), color: dark }
+          }
+          aria-label={copiedCode ? '코드 복사됨' : '초대 코드 복사'}
         >
-          {inviteCode}
-        </p>
+          {copiedCode ? (
+            <><Check size={18} aria-hidden="true" />복사됨</>
+          ) : (
+            <><Copy size={18} aria-hidden="true" />코드 복사</>
+          )}
+        </button>
       </div>
-      <button
-        onClick={handleCopy}
-        className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-all duration-200 [-webkit-tap-highlight-color:transparent]"
-        style={copied
-          ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
-          : { background: grad, color: 'white' }
-        }
-        aria-label={copied ? '복사됨' : '초대 코드 복사'}
-      >
-        {copied ? (
-          <>
-            <Check size={18} aria-hidden="true" />
-            복사됨
-          </>
-        ) : (
-          <>
-            <Copy size={18} aria-hidden="true" />
-            복사
-          </>
-        )}
-      </button>
+
+      {/* 구분선 */}
+      <div className="h-px w-full rounded-full" style={{ background: mA(0.12) }} aria-hidden="true" />
+
+      {/* 링크 공유 행 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold mb-0.5" style={{ color: dark }}>가입 링크</p>
+          <p className="text-sm text-foreground/50 truncate">{inviteLink}</p>
+        </div>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-all duration-200 [-webkit-tap-highlight-color:transparent]"
+          style={copiedLink
+            ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
+            : { background: grad, color: 'white' }
+          }
+          aria-label={copiedLink ? '링크 복사됨' : '가입 링크 공유'}
+        >
+          {copiedLink ? (
+            <><Check size={18} aria-hidden="true" />복사됨</>
+          ) : (
+            <><Share2 size={18} aria-hidden="true" />링크 공유</>
+          )}
+        </button>
+      </div>
     </div>
   )
 }

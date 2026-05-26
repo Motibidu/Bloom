@@ -8,6 +8,7 @@ import com.starterkit.domain.family.dto.request.JoinFamilyRequest;
 import com.starterkit.domain.family.dto.response.FamilyFeedResponse;
 import com.starterkit.domain.family.dto.response.FamilyGroupResponse;
 import com.starterkit.domain.family.dto.response.FamilyMemberResponse;
+import com.starterkit.domain.family.dto.response.FamilyPreviewResponse;
 import com.starterkit.domain.family.entity.FamilyGroup;
 import com.starterkit.domain.family.entity.FamilyMember;
 import com.starterkit.domain.family.entity.FamilyMemberRole;
@@ -246,6 +247,19 @@ public class FamilyService {
         } catch (Exception e) {
             log.warn("이메일 발송 실패: {}", e.getMessage());
         }
+    }
+
+    public FamilyPreviewResponse getPreview(String inviteCode) {
+        FamilyGroup group = familyGroupRepository.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new InvalidInviteCodeException("유효하지 않은 초대 코드입니다."));
+
+        List<FamilyMember> members = familyMemberRepository.findByGroupId(group.getId());
+        List<String> nicknames = members.stream()
+                .map(fm -> fm.getUser().getNickname())
+                .limit(5)
+                .toList();
+
+        return new FamilyPreviewResponse(group.getName(), members.size(), nicknames);
     }
 
     private String generateUniqueInviteCode() {

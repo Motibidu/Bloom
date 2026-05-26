@@ -4,6 +4,7 @@ import com.starterkit.domain.family.dto.request.CreateFamilyRequest;
 import com.starterkit.domain.family.dto.request.JoinFamilyRequest;
 import com.starterkit.domain.family.dto.response.FamilyFeedResponse;
 import com.starterkit.domain.family.dto.response.FamilyGroupResponse;
+import com.starterkit.domain.family.dto.response.FamilyPreviewResponse;
 import com.starterkit.domain.family.service.FamilyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -24,6 +25,13 @@ import org.springframework.web.bind.annotation.*;
 public class FamilyController {
 
     private final FamilyService familyService;
+
+    @GetMapping("/preview")
+    @Operation(summary = "초대 코드 미리보기", description = "비인증 상태에서 초대 코드의 그룹 정보를 조회합니다.")
+    public ResponseEntity<FamilyPreviewResponse> getPreview(
+            @RequestParam("inviteCode") String inviteCode) {
+        return ResponseEntity.ok(familyService.getPreview(inviteCode));
+    }
 
     @PostMapping
     @Operation(summary = "가족 그룹 생성", description = "가족 그룹을 생성하고 8자리 초대 코드를 반환합니다.")
