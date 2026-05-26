@@ -54,7 +54,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // Sentry
-    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.13.1")
+    implementation("io.sentry:sentry-spring-boot-starter-jakarta:7.22.5")
 
     // Hot reload
     developmentOnly("org.springframework.boot:spring-boot-devtools")
