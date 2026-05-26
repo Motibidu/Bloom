@@ -162,6 +162,20 @@ public class CheckinService {
                 return CheckinResponse.of(checkin, likeCount, likedByMe, myReactionType, reactionCounts, commentCount, s3BaseUrl());
         }
 
+        @Transactional
+        public CheckinResponse getPublicById(Long id) {
+                Checkin checkin = checkinRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
+                checkin.incrementViewCount();
+                long likeCount = checkinRepository.countLikesByCheckinId(id);
+                long commentCount = checkinRepository.countCommentsByCheckinId(id);
+
+                List<Object[]> reactionRows = likeRepository.countByReactionTypeForCheckin(id);
+                Map<String, Long> reactionCounts = buildReactionCountMap(reactionRows);
+
+                return CheckinResponse.of(checkin, likeCount, false, null, reactionCounts, commentCount, s3BaseUrl());
+        }
+
         public TodayFeedResponse getTodayFeed(String email, List<Long> followingIds, Long cursor, int limit) {
                 User user = findUserByEmail(email);
                 LocalDateTime[] range = todayKstRange();

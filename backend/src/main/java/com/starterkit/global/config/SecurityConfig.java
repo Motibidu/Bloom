@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/families/preview").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/public/checkins/*").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // FAMILY_VIEWER 허용 엔드포인트
                         .requestMatchers("/api/families/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
