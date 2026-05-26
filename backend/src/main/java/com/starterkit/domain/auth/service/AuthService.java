@@ -134,19 +134,17 @@ public class AuthService implements UserDetailsService {
                 .orElseThrow(() -> new TokenRefreshException("Invalid refresh token"));
 
         if (stored.isRevoked()) {
-            // 재사용 감지 — 해당 유저의 모든 세션 폐기
-            refreshTokenRepository.revokeAllByUserId(stored.getUser().getId());
-            log.warn("[Security] Refresh token reuse detected for userId={}", stored.getUser().getId());
-            throw new TokenRefreshException("Refresh token reuse detected — all sessions revoked");
+            throw new TokenRefreshException("Refresh token already used");
         }
 
-        // 구 토큰 폐기
-        stored.setRevoked(true);
+        if (stored.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+            throw new TokenRefreshException("Refresh token expired");
+        }
 
+        // refresh token은 rotation하지 않고 재사용, access token만 새로 발급
         User user = stored.getUser();
-        AuthResponse newPair = generateTokenPair(user.getEmail());
-        saveRefreshToken(newPair.refreshToken(), user);
-        return newPair;
+        String newAccessToken = tokenProvider.generateAccessToken(user.getEmail());
+        return new AuthResponse(newAccessToken, rawToken, "Bearer", false);
     }
 
     public void logout(String rawToken) {

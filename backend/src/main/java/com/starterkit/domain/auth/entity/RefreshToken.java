@@ -24,7 +24,7 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "token_hash", nullable = false, length = 64)
+    @Column(name = "token_hash", nullable = false, length = 64, unique = true)
     private String tokenHash;
 
     @ManyToOne(fetch = FetchType.LAZY)
