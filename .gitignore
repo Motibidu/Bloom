@@ -48,3 +48,9 @@ backend/bin/
 frontend/.claude/
 
 playwright_screenshot/*
+
+.env
+
+google-services.json
+
+
