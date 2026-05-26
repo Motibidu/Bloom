@@ -4,7 +4,7 @@ import { Toaster } from 'sonner'
 import { useEffect, useRef, useState } from 'react'
 import { queryClient } from '@/lib/queryClient'
 import { useAuthStore } from '@/store/authStore'
-import api from '@/lib/api'
+import { initRefresh } from '@/lib/api'
 import type { AxiosError } from 'axios'
 import { isNativeApp, registerPushToken } from '@/lib/native-bridge'
 import { registerFcmWeb } from '@/lib/push-notification'
@@ -39,7 +39,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 
 // 앱 초기 진입 시 refresh token 쿠키로 accessToken 복구
 function AuthInitializer({ children }: { children: React.ReactNode }) {
-  const { user, setAccessToken, logout } = useAuthStore()
+  const { user, logout } = useAuthStore()
   const [ready, setReady] = useState(false)
   const called = useRef(false)
 
@@ -51,9 +51,8 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
       setReady(true)
       return
     }
-    api.post<{ accessToken: string }>('/auth/refresh')
-      .then(({ data }) => {
-        setAccessToken(data.accessToken)
+    initRefresh()
+      .then(() => {
         if (isNativeApp()) {
           registerPushToken()
         } else {
