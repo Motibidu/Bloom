@@ -87,14 +87,14 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
      * cursor가 있으면 해당 id보다 작은 체크인만 반환.
      */
     @EntityGraph(attributePaths = "user")
-    @Query("SELECT c FROM Checkin c WHERE (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    @Query("SELECT c FROM Checkin c WHERE c.isSimple = false AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
     List<Checkin> findAllByCursorOrderByIdDesc(@Param("cursor") Long cursor, @Param("limit") int limit);
 
     /**
      * 팔로우 피드 커서 기반 조회
      */
     @EntityGraph(attributePaths = "user")
-    @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    @Query("SELECT c FROM Checkin c WHERE c.isSimple = false AND c.user.id IN :userIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
     List<Checkin> findByUserIdsByCursorOrderByIdDesc(@Param("userIds") List<Long> userIds,
                                                      @Param("cursor") Long cursor,
                                                      @Param("limit") int limit);
@@ -122,7 +122,7 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
      * 차단 사용자 제외 커서 기반 피드 조회 (전체 피드용)
      */
     @EntityGraph(attributePaths = "user")
-    @Query("SELECT c FROM Checkin c WHERE c.user.id NOT IN :excludeUserIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    @Query("SELECT c FROM Checkin c WHERE c.isSimple = false AND c.user.id NOT IN :excludeUserIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
     List<Checkin> findAllByCursorExcludingUsersOrderByIdDesc(@Param("excludeUserIds") List<Long> excludeUserIds,
                                                               @Param("cursor") Long cursor,
                                                               @Param("limit") int limit);
@@ -131,7 +131,7 @@ public interface CheckinRepository extends JpaRepository<Checkin, Long> {
      * 차단 사용자 제외 팔로우 피드 커서 기반 조회
      */
     @EntityGraph(attributePaths = "user")
-    @Query("SELECT c FROM Checkin c WHERE c.user.id IN :userIds AND c.user.id NOT IN :excludeUserIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
+    @Query("SELECT c FROM Checkin c WHERE c.isSimple = false AND c.user.id IN :userIds AND c.user.id NOT IN :excludeUserIds AND (:cursor IS NULL OR c.id < :cursor) ORDER BY c.id DESC LIMIT :limit")
     List<Checkin> findByUserIdsByCursorExcludingUsersOrderByIdDesc(@Param("userIds") List<Long> userIds,
                                                                     @Param("excludeUserIds") List<Long> excludeUserIds,
                                                                     @Param("cursor") Long cursor,
