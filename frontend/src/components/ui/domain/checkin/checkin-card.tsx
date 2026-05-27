@@ -564,7 +564,7 @@ export default function CheckInCard({
       )}
 
       {/* 헤더 */}
-      <div className="pl-5 pr-5 pt-4 pb-2">
+      <div className="pl-3 pr-3 sm:pl-5 sm:pr-5 pt-2 sm:pt-4 pb-2">
         <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-lg font-black"
@@ -683,12 +683,12 @@ export default function CheckInCard({
       </div>
 
       {/* 구분선 */}
-      <hr className="mx-6 border-none h-px" style={{ background: mA(0.18) }} />
+      <hr className="mx-3 sm:mx-6 border-none h-px" style={{ background: mA(0.18) }} />
 
       {/* 본문 + 사진 wrapper */}
       <div className={`flex-1 flex flex-col ${showFullContent ? 'min-h-[200px]' : 'min-h-[160px]'}`}>
         {/* 본문 */}
-        <div className="pl-7 pr-5 pt-4 pb-5">
+        <div className="pl-4 pr-3 sm:pl-7 sm:pr-5 pt-4 pb-5">
           <h3
             className="text-xl font-black text-foreground mb-2 leading-snug"
             style={{ textWrap: 'balance' } as React.CSSProperties}
@@ -702,7 +702,7 @@ export default function CheckInCard({
 
         {/* 사진 */}
         {checkin.photoUrls && checkin.photoUrls.length > 0 && (
-        <div className="px-5 pb-5">
+        <div className="px-3 sm:px-5 pb-5">
           {checkin.photoUrls.length === 1 ? (
             <img
               src={checkin.photoUrls[0]}
@@ -793,7 +793,7 @@ export default function CheckInCard({
 
       {/* 하단 반응 바 */}
       <div
-        className="px-5 flex items-center relative mt-auto"
+        className="px-3 sm:px-5 flex items-center relative mt-auto"
         style={{
           borderTop: `1px solid ${mA(0.10)}`,
           background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,

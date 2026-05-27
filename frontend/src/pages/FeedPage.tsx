@@ -362,7 +362,7 @@ export default function FeedPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
 
       {/* ── 인사말 헤더 ────────────────────────────────────────────────────── */}
       <header
