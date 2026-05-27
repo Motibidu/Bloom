@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useScrollContainer } from '@/lib/scrollContext'
 import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
@@ -119,8 +120,12 @@ function SameCategoryUserRow({ user, currentUserId, onFollowSuccess }: { user: a
   )
 }
 
+const SCROLL_KEY = 'feed-scroll-y'
+
 export default function FeedPage() {
   const navigate = useNavigate()
+  const scrollContainer = useScrollContainer()
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [title, setTitle] = useState('')
@@ -146,6 +151,16 @@ export default function FeedPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteTodayFeed(feedTab)
+
+  // 복원 대상 스크롤 위치 (마운트 시 sessionStorage에서 1회만 읽음)
+  const restoreTargetRef = useRef<number | null>(null)
+  if (restoreTargetRef.current === null) {
+    const saved = sessionStorage.getItem(SCROLL_KEY)
+    restoreTargetRef.current = saved ? Number(saved) : -1
+    sessionStorage.removeItem(SCROLL_KEY)
+  }
+  // 복원 진행 중에는 저장을 막기 위한 플래그
+  const restoringRef = useRef(restoreTargetRef.current >= 0)
 
   // IntersectionObserver — 하단 센티넬 감지 시 다음 페이지 로드
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -175,6 +190,27 @@ export default function FeedPage() {
   const { data: sameCategoryUsers, refetch: fetchSameCategoryUsers, isFetching: isFetchingUsers } = useSameCategoryUsers()
   const currentUser = useAuthStore((s) => s.user)
   const canWriteFeed = currentUser?.canWriteFeed ?? false
+
+  // 스크롤 위치 복원 — DOM 높이가 목표치를 수용할 때까지(무한 스크롤로 페이지 추가) 재시도.
+  // ⚠ early return(로딩/에러)보다 위에 있어야 hook 호출 순서가 일정하게 유지된다.
+  const loadedCheckinCount = (infiniteFeed?.pages ?? []).reduce((n, p) => n + p.checkins.length, 0)
+  useEffect(() => {
+    const target = restoreTargetRef.current
+    if (target === null || target < 0) return
+    if (isLoading) return
+    const el = scrollContainer?.current
+    if (!el) return
+
+    if (el.scrollHeight - el.clientHeight >= target) {
+      el.scrollTop = target
+      restoreTargetRef.current = -1
+      // 복원 직후 발생하는 scroll 이벤트가 위치를 덮어쓰지 않도록 다음 프레임까지 차단 유지
+      requestAnimationFrame(() => { restoringRef.current = false })
+      return
+    }
+    // 높이가 부족하면 다음 페이지를 당겨 복원에 필요한 높이를 확보
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage()
+  }, [isLoading, loadedCheckinCount, hasNextPage, isFetchingNextPage, fetchNextPage, scrollContainer])
 
   const handleModeToggle = () => {
     const next = checkinMode === 'simple' ? 'detail' : 'simple'
@@ -318,8 +354,15 @@ export default function FeedPage() {
     .flatMap((p) => p.checkins)
     .filter((c: any) => !c.isSimple || c.userId === currentUser?.id)
 
+  // 떠나기 직전 스크롤 위치 저장 (상세 진입 시 onNavigate에서 호출)
+  const saveScroll = () => {
+    if (restoringRef.current) return
+    const el = scrollContainer?.current
+    if (el) sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop))
+  }
+
   return (
-    <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+    <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
 
       {/* ── 인사말 헤더 ────────────────────────────────────────────────────── */}
       <header
@@ -454,7 +497,7 @@ export default function FeedPage() {
           onClick={() => setIsFormOpen(true)}
           className="w-full rounded-2xl px-5 sm:px-7 py-5 sm:py-7 flex items-center gap-4 sm:gap-5 text-left min-h-[88px] sm:min-h-[108px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           style={{
-            background: 'linear-gradient(135deg, oklch(0.68 0.13 220), oklch(0.58 0.14 235))',
+            background: grad,
             boxShadow: `0 4px 20px oklch(0.62 0.13 220 / 0.25)`,
             '--tw-ring-color': main,
           } as React.CSSProperties}
@@ -537,7 +580,7 @@ export default function FeedPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[40px]"
                 style={{
                   color: dark,
-                  background: checkinMode === 'simple' ? `oklch(0.62 0.15 220 / 0.08)` : `oklch(0.62 0.15 220 / 0.08)`,
+                  background: mA(0.08),
                   '--tw-ring-color': main,
                 } as React.CSSProperties}
                 aria-pressed={checkinMode === 'detail'}
@@ -889,22 +932,24 @@ export default function FeedPage() {
             </div>
           )
         ) : (
-          <div className="space-y-6 w-full max-w-4xl mx-auto">
-            {checkins.map((checkin: any) => (
-              <FeedCheckinCard
-                key={checkin.id}
-                checkin={checkin}
-                currentUserId={currentUser?.id}
-                canInteract={canWriteFeed}
-                onNavigate={() => navigate(`/checkin/${checkin.id}`)}
-                onAlsoCheckin={() => {
-                  setSelectedCategory(checkin.category as Category)
-                  setIsFormOpen(true)
-                  setTimeout(() => {
-                    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }, 50)
-                }}
-              />
+          <div className="-mx-6 w-[calc(100%+3rem)] sm:mx-0 sm:w-full flex flex-col sm:gap-6">
+            {checkins.map((checkin: any, idx: number) => (
+              <React.Fragment key={checkin.id}>
+                {idx > 0 && <div className="sm:hidden h-4" style={{ background: 'oklch(0.96 0.01 220)' }} aria-hidden="true" />}
+                <FeedCheckinCard
+                  checkin={checkin}
+                  currentUserId={currentUser?.id}
+                  canInteract={canWriteFeed}
+                  onNavigate={() => { saveScroll(); navigate(`/checkin/${checkin.id}`) }}
+                  onAlsoCheckin={() => {
+                    setSelectedCategory(checkin.category as Category)
+                    setIsFormOpen(true)
+                    setTimeout(() => {
+                      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }, 50)
+                  }}
+                />
+              </React.Fragment>
             ))}
 
             {/* 스켈레톤 로딩 카드 — 다음 페이지 로드 중 표시 */}
@@ -913,7 +958,7 @@ export default function FeedPage() {
                 {[0, 1].map((i) => (
                   <div
                     key={`skeleton-${i}`}
-                    className="rounded-2xl bg-card p-5 space-y-4 animate-pulse"
+                    className="rounded-none sm:rounded-2xl bg-card p-5 space-y-4 animate-pulse"
                     style={{ border: `1px solid ${mA(0.10)}` }}
                     aria-hidden="true"
                   >
