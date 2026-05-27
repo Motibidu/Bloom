@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useScrollContainer } from '@/lib/scrollContext'
 import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
@@ -271,6 +272,9 @@ export default function FeedPage() {
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
         isSimple: checkinMode === 'simple',
       })
+      if (checkinMode === 'simple') {
+        toast.success('기록 완료! 가족 탭에서 확인할 수 있어요 👨‍👩‍👧')
+      }
       handleCloseForm()
     } catch {
       // 에러는 각 mutation에서 처리됨
@@ -352,7 +356,7 @@ export default function FeedPage() {
   const activitySummary = firstPage?.activitySummary ?? []
   const checkins = (infiniteFeed?.pages ?? [])
     .flatMap((p) => p.checkins)
-    .filter((c: any) => !c.isSimple || c.userId === currentUser?.id)
+    .filter(Boolean)
 
   // 떠나기 직전 스크롤 위치 저장 (상세 진입 시 onNavigate에서 호출)
   const saveScroll = () => {
@@ -630,6 +634,10 @@ export default function FeedPage() {
                       {' '}로 등록돼요
                     </p>
                   </div>
+                  {/* 가족 탭 공유 안내 */}
+                  <p className="text-base font-semibold text-center" style={{ color: mA(0.6) }} aria-live="polite">
+                    👨‍👩‍👧 가족 탭에만 공유돼요
+                  </p>
                   {/* 바로 등록 버튼 */}
                   <BigButton
                     fullWidth
