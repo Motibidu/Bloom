@@ -527,7 +527,7 @@ export default function CheckInCard({
   return (
     <article
       className={`
-        group relative rounded-2xl bg-white overflow-hidden flex flex-col
+        group relative rounded-none sm:rounded-2xl bg-white overflow-hidden flex flex-col
         checkin-card
         ${isClickable ? 'checkin-card--clickable cursor-pointer' : ''}
       `}
