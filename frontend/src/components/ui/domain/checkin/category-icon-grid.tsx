@@ -1,7 +1,6 @@
 import { CATEGORY_META, CATEGORY_ORDER } from '@/lib/categories'
 import type { Category } from '@/types'
 
-const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
 
