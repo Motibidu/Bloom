@@ -110,7 +110,7 @@ function EditModal({
               type="button"
               onClick={onClose}
               aria-label="수정 취소"
-              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              className="min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{ background: mA(0.06), color: dark }}
             >
               <X size={20} aria-hidden="true" />
@@ -168,6 +168,7 @@ function EditModal({
               value={editTitle}
               onChange={e => setEditTitle(e.target.value)}
               placeholder="활동 제목을 입력해 주세요"
+              autoComplete="off"
               className="w-full rounded-2xl px-4 py-3 text-base text-foreground leading-relaxed outline-none border-2 transition-colors"
               style={{
                 borderColor: editTitle.length > 0 ? mA(0.45) : mA(0.15),
@@ -194,6 +195,7 @@ function EditModal({
               value={editDesc}
               onChange={e => setEditDesc(e.target.value)}
               placeholder="활동 내용을 입력해 주세요"
+              autoComplete="off"
               className="w-full resize-none rounded-2xl px-4 py-3 text-base text-foreground leading-relaxed outline-none border-2 transition-colors"
               style={{
                 borderColor: editDesc.length > 0 ? mA(0.45) : mA(0.15),
@@ -289,7 +291,7 @@ function DeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 [-webkit-tap-highlight-color:transparent]"
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
             style={{ background: mA(0.08), color: dark }}
           >
             취소
@@ -297,7 +299,7 @@ function DeleteConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 [-webkit-tap-highlight-color:transparent]"
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
             style={{ background: 'oklch(0.55 0.18 20)' }}
           >
             삭제하기
@@ -467,7 +469,7 @@ function BlockConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors"
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
             style={{ background: mA(0.08), color: dark }}
           >
             취소
@@ -476,7 +478,7 @@ function BlockConfirmModal({
             type="button"
             onClick={handleConfirm}
             disabled={blockUser.isPending}
-            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white disabled:opacity-40 transition-opacity"
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
             style={{ background: 'oklch(0.55 0.18 20)' }}
           >
             {blockUser.isPending ? (

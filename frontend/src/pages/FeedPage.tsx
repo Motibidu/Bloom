@@ -537,18 +537,18 @@ export default function FeedPage() {
           style={{ border: `2px solid ${mA(0.20)}` }}
         >
           {/* 폼 헤더 */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-black text-foreground shrink-0">
               오늘 활동 기록하기
             </h2>
             <button
               type="button"
               onClick={handleCloseForm}
               aria-label="작성 취소하기"
-              className="inline-flex items-center gap-1.5 min-h-[52px] min-w-[52px] px-4 rounded-xl text-lg font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-1.5 min-h-[48px] min-w-[48px] px-3 rounded-xl text-base font-semibold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shrink-0"
               style={{ '--tw-ring-color': main } as React.CSSProperties}
             >
-              <X size={22} aria-hidden="true" />
+              <X size={20} aria-hidden="true" />
               <span>취소</span>
             </button>
           </div>
@@ -577,7 +577,7 @@ export default function FeedPage() {
               <button
                 type="button"
                 onClick={handleModeToggle}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[40px]"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[48px]"
                 style={{
                   color: dark,
                   background: mA(0.08),
@@ -693,6 +693,7 @@ export default function FeedPage() {
                   placeholder="활동 제목을 입력해 주세요"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
 
@@ -715,6 +716,7 @@ export default function FeedPage() {
                   placeholder="오늘 활동을 간단히 설명해 주세요"
                   value={content}
                   onChange={e => setContent(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
 
