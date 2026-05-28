@@ -368,57 +368,29 @@ export default function FeedPage() {
   return (
     <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
 
-      {/* ── 인사말 헤더 ────────────────────────────────────────────────────── */}
+      {/* ── 미니 인사말 헤더 ──────────────────────────────────────────────── */}
       <header
-        className="relative rounded-3xl px-5 sm:px-8 py-6 sm:py-8 flex items-center gap-4 sm:gap-6 overflow-hidden"
+        className="rounded-2xl px-4 py-3 flex items-center gap-3"
         style={{
-          background: `linear-gradient(135deg, ${mA(0.08)} 0%, ${lA(0.12)} 100%)`,
+          background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
           border: `1px solid ${mA(0.15)}`,
         }}
       >
-        {/* 배경 장식 orb */}
-        <div
-          className="absolute -top-8 -right-8 w-40 h-40 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${lA(0.25)}, transparent 70%)` }}
-          aria-hidden="true"
-        />
-        <div
-          className="absolute -bottom-6 -left-4 w-28 h-28 rounded-full pointer-events-none"
-          style={{ background: `radial-gradient(circle, ${mA(0.15)}, transparent 70%)` }}
-          aria-hidden="true"
-        />
-
-        {/* 아이콘 */}
-        <div
-          className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0 relative lp-float"
-          style={{ background: grad }}
-          aria-hidden="true"
-        >
-          <span className="text-2xl sm:text-3xl">☀️</span>
-        </div>
-
-        <div className="space-y-0.5 min-w-0 relative">
-          <p className="text-sm sm:text-base font-bold" style={{ color: dark }}>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold" style={{ color: dark }}>
             {formatTodayKo()}
           </p>
-          <h1 className="text-lg sm:text-2xl font-black text-foreground leading-snug">
+          <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
             오늘도 좋은 하루 되세요!
           </h1>
-          <p className="text-sm sm:text-base font-medium text-muted-foreground leading-relaxed">
-            오늘 하루 어떤 활동을 하셨나요? 기록해 보세요.
-          </p>
+          {totalCheckinCount > 0 && (
+            <p className="text-sm font-medium text-muted-foreground mt-0.5">
+              🌡️ {getParticipationMessage(totalCheckinCount)}
+            </p>
+          )}
         </div>
+        <span className="text-2xl shrink-0" aria-hidden="true">☀️</span>
       </header>
-
-      {/* ── 참여 온도 ────────────────────────────────────────────────────── */}
-      {totalCheckinCount > 0 && (
-        <p
-          className="text-base font-bold px-5 py-3 rounded-2xl w-fit whitespace-nowrap"
-          style={{ background: mA(0.08), color: dark, border: `1px solid ${mA(0.18)}` }}
-        >
-          🌡️ {getParticipationMessage(totalCheckinCount)}
-        </p>
-      )}
 
       {/* ── 같은 카테고리 활동자 배너 ─────────────────────────────────────── */}
       {sameCategoryUserCount > 0 && (
@@ -494,45 +466,6 @@ export default function FeedPage() {
           </p>
         </div>
       )}
-      {canWriteFeed && (isFormOpen ? null : (
-        <button
-          type="button"
-          aria-label="오늘 활동 기록하기"
-          onClick={() => setIsFormOpen(true)}
-          className="w-full rounded-2xl px-5 sm:px-7 py-5 sm:py-7 flex items-center gap-4 sm:gap-5 text-left min-h-[88px] sm:min-h-[108px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{
-            background: grad,
-            boxShadow: `0 4px 20px oklch(0.62 0.13 220 / 0.25)`,
-            '--tw-ring-color': main,
-          } as React.CSSProperties}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
-        >
-          {/* 아이콘 박스 */}
-          <div
-            className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'oklch(1 0 0 / 0.18)' }}
-            aria-hidden="true"
-          >
-            <PenLine size={22} className="text-white" />
-          </div>
-
-          <div className="space-y-1 min-w-0">
-            <p className="text-lg sm:text-xl font-black text-white">오늘 활동 기록하기</p>
-            <p className="text-sm sm:text-base font-semibold" style={{ color: 'oklch(1 0 0 / 0.75)' }}>
-              탭해서 바로 시작하기
-            </p>
-          </div>
-
-          <div
-            className="ml-auto shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'oklch(1 0 0 / 0.18)' }}
-            aria-hidden="true"
-          >
-            <span className="text-white text-lg font-black">→</span>
-          </div>
-        </button>
-      ))}
       {canWriteFeed && isFormOpen && (
         <section
           ref={formRef}
@@ -1008,6 +941,25 @@ export default function FeedPage() {
           </div>
         )}
       </section>
+
+      {/* ── 활동 기록 FAB ──────────────────────────────────────────────────── */}
+      {canWriteFeed && !isFormOpen && (
+        <button
+          type="button"
+          aria-label="오늘 활동 기록하기"
+          onClick={() => setIsFormOpen(true)}
+          className="fixed right-5 z-40 w-14 h-14 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform]"
+          style={{
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)',
+            background: grad,
+            boxShadow: '0 4px 20px oklch(0.62 0.13 220 / 0.35)',
+            touchAction: 'manipulation',
+            '--tw-ring-color': main,
+          } as React.CSSProperties}
+        >
+          <PenLine size={24} className="text-white" aria-hidden="true" />
+        </button>
+      )}
     </main>
   )
 }
