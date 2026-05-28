@@ -143,6 +143,7 @@ export default function FeedPage() {
   const [feedTab, setFeedTab] = useState<'all' | 'following'>('all')
 
   const [sameCategorySheetOpen, setSameCategorySheetOpen] = useState(false)
+  const [isScrolledDown, setIsScrolledDown] = useState(false)
 
   const {
     data: infiniteFeed,
@@ -212,6 +213,15 @@ export default function FeedPage() {
     // 높이가 부족하면 다음 페이지를 당겨 복원에 필요한 높이를 확보
     if (hasNextPage && !isFetchingNextPage) fetchNextPage()
   }, [isLoading, loadedCheckinCount, hasNextPage, isFetchingNextPage, fetchNextPage, scrollContainer])
+
+  // 스크롤 200px 이상 내리면 데스크탑 FAB 표시
+  useEffect(() => {
+    const el = scrollContainer?.current
+    if (!el) return
+    const onScroll = () => setIsScrolledDown(el.scrollTop > 200)
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [scrollContainer])
 
   const handleModeToggle = () => {
     const next = checkinMode === 'simple' ? 'detail' : 'simple'
@@ -369,8 +379,49 @@ export default function FeedPage() {
     <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
 
       {/* ── 미니 인사말 헤더 ──────────────────────────────────────────────── */}
+      <div className="hidden md:flex items-stretch gap-4">
+        <header
+          className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={{
+            background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
+            border: `1px solid ${mA(0.15)}`,
+          }}
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold" style={{ color: dark }}>
+              {formatTodayKo()}
+            </p>
+            <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
+              오늘도 좋은 하루 되세요!
+            </h1>
+            {totalCheckinCount > 0 && (
+              <p className="text-sm font-medium text-muted-foreground mt-0.5">
+                🌡️ {getParticipationMessage(totalCheckinCount)}
+              </p>
+            )}
+          </div>
+        </header>
+        {/* 데스크탑 — 헤더 오른쪽 외부 기록하기 버튼 */}
+        {canWriteFeed && !isFormOpen && (
+          <button
+            type="button"
+            aria-label="오늘 활동 기록하기"
+            onClick={() => setIsFormOpen(true)}
+            className="inline-flex items-center gap-2 px-6 rounded-2xl text-base font-bold text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 transition-opacity"
+            style={{
+              background: grad,
+              boxShadow: `0 4px 16px ${mA(0.30)}`,
+              '--tw-ring-color': main,
+            } as React.CSSProperties}
+          >
+            <PenLine size={18} aria-hidden="true" />
+            기록하기
+          </button>
+        )}
+      </div>
+      {/* 모바일 헤더 */}
       <header
-        className="rounded-2xl px-4 py-3 flex items-center gap-3"
+        className="md:hidden rounded-2xl px-4 py-3 flex items-center gap-3"
         style={{
           background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
           border: `1px solid ${mA(0.15)}`,
@@ -942,22 +993,24 @@ export default function FeedPage() {
         )}
       </section>
 
-      {/* ── 활동 기록 FAB ──────────────────────────────────────────────────── */}
+      {/* ── 활동 기록 FAB ────────────────────────────────────────────────────── */}
+      {/* 모바일: 항상 표시 / 데스크탑: 200px 이상 스크롤 시 표시 */}
       {canWriteFeed && !isFormOpen && (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
           onClick={() => setIsFormOpen(true)}
-          className="fixed right-5 z-40 w-14 h-14 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform]"
+          className={`fixed right-15 z-40 w-16 h-16 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform] md:w-auto md:h-auto md:rounded-2xl md:px-5 md:py-6 md:gap-2 ${isScrolledDown ? 'md:flex' : 'md:hidden'}`}
           style={{
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
             background: grad,
             boxShadow: '0 4px 20px oklch(0.62 0.13 220 / 0.35)',
             touchAction: 'manipulation',
             '--tw-ring-color': main,
           } as React.CSSProperties}
         >
-          <PenLine size={24} className="text-white" aria-hidden="true" />
+          <PenLine size={22} className="text-white" aria-hidden="true" />
+          <span className="hidden md:inline text-white font-bold text-base">기록하기</span>
         </button>
       )}
     </main>

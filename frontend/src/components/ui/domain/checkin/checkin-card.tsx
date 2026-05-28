@@ -688,7 +688,7 @@ export default function CheckInCard({
       <hr className="mx-3 sm:mx-6 border-none h-px" style={{ background: mA(0.18) }} />
 
       {/* 본문 + 사진 wrapper */}
-      <div className={`flex-1 flex flex-col ${showFullContent ? 'min-h-[200px]' : 'min-h-[160px]'}`}>
+      <div className="flex-1 flex flex-col">
         {/* 본문 */}
         <div className="pl-4 pr-3 sm:pl-7 sm:pr-5 pt-4 pb-5">
           <h3
