@@ -4,8 +4,8 @@ import api from '@/lib/api'
 export interface AppNotification {
   id: number
   actorNickname: string
-  type: 'LIKE' | 'COMMENT'
-  checkinId: number
+  type: 'LIKE' | 'COMMENT' | 'PROMPT'
+  checkinId: number | null
   message: string
   isRead: boolean
   createdAt: string

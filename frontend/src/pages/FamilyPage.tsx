@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Share2 } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Share2, Send, ChevronLeft, Bell } from 'lucide-react'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/shadcn/sheet'
+import { type PromptDirection, type PromptTemplateItem, PROMPT_TEMPLATES } from '@/types/prompt'
+import { useSendPrompt, useReceivedPrompts } from '@/hooks/usePrompt'
 
 // ── Warm Blue 테마 ─────────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -68,7 +71,7 @@ function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
         </div>
         <button
           onClick={handleCopyCode}
-          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-all duration-200 [-webkit-tap-highlight-color:transparent]"
+          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-colors duration-200 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           style={copiedCode
             ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
             : { background: mA(0.12), color: dark }
@@ -94,7 +97,7 @@ function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
         </div>
         <button
           onClick={handleShare}
-          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-all duration-200 [-webkit-tap-highlight-color:transparent]"
+          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-colors duration-200 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           style={copiedLink
             ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
             : { background: grad, color: 'white' }
@@ -227,7 +230,7 @@ function LeaveConfirmDialog({
             className="flex-1 min-h-[52px] rounded-2xl text-base font-black text-white transition-opacity disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             style={{ background: isOwner ? 'oklch(0.55 0.2 25)' : grad }}
           >
-            {isPending ? '처리 중...' : isOwner ? '해산하기' : '나가기'}
+            {isPending ? '처리 중…' : isOwner ? '해산하기' : '나가기'}
           </button>
         </div>
       </div>
@@ -236,14 +239,16 @@ function LeaveConfirmDialog({
 }
 
 // ── 그룹 있는 화면 ─────────────────────────────────────────────────────────────
-function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
+function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentUserId }: {
   groupId: number
   name: string
   inviteCode: string
   members: { userId: number; nickname: string; profileImageUrl: string | null }[]
   isOwner: boolean
+  currentUserId: number | null
 }) {
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
+  const [promptSheetOpen, setPromptSheetOpen] = useState(false)
   const leaveFamily = useLeaveFamilyGroup()
 
   const handleLeaveConfirm = async () => {
@@ -266,6 +271,12 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
       onConfirm={handleLeaveConfirm}
       onCancel={() => setLeaveDialogOpen(false)}
     />
+    <PromptSheet
+      open={promptSheetOpen}
+      onClose={() => setPromptSheetOpen(false)}
+      members={members}
+      currentUserId={currentUserId}
+    />
     <div className="flex flex-col gap-6">
       {/* 그룹 헤더 카드 */}
       <div
@@ -282,7 +293,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
           </div>
           <button
             onClick={() => setLeaveDialogOpen(true)}
-            className="flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-sm font-bold transition-opacity [-webkit-tap-highlight-color:transparent]"
+            className="flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-sm font-bold transition-opacity [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             style={{ background: 'rgba(255,255,255,0.18)', color: 'white' }}
             aria-label={isOwner ? '그룹 해산' : '그룹 나가기'}
           >
@@ -334,6 +345,19 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
       {/* 초대 코드 */}
       <InviteCodeBlock inviteCode={inviteCode} />
 
+      {/* 수신된 프롬프트 배너 */}
+      <ReceivedPromptBanner />
+
+      {/* 공유 초대 보내기 버튼 */}
+      <button
+        onClick={() => setPromptSheetOpen(true)}
+        className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={{ background: `linear-gradient(135deg, ${main}, oklch(0.76 0.12 220))`, boxShadow: `0 4px 20px ${mA(0.25)}` }}
+      >
+        <Send size={20} aria-hidden="true" />
+        공유 초대 보내기
+      </button>
+
       {/* 가족 피드 */}
       <div>
         <div className="flex items-center gap-2 mb-4">
@@ -350,6 +374,270 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner }: {
       </div>
     </div>
     </>
+  )
+}
+
+// ── 수신된 프롬프트 배너 ────────────────────────────────────────────────────────
+function ReceivedPromptBanner() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [dismissedIds, setDismissedIds] = useState<number[]>([])
+
+  const openPromptId = (location.state as { openPromptId?: number } | null)?.openPromptId
+  const { data: receivedPrompts = [] } = useReceivedPrompts()
+
+  const visible = receivedPrompts.filter(p => !dismissedIds.includes(p.id))
+
+  if (visible.length === 0) return null
+
+  // 알림 딥링크로 온 경우 해당 프롬프트를 우선 표시
+  const prompt = visible.find(p => p.id === openPromptId) ?? visible[0]
+
+  return (
+    <div
+      className="rounded-2xl p-4 flex items-center gap-3"
+      style={{
+        background: 'linear-gradient(135deg, oklch(0.65 0.14 280 / 0.08), oklch(0.65 0.14 280 / 0.04))',
+        border: '1.5px solid oklch(0.65 0.14 280 / 0.25)',
+        wordBreak: 'keep-all',
+      }}
+      role="region"
+      aria-label="공유 초대 알림"
+    >
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: 'oklch(0.65 0.14 280 / 0.15)' }}
+        aria-hidden="true"
+      >
+        <Bell size={20} style={{ color: 'oklch(0.50 0.14 280)' }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-foreground leading-snug">
+          <span style={{ color: 'oklch(0.50 0.14 280)' }}>{prompt.senderNickname}</span>님이 공유를 초대했어요
+          {visible.length > 1 && (
+            <span className="ml-1 text-foreground/50"> 외 {visible.length - 1}건</span>
+          )}
+        </p>
+        <p className="text-sm text-foreground/60 mt-0.5">"{prompt.templateLabel}"</p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => navigate('/')}
+          className="min-h-[40px] px-3 rounded-xl text-sm font-black text-white [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: 'oklch(0.50 0.14 280)' }}
+        >
+          기록하기
+        </button>
+        <button
+          onClick={() => setDismissedIds(prev => [...prev, prompt.id])}
+          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ color: 'oklch(0.50 0.14 280 / 0.6)' }}
+          aria-label="닫기"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 프롬프트 발송 바텀시트 ─────────────────────────────────────────────────────
+type PromptStep = 'direction' | 'template' | 'confirm'
+
+function PromptSheet({
+  open,
+  onClose,
+  members,
+  currentUserId,
+}: {
+  open: boolean
+  onClose: () => void
+  members: { userId: number; nickname: string }[]
+  currentUserId: number | null
+}) {
+  const [step, setStep] = useState<PromptStep>('direction')
+  const [direction, setDirection] = useState<PromptDirection | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplateItem | null>(null)
+
+  const sendPrompt = useSendPrompt()
+  const otherMembers = members.filter(m => m.userId !== currentUserId)
+  const recipient = otherMembers[0]
+
+  const directionLabel = direction === 'CHILD_TO_PARENT' ? '부모님께' : '자녀에게'
+
+  function handleClose() {
+    setStep('direction')
+    setDirection(null)
+    setSelectedTemplate(null)
+    onClose()
+  }
+
+  function handleSelectDirection(d: PromptDirection) {
+    setDirection(d)
+    setStep('template')
+  }
+
+  function handleSelectTemplate(t: PromptTemplateItem) {
+    setSelectedTemplate(t)
+    setStep('confirm')
+  }
+
+  async function handleSend() {
+    if (!direction || !selectedTemplate || !recipient) return
+    await sendPrompt.mutateAsync({
+      recipientId: recipient.userId,
+      direction,
+      templateCode: selectedTemplate.code,
+    })
+    handleClose()
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={v => { if (!v) handleClose() }}>
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto px-6 pb-8">
+        <SheetTitle className="sr-only">
+          {step === 'direction' ? '공유 초대 보내기' : step === 'template' ? '어떤 내용을 물어볼까요?' : '이렇게 보낼게요'}
+        </SheetTitle>
+        <div className="flex items-center justify-between pt-2 pb-4">
+          <div className="flex items-center gap-2">
+            {step !== 'direction' && (
+              <button
+                onClick={() => setStep(step === 'confirm' ? 'template' : 'direction')}
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{ color: dark }}
+                aria-label="이전 단계"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+            <h2 className="text-xl font-black text-foreground" style={serifStyle}>
+              {step === 'direction' && '공유 초대 보내기'}
+              {step === 'template' && '어떤 내용을 물어볼까요?'}
+              {step === 'confirm' && '이렇게 보낼게요'}
+            </h2>
+          </div>
+          <button
+            onClick={handleClose}
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent]"
+            aria-label="닫기"
+          >
+            <X size={20} className="text-foreground/50" />
+          </button>
+        </div>
+
+        {/* Step 1: 방향 선택 */}
+        {step === 'direction' && (
+          <div className="flex flex-col gap-3">
+            <p className="text-base text-foreground/60 font-bold mb-2" style={{ wordBreak: 'keep-all' }}>
+              누구에게 일상을 공유해달라고 할까요?
+            </p>
+            <button
+              onClick={() => handleSelectDirection('CHILD_TO_PARENT')}
+              className="w-full min-h-[72px] rounded-2xl px-5 flex items-center gap-4 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
+            >
+              <span className="text-3xl" aria-hidden="true">👴</span>
+              <div>
+                <p className="text-lg font-black text-foreground" style={{ wordBreak: 'keep-all' }}>부모님께 초대 보내기</p>
+                <p className="text-sm text-foreground/60 font-bold">부모님의 오늘 일상이 궁금해요</p>
+              </div>
+            </button>
+            <button
+              onClick={() => handleSelectDirection('PARENT_TO_CHILD')}
+              className="w-full min-h-[72px] rounded-2xl px-5 flex items-center gap-4 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
+            >
+              <span className="text-3xl" aria-hidden="true">🧑</span>
+              <div>
+                <p className="text-lg font-black text-foreground" style={{ wordBreak: 'keep-all' }}>자녀에게 초대 보내기</p>
+                <p className="text-sm text-foreground/60 font-bold">자녀의 오늘 일상이 궁금해요</p>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: 문구 선택 */}
+        {step === 'template' && (
+          <div className="flex flex-col gap-2">
+            <p className="text-base text-foreground/60 font-bold mb-2" style={{ wordBreak: 'keep-all' }}>
+              {directionLabel} 어떤 공유를 초대할까요?
+            </p>
+            {PROMPT_TEMPLATES.map((t: PromptTemplateItem) => (
+              <button
+                key={t.code}
+                onClick={() => handleSelectTemplate(t)}
+                className="w-full min-h-[64px] rounded-2xl px-5 flex items-center gap-3 text-left [-webkit-tap-highlight-color:transparent] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
+                onMouseEnter={e => { e.currentTarget.style.background = mA(0.13); e.currentTarget.style.borderColor = main }}
+                onMouseLeave={e => { e.currentTarget.style.background = mA(0.07); e.currentTarget.style.borderColor = mA(0.15) }}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-black text-foreground" style={{ wordBreak: 'keep-all' }}>{t.label}</p>
+                  <p className="text-sm text-foreground/50 font-bold">{t.description}</p>
+                </div>
+                <ChevronRight size={18} style={{ color: mA(0.4) }} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 3: 발송 확인 */}
+        {step === 'confirm' && selectedTemplate && (
+          <div className="flex flex-col gap-5">
+            <div
+              className="rounded-2xl p-5 flex flex-col gap-3"
+              style={{ background: mA(0.07), border: `2px solid ${mA(0.18)}` }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="px-3 py-1 rounded-full text-sm font-black"
+                  style={{ background: mA(0.15), color: dark }}
+                >
+                  {directionLabel}
+                </span>
+                {recipient && (
+                  <span className="text-sm font-bold text-foreground/60">{recipient.nickname}님</span>
+                )}
+              </div>
+              <p className="text-xl font-black text-foreground" style={serifStyle}>
+                "{selectedTemplate.label}"
+              </p>
+            </div>
+
+            {/* 가치 제안 문구 */}
+            <div
+              className="rounded-2xl p-4"
+              style={{
+                background: `linear-gradient(135deg, ${mA(0.06)}, oklch(0.76 0.12 220 / 0.08))`,
+                border: `1px solid ${mA(0.15)}`,
+                wordBreak: 'keep-all',
+              }}
+            >
+              <p className="text-sm font-bold text-foreground/70 leading-relaxed">
+                💡 이게 쌓이면 1년 후 가족의 일상 앨범이 돼요.<br />
+                오늘 한 장면을 함께 기록해 보세요.
+              </p>
+            </div>
+
+            <button
+              onClick={handleSend}
+              disabled={sendPrompt.isPending}
+              className="w-full min-h-[64px] rounded-2xl text-xl font-black text-white flex items-center justify-center gap-3 transition-opacity disabled:opacity-60 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ background: `linear-gradient(135deg, ${main}, oklch(0.76 0.12 220))`, boxShadow: `0 4px 20px ${mA(0.3)}` }}
+            >
+              {sendPrompt.isPending ? (
+                <div className="w-6 h-6 rounded-full border-2 border-white/40 border-t-white animate-spin" role="status" aria-label="전송 중" />
+              ) : (
+                <>
+                  <Send size={22} aria-hidden="true" />
+                  공유 초대 보내기
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -595,6 +883,7 @@ export default function FamilyPage() {
           inviteCode={family.inviteCode}
           members={family.members}
           isOwner={isOwner}
+          currentUserId={currentUserId}
         />
       ) : is404 || isError ? (
         <FamilyEmpty />
