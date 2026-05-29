@@ -25,6 +25,20 @@ declare global {
             link: KakaoLink
           }>
         }) => void
+        createDefaultButton: (settings: {
+          container: string | HTMLElement
+          objectType: string
+          content: {
+            title: string
+            description?: string
+            imageUrl?: string
+            link: KakaoLink
+          }
+          buttons?: Array<{
+            title: string
+            link: KakaoLink
+          }>
+        }) => void
       }
     }
   }

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Share2, Send, ChevronLeft, Bell } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Send, ChevronLeft, Bell } from 'lucide-react'
+import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -23,8 +24,29 @@ const INVITE_BASE_URL = 'https://pcgear.store/invite'
 function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
   const [copiedCode, setCopiedCode] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+  const kakaoInitialized = useRef(false)
+  const btnId = `kakao-share-btn-${inviteCode}`
 
   const inviteLink = `${INVITE_BASE_URL}/${inviteCode}`
+
+  useEffect(() => {
+    if (kakaoInitialized.current) return
+    if (!isKakaoShareReady()) return
+    const container = document.getElementById(btnId)
+    if (!container) return
+    kakaoInitialized.current = true
+    window.Kakao.Share.createDefaultButton({
+      container,
+      objectType: 'feed',
+      content: {
+        title: '가족으로 초대합니다',
+        description: '오늘 뭐 했어요? — 함께 일상을 기록해요.',
+        imageUrl: 'https://pcgear.store/og-image.png',
+        link: { mobileWebUrl: inviteLink, webUrl: inviteLink },
+      },
+      buttons: [{ title: '가족으로 합류하기', link: { mobileWebUrl: inviteLink, webUrl: inviteLink } }],
+    })
+  }, [inviteLink, btnId])
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(inviteCode).then(() => {
@@ -33,7 +55,7 @@ function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
     })
   }
 
-  const handleShare = async () => {
+  const handleFallbackShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
@@ -95,21 +117,36 @@ function InviteCodeBlock({ inviteCode }: { inviteCode: string }) {
           <p className="text-sm font-bold mb-0.5" style={{ color: dark }}>가입 링크</p>
           <p className="text-sm text-foreground/50 truncate">{inviteLink}</p>
         </div>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-colors duration-200 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={copiedLink
-            ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
-            : { background: grad, color: 'white' }
-          }
-          aria-label={copiedLink ? '링크 복사됨' : '가입 링크 공유'}
-        >
-          {copiedLink ? (
-            <><Check size={18} aria-hidden="true" />복사됨</>
-          ) : (
-            <><Share2 size={18} aria-hidden="true" />링크 공유</>
-          )}
-        </button>
+        {/* 카카오 SDK가 준비된 경우 공식 공유 버튼 마운트, 아닌 경우 폴백 버튼 */}
+        {isKakaoShareReady() ? (
+          <div
+            id={btnId}
+            className="min-h-[48px] flex items-center cursor-pointer"
+            aria-label="카카오톡으로 공유"
+          >
+            <img
+              src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"
+              alt="카카오톡 공유"
+              className="h-12 w-auto"
+            />
+          </div>
+        ) : (
+          <button
+            onClick={handleFallbackShare}
+            className="flex items-center gap-2 min-h-[48px] px-4 rounded-xl font-bold text-base transition-colors duration-200 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={copiedLink
+              ? { background: 'oklch(0.65 0.12 150)', color: 'white' }
+              : { background: grad, color: 'white' }
+            }
+            aria-label={copiedLink ? '링크 복사됨' : '링크 공유'}
+          >
+            {copiedLink ? (
+              <><Check size={18} aria-hidden="true" />복사됨</>
+            ) : (
+              <><Copy size={18} aria-hidden="true" />링크 복사</>
+            )}
+          </button>
+        )}
       </div>
     </div>
   )
