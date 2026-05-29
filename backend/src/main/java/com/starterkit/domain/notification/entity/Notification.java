@@ -31,7 +31,7 @@ public class Notification {
     @Column(nullable = false, length = 20)
     private NotificationType type;
 
-    @Column(name = "checkin_id", nullable = false)
+    @Column(name = "checkin_id", nullable = true)
     private Long checkinId;
 
     @Column(nullable = false, length = 200)
