@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Send, ChevronLeft, Bell } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Send, ChevronLeft, ClipboardList, Pen } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
@@ -420,56 +420,85 @@ function ReceivedPromptBanner() {
   const { data: receivedPrompts = [] } = useReceivedPrompts()
 
   const visible = receivedPrompts.filter(p => !dismissedIds.includes(p.id))
-
   if (visible.length === 0) return null
 
-  // 알림 딥링크로 온 경우 해당 프롬프트를 우선 표시
-  const prompt = visible.find(p => p.id === openPromptId) ?? visible[0]
+  // 딥링크로 온 경우 해당 프롬프트를 최상단으로
+  const sorted = openPromptId
+    ? [visible.find(p => p.id === openPromptId), ...visible.filter(p => p.id !== openPromptId)].filter(Boolean) as typeof visible
+    : visible
+
+  const purple = 'oklch(0.55 0.18 280)'
+  const purpleA = (a: number) => `oklch(0.55 0.18 280 / ${a})`
 
   return (
     <div
-      className="rounded-2xl p-4 flex items-center gap-3"
-      style={{
-        background: 'linear-gradient(135deg, oklch(0.65 0.14 280 / 0.08), oklch(0.65 0.14 280 / 0.04))',
-        border: '1.5px solid oklch(0.65 0.14 280 / 0.25)',
-        wordBreak: 'keep-all',
-      }}
+      className="rounded-2xl overflow-hidden"
+      style={{ border: `1.5px solid ${purpleA(0.3)}`, wordBreak: 'keep-all' }}
       role="region"
-      aria-label="공유 초대 알림"
+      aria-label="가족 활동 기록 요청"
     >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: 'oklch(0.65 0.14 280 / 0.15)' }}
-        aria-hidden="true"
-      >
-        <Bell size={20} style={{ color: 'oklch(0.50 0.14 280)' }} />
+      {/* 헤더 */}
+      <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: purpleA(0.12) }}>
+        <ClipboardList size={14} style={{ color: purple }} aria-hidden="true" />
+        <span className="text-sm font-black" style={{ color: purple }}>
+          가족이 활동 기록을 요청했어요
+        </span>
+        {sorted.length > 1 && (
+          <span
+            className="ml-1 text-xs font-black px-2 py-0.5 rounded-full text-white"
+            style={{ background: purple }}
+          >
+            {sorted.length}
+          </span>
+        )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-foreground leading-snug">
-          <span style={{ color: 'oklch(0.50 0.14 280)' }}>{prompt.senderNickname}</span>님이 공유를 초대했어요
-          {visible.length > 1 && (
-            <span className="ml-1 text-foreground/50"> 외 {visible.length - 1}건</span>
-          )}
-        </p>
-        <p className="text-sm text-foreground/60 mt-0.5">"{prompt.templateLabel}"</p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={() => navigate('/')}
-          className="min-h-[40px] px-3 rounded-xl text-sm font-black text-white [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ background: 'oklch(0.50 0.14 280)' }}
+
+      {/* 요청 목록 */}
+      {sorted.map((p, i) => (
+        <div
+          key={p.id}
+          className="px-4 py-3 flex items-center gap-3"
+          style={{
+            background: i % 2 === 0 ? 'white' : purpleA(0.02),
+            borderTop: i > 0 ? `1px solid ${purpleA(0.10)}` : undefined,
+          }}
         >
-          기록하기
-        </button>
-        <button
-          onClick={() => setDismissedIds(prev => [...prev, prompt.id])}
-          className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ color: 'oklch(0.50 0.14 280 / 0.6)' }}
-          aria-label="닫기"
-        >
-          <X size={16} />
-        </button>
-      </div>
+          {/* 아바타 */}
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+            style={{ background: purpleA(0.15), color: purple }}
+            aria-hidden="true"
+          >
+            {p.senderNickname[0]}
+          </div>
+
+          {/* 텍스트 */}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black" style={{ color: purple }}>{p.senderNickname}</p>
+            <p className="text-sm text-foreground/70 truncate">"{p.templateLabel}"</p>
+          </div>
+
+          {/* 액션 */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate('/')}
+              className="min-h-[40px] px-3 rounded-xl text-sm font-black text-white flex items-center gap-1.5 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ background: purple }}
+            >
+              <Pen size={13} aria-hidden="true" />
+              기록
+            </button>
+            <button
+              onClick={() => setDismissedIds(prev => [...prev, p.id])}
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border-2 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ borderColor: purpleA(0.25), color: purpleA(0.5) }}
+              aria-label="완료"
+            >
+              <Check size={15} />
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
