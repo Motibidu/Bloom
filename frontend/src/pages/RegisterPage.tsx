@@ -139,7 +139,6 @@ export default function RegisterPage() {
   }
 
   const currentYear = new Date().getFullYear()
-  const maxBirthYear = currentYear - 50
   const isInvited = !!inviteCode
 
   return (
@@ -199,16 +198,13 @@ export default function RegisterPage() {
                 <p className="text-lg font-semibold text-foreground">
                   서비스 이용을 위해 아래 약관에 동의해 주세요.
                 </p>
-                {!isInvited && (
-                  <p className="text-base font-medium" style={{ color: dark }}>
-                    <span className="font-black">{maxBirthYear}년생 이상</span>만 이용할 수 있어요.
-                  </p>
-                )}
-                {isInvited && (
-                  <p className="text-base font-medium" style={{ color: dark }}>
-                    가족 초대 코드로 가입하시면 나이 제한 없이 가입할 수 있어요.
-                  </p>
-                )}
+                <p className="text-base font-medium" style={{ color: dark }}>
+                  누구나 가입할 수 있어요.
+                </p>
+                <ul className="mt-2 space-y-1 text-sm" style={{ color: dark }}>
+                  <li>✅ <span className="font-semibold">50세 이상</span> — 모든 기능 이용 가능</li>
+                  <li>👨‍👩‍👧 <span className="font-semibold">50세 미만</span> — 가족 피드 열람, 마이페이지 이용 가능</li>
+                </ul>
               </div>
 
               <div
@@ -437,9 +433,6 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Label className="text-lg font-semibold text-foreground">생년월일</Label>
-                  {!isInvited && (
-                    <span className="text-sm text-muted-foreground font-medium">{maxBirthYear}년생부터 가입 가능해요</span>
-                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="relative">
@@ -450,15 +443,12 @@ export default function RegisterPage() {
                       {...register('birthYear', {
                         required: '연도를 선택하세요',
                         valueAsNumber: true,
-                        validate: isInvited
-                          ? undefined
-                          : (v) => v <= maxBirthYear || '이 서비스는 50세 이상만 이용 가능해요',
                       })}
                     >
                       <option value="" disabled>연도</option>
                       {Array.from(
-                        { length: (isInvited ? currentYear : maxBirthYear) - 1900 + 1 },
-                        (_, i) => (isInvited ? currentYear : maxBirthYear) - i
+                        { length: currentYear - 1900 + 1 },
+                        (_, i) => currentYear - i
                       ).map((y) => (
                         <option key={y} value={y}>{y}년</option>
                       ))}

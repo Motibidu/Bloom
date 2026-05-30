@@ -116,10 +116,6 @@ public class AuthService implements UserDetailsService {
         int age = Year.now().getValue() - req.birthYear();
         boolean isAgeEligible = age >= 50;
 
-        if (!hasInviteCode && !isAgeEligible) {
-            throw new AgeRestrictionException("1976년 이전 출생자만 가입할 수 있어요. 가족 초대 코드가 있다면 함께 입력해 주세요.");
-        }
-
         // inviteCode가 있으면 유효성 먼저 검증
         FamilyGroup invitedGroup = null;
         if (hasInviteCode) {
@@ -127,7 +123,8 @@ public class AuthService implements UserDetailsService {
                     .orElseThrow(() -> new InvalidInviteCodeException("유효하지 않은 초대 코드입니다."));
         }
 
-        UserRole role = hasInviteCode && !isAgeEligible ? UserRole.FAMILY_VIEWER : UserRole.MEMBER;
+        // 나이 미충족 + 초대코드 없음 → FAMILY_VIEWER (공개 피드 작성 불가, 가족 피드 열람 가능)
+        UserRole role = isAgeEligible ? UserRole.MEMBER : UserRole.FAMILY_VIEWER;
 
         User user = User.builder()
                 .email(req.email())
