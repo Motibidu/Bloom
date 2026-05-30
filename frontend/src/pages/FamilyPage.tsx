@@ -231,7 +231,7 @@ function LeaveConfirmDialog({
       aria-labelledby="leave-dialog-title"
     >
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} aria-hidden="true" />
-      <div className="relative w-full sm:max-w-sm mx-4 sm:mx-auto rounded-3xl bg-white p-7 flex flex-col gap-5 shadow-2xl mb-4 sm:mb-0">
+      <div className="relative w-full sm:max-w-sm mx-4 sm:mx-auto rounded-3xl bg-white p-7 flex flex-col gap-5 shadow-2xl mb-24 sm:mb-0">
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto"
           style={{ background: isOwner ? 'oklch(0.95 0.05 25)' : mA(0.08) }}
@@ -284,6 +284,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
   isOwner: boolean
   currentUserId: number | null
 }) {
+  const [tab, setTab] = useState<'feed' | 'settings'>('feed')
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
   const [promptSheetOpen, setPromptSheetOpen] = useState(false)
   const leaveFamily = useLeaveFamilyGroup()
@@ -314,101 +315,96 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       members={members}
       currentUserId={currentUserId}
     />
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* 그룹 헤더 카드 */}
       <div
-        className="rounded-3xl p-6"
-        style={{
-          background: grad,
-          boxShadow: `0 8px 32px ${mA(0.25)}`,
-        }}
+        className="rounded-3xl p-5"
+        style={{ background: grad, boxShadow: `0 8px 32px ${mA(0.25)}` }}
       >
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Home size={18} className="text-white/80" aria-hidden="true" />
+            <Home size={16} className="text-white/80" aria-hidden="true" />
             <span className="text-white/80 text-sm font-bold">우리 가족</span>
           </div>
           <button
             onClick={() => setLeaveDialogOpen(true)}
-            className="flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-sm font-bold transition-opacity [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-sm font-bold [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             style={{ background: 'rgba(255,255,255,0.18)', color: 'white' }}
             aria-label={isOwner ? '그룹 해산' : '그룹 나가기'}
           >
-            <LogOut size={15} aria-hidden="true" />
+            <LogOut size={14} aria-hidden="true" />
             {isOwner ? '해산' : '나가기'}
           </button>
         </div>
-        <h1
-          className="text-3xl font-black text-white mb-4 leading-tight"
-          style={serifStyle}
-        >
+        <h1 className="text-2xl font-black text-white mb-3 leading-tight" style={serifStyle}>
           {name}
         </h1>
 
         {/* 멤버 아바타 목록 */}
         <div
-          className="rounded-2xl p-4 flex gap-5 overflow-x-auto"
+          className="rounded-2xl px-4 py-3 flex gap-4 overflow-x-auto mb-4"
           style={{ background: 'rgba(255,255,255,0.18)' }}
         >
           {members.map(m => (
-            <div key={m.userId} className="flex flex-col items-center gap-2 shrink-0">
+            <div key={m.userId} className="flex flex-col items-center gap-1.5 shrink-0">
               <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black shrink-0 overflow-hidden"
-                style={{
-                  background: 'rgba(255,255,255,0.35)',
-                  color: dark,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.35)', color: dark, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
                 aria-hidden="true"
               >
                 {m.profileImageUrl ? (
-                  <img
-                    src={m.profileImageUrl}
-                    alt={m.nickname}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={m.profileImageUrl} alt={m.nickname} className="w-full h-full object-cover" />
                 ) : (
                   m.nickname[0]
                 )}
               </div>
-              <span className="text-white text-sm font-bold max-w-[60px] text-center truncate">
-                {m.nickname}
-              </span>
+              <span className="text-white text-xs font-bold max-w-[52px] text-center truncate">{m.nickname}</span>
             </div>
+          ))}
+        </div>
+
+        {/* 탭 바 */}
+        <div className="flex gap-2" role="tablist">
+          {([['feed', '가족 피드'], ['settings', '그룹 설정']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className="flex-1 min-h-[44px] rounded-xl text-base font-black transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={tab === key
+                ? { background: 'white', color: dark }
+                : { background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }
+              }
+            >
+              {label}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* 초대 코드 */}
-      <InviteCodeBlock inviteCode={inviteCode} />
-
-      {/* 수신된 프롬프트 배너 */}
-      <ReceivedPromptBanner />
-
-      {/* 공유 초대 보내기 버튼 */}
-      <button
-        onClick={() => setPromptSheetOpen(true)}
-        className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={{ background: `linear-gradient(135deg, ${main}, oklch(0.76 0.12 220))`, boxShadow: `0 4px 20px ${mA(0.25)}` }}
-      >
-        <Send size={20} aria-hidden="true" />
-        공유 초대 보내기
-      </button>
-
-      {/* 가족 피드 */}
-      <div>
-        <div className="flex items-center gap-2 mb-4">
-          <div
-            className="w-1.5 h-6 rounded-full"
-            style={{ background: grad }}
-            aria-hidden="true"
-          />
-          <h2 className="text-xl font-black text-foreground" style={serifStyle}>
-            가족 활동
-          </h2>
+      {/* 가족 피드 탭 */}
+      {tab === 'feed' && (
+        <div className="flex flex-col gap-4" role="tabpanel">
+          <ReceivedPromptBanner />
+          <FamilyFeed groupId={groupId} />
         </div>
-        <FamilyFeed groupId={groupId} />
-      </div>
+      )}
+
+      {/* 그룹 설정 탭 */}
+      {tab === 'settings' && (
+        <div className="flex flex-col gap-4" role="tabpanel">
+          <InviteCodeBlock inviteCode={inviteCode} />
+          <button
+            onClick={() => setPromptSheetOpen(true)}
+            className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: grad, boxShadow: `0 4px 20px ${mA(0.25)}` }}
+          >
+            <Send size={20} aria-hidden="true" />
+            공유 초대 보내기
+          </button>
+        </div>
+      )}
     </div>
     </>
   )
