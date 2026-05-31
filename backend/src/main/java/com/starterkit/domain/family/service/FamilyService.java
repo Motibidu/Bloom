@@ -96,7 +96,7 @@ public class FamilyService {
         );
 
         long memberCount = 1L;
-        List<FamilyMemberResponse> members = List.of(FamilyMemberResponse.of(ownerMember));
+        List<FamilyMemberResponse> members = List.of(FamilyMemberResponse.of(ownerMember, s3BaseUrl()));
 
         return new FamilyGroupResponse(group.getId(), group.getName(), group.getInviteCode(),
                 memberCount, group.getCreatedAt(), members);
@@ -130,8 +130,9 @@ public class FamilyService {
         sendJoinNotificationAsync(existingEmails, newMember.getNickname(), group.getName());
 
         long memberCount = familyMemberRepository.countByGroupId(group.getId());
+        String baseUrl = s3BaseUrl();
         List<FamilyMemberResponse> members = familyMemberRepository.findByGroupId(group.getId())
-                .stream().map(FamilyMemberResponse::of).toList();
+                .stream().map(fm -> FamilyMemberResponse.of(fm, baseUrl)).toList();
 
         return new FamilyGroupResponse(group.getId(), group.getName(), group.getInviteCode(),
                 memberCount, group.getCreatedAt(), members);
@@ -149,8 +150,9 @@ public class FamilyService {
         FamilyGroup group = myMemberships.get(myMemberships.size() - 1).getGroup();
         List<FamilyMember> members = familyMemberRepository.findByGroupId(group.getId());
         long memberCount = members.size();
+        String baseUrl = s3BaseUrl();
         List<FamilyMemberResponse> memberResponses = members.stream()
-                .map(FamilyMemberResponse::of).toList();
+                .map(fm -> FamilyMemberResponse.of(fm, baseUrl)).toList();
 
         return new FamilyGroupResponse(group.getId(), group.getName(), group.getInviteCode(),
                 memberCount, group.getCreatedAt(), memberResponses);

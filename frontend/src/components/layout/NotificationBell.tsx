@@ -37,6 +37,7 @@ function NotificationRow({
   onRead: (n: AppNotification) => void
 }) {
   const Icon = notification.type === 'LIKE' ? Heart : MessageCircle
+  const isPrompt = notification.type === 'PROMPT'
 
   return (
     <button
@@ -57,13 +58,15 @@ function NotificationRow({
         style={{
           background: notification.type === 'LIKE'
             ? 'oklch(0.55 0.18 25 / 0.12)'
+            : isPrompt
+            ? 'oklch(0.65 0.14 280 / 0.12)'
             : mA(0.12),
         }}
         aria-hidden="true"
       >
         <Icon
           size={15}
-          style={{ color: notification.type === 'LIKE' ? red : main }}
+          style={{ color: notification.type === 'LIKE' ? red : isPrompt ? 'oklch(0.50 0.14 280)' : main }}
         />
       </div>
 
@@ -147,7 +150,11 @@ export default function NotificationBell() {
       markAsRead.mutate(n.id)
     }
     setOpen(false)
-    navigate(`/checkin/${n.checkinId}`)
+    if (n.type === 'PROMPT') {
+      navigate('/family', { state: { openPromptId: n.checkinId } })
+    } else if (n.checkinId != null) {
+      navigate(`/checkin/${n.checkinId}`)
+    }
   }
 
   function handleMarkAll() {
@@ -260,7 +267,7 @@ export default function NotificationBell() {
           </div>
 
           {/* 알림 목록 */}
-          <div className="overflow-y-auto flex-1" role="list">
+          <div className="overflow-y-auto flex-1">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <div
