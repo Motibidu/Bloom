@@ -6,7 +6,7 @@ import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFam
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/shadcn/sheet'
-import { type PromptDirection, type PromptTemplateItem, PROMPT_TEMPLATES } from '@/types/prompt'
+import { type PromptTemplateItem, PROMPT_TEMPLATES } from '@/types/prompt'
 import { useSendPrompt, useReceivedPrompts, useDismissPrompt } from '@/hooks/usePrompt'
 
 // ── Warm Blue 테마 ─────────────────────────────────────────────────────────────
@@ -504,7 +504,7 @@ function ReceivedPromptBanner() {
 }
 
 // ── 프롬프트 발송 바텀시트 ─────────────────────────────────────────────────────
-type PromptStep = 'direction' | 'template' | 'confirm'
+type PromptStep = 'template' | 'confirm'
 
 function PromptSheet({
   open,
@@ -517,26 +517,17 @@ function PromptSheet({
   members: { userId: number; nickname: string }[]
   currentUserId: number | null
 }) {
-  const [step, setStep] = useState<PromptStep>('direction')
-  const [direction, setDirection] = useState<PromptDirection | null>(null)
+  const [step, setStep] = useState<PromptStep>('template')
   const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplateItem | null>(null)
 
   const sendPrompt = useSendPrompt()
   const otherMembers = members.filter(m => m.userId !== currentUserId)
   const recipient = otherMembers[0]
 
-  const directionLabel = direction === 'CHILD_TO_PARENT' ? '부모님께' : '자녀에게'
-
   function handleClose() {
-    setStep('direction')
-    setDirection(null)
+    setStep('template')
     setSelectedTemplate(null)
     onClose()
-  }
-
-  function handleSelectDirection(d: PromptDirection) {
-    setDirection(d)
-    setStep('template')
   }
 
   function handleSelectTemplate(t: PromptTemplateItem) {
@@ -545,10 +536,9 @@ function PromptSheet({
   }
 
   async function handleSend() {
-    if (!direction || !selectedTemplate || !recipient) return
+    if (!selectedTemplate || !recipient) return
     await sendPrompt.mutateAsync({
       recipientId: recipient.userId,
-      direction,
       templateCode: selectedTemplate.code,
     })
     handleClose()
@@ -558,13 +548,13 @@ function PromptSheet({
     <Sheet open={open} onOpenChange={v => { if (!v) handleClose() }}>
       <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto px-6 pb-8">
         <SheetTitle className="sr-only">
-          {step === 'direction' ? '공유 초대 보내기' : step === 'template' ? '어떤 내용을 물어볼까요?' : '이렇게 보낼게요'}
+          {step === 'template' ? '공유 초대 보내기' : '이렇게 보낼게요'}
         </SheetTitle>
         <div className="flex items-center justify-between pt-2 pb-4">
           <div className="flex items-center gap-2">
-            {step !== 'direction' && (
+            {step === 'confirm' && (
               <button
-                onClick={() => setStep(step === 'confirm' ? 'template' : 'direction')}
+                onClick={() => setStep('template')}
                 className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{ color: dark }}
                 aria-label="이전 단계"
@@ -573,8 +563,7 @@ function PromptSheet({
               </button>
             )}
             <h2 className="text-xl font-black text-foreground" style={serifStyle}>
-              {step === 'direction' && '공유 초대 보내기'}
-              {step === 'template' && '어떤 내용을 물어볼까요?'}
+              {step === 'template' && '공유 초대 보내기'}
               {step === 'confirm' && '이렇게 보낼게요'}
             </h2>
           </div>
@@ -587,42 +576,11 @@ function PromptSheet({
           </button>
         </div>
 
-        {/* Step 1: 방향 선택 */}
-        {step === 'direction' && (
-          <div className="flex flex-col gap-3">
-            <p className="text-base text-foreground/60 font-bold mb-2" style={{ wordBreak: 'keep-all' }}>
-              누구에게 일상을 공유해달라고 할까요?
-            </p>
-            <button
-              onClick={() => handleSelectDirection('CHILD_TO_PARENT')}
-              className="w-full min-h-[72px] rounded-2xl px-5 flex items-center gap-4 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
-            >
-              <span className="text-3xl" aria-hidden="true">👴</span>
-              <div>
-                <p className="text-lg font-black text-foreground" style={{ wordBreak: 'keep-all' }}>부모님께 초대 보내기</p>
-                <p className="text-sm text-foreground/60 font-bold">부모님의 오늘 일상이 궁금해요</p>
-              </div>
-            </button>
-            <button
-              onClick={() => handleSelectDirection('PARENT_TO_CHILD')}
-              className="w-full min-h-[72px] rounded-2xl px-5 flex items-center gap-4 text-left [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
-            >
-              <span className="text-3xl" aria-hidden="true">🧑</span>
-              <div>
-                <p className="text-lg font-black text-foreground" style={{ wordBreak: 'keep-all' }}>자녀에게 초대 보내기</p>
-                <p className="text-sm text-foreground/60 font-bold">자녀의 오늘 일상이 궁금해요</p>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: 문구 선택 */}
+        {/* Step 1: 문구 선택 */}
         {step === 'template' && (
           <div className="flex flex-col gap-2">
             <p className="text-base text-foreground/60 font-bold mb-2" style={{ wordBreak: 'keep-all' }}>
-              {directionLabel} 어떤 공유를 초대할까요?
+              어떤 공유를 초대할까요?
             </p>
             {PROMPT_TEMPLATES.map((t: PromptTemplateItem) => (
               <button
@@ -643,24 +601,16 @@ function PromptSheet({
           </div>
         )}
 
-        {/* Step 3: 발송 확인 */}
+        {/* Step 2: 발송 확인 */}
         {step === 'confirm' && selectedTemplate && (
           <div className="flex flex-col gap-5">
             <div
               className="rounded-2xl p-5 flex flex-col gap-3"
               style={{ background: mA(0.07), border: `2px solid ${mA(0.18)}` }}
             >
-              <div className="flex items-center gap-2">
-                <span
-                  className="px-3 py-1 rounded-full text-sm font-black"
-                  style={{ background: mA(0.15), color: dark }}
-                >
-                  {directionLabel}
-                </span>
-                {recipient && (
-                  <span className="text-sm font-bold text-foreground/60">{recipient.nickname}님</span>
-                )}
-              </div>
+              {recipient && (
+                <span className="text-sm font-bold text-foreground/60">{recipient.nickname}님에게 보낼 초대예요</span>
+              )}
               <p className="text-xl font-black text-foreground" style={serifStyle}>
                 "{selectedTemplate.label}"
               </p>

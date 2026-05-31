@@ -1,5 +1,3 @@
-export type PromptDirection = 'CHILD_TO_PARENT' | 'PARENT_TO_CHILD'
-
 export type PromptTemplate =
   | 'SHARE_MEAL'
   | 'SHARE_WALK'
@@ -15,7 +13,6 @@ export interface PromptTemplateItem {
 
 export interface SendPromptRequest {
   recipientId: number
-  direction: PromptDirection
   templateCode: PromptTemplate
 }
 
@@ -29,7 +26,6 @@ export interface ReceivedPrompt {
   id: number
   senderId: number
   senderNickname: string
-  direction: PromptDirection
   templateCode: PromptTemplate
   templateLabel: string
   sentAt: string
