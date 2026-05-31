@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2 } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/shadcn/sheet'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -292,6 +293,36 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
   const leaveFamily = useLeaveFamilyGroup()
   const [promptTarget, setPromptTarget] = useState<PromptTarget | null>(null)
   const otherMembers = members.filter(m => m.userId !== currentUserId)
+  const [inviteSheetOpen, setInviteSheetOpen] = useState(false)
+  const inviteLink = `${INVITE_BASE_URL}/${inviteCode}`
+
+  const handleKakaoShare = () => {
+    if (!isKakaoShareReady()) return
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: '가족으로 초대합니다',
+        description: '오늘 뭐 했어요? — 함께 일상을 기록해요.',
+        imageUrl: 'https://pcgear.store/og-image.png',
+        link: { mobileWebUrl: inviteLink, webUrl: inviteLink },
+      },
+      buttons: [{ title: '가족으로 합류하기', link: { mobileWebUrl: inviteLink, webUrl: inviteLink } }],
+    })
+    setInviteSheetOpen(false)
+  }
+
+  const handleBandShare = () => {
+    const bandUrl = `https://band.us/plugin/share?body=${encodeURIComponent('오늘 뭐 했어요? 서비스에 가족으로 초대합니다.\n' + inviteLink)}&route=${encodeURIComponent(inviteLink)}`
+    window.open(bandUrl, '_blank', 'noopener,noreferrer')
+    setInviteSheetOpen(false)
+  }
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      toast.success('초대 링크를 복사했어요.')
+    })
+    setInviteSheetOpen(false)
+  }
 
   const handleLeaveConfirm = async () => {
     try {
@@ -313,6 +344,48 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       onConfirm={handleLeaveConfirm}
       onCancel={() => setLeaveDialogOpen(false)}
     />
+
+    {/* 초대 방법 선택 바텀시트 */}
+    <Sheet open={inviteSheetOpen} onOpenChange={setInviteSheetOpen}>
+      <SheetContent side="bottom" className="rounded-t-3xl px-6 pb-8 pt-5">
+        <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: mA(0.2) }} aria-hidden="true" />
+        <SheetTitle className="text-xl font-black mb-5" style={{ color: dark, ...serifStyle, wordBreak: 'keep-all' }}>
+          어디로 초대 링크를 보낼까요?
+        </SheetTitle>
+        <div className="flex flex-col gap-3">
+          {/* 카카오톡 */}
+          {isKakaoShareReady() && (
+            <button
+              onClick={handleKakaoShare}
+              className="flex items-center gap-4 min-h-[64px] px-5 rounded-2xl font-bold text-lg text-left transition-colors [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              style={{ background: 'oklch(0.88 0.14 85)', color: 'oklch(0.32 0.10 85)' }}
+            >
+              <span className="text-2xl" aria-hidden="true">💬</span>
+              카카오톡으로 보내기
+            </button>
+          )}
+          {/* 네이버 밴드 */}
+          <button
+            onClick={handleBandShare}
+            className="flex items-center gap-4 min-h-[64px] px-5 rounded-2xl font-bold text-lg text-left transition-colors [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: 'oklch(0.88 0.16 145)', color: 'oklch(0.32 0.12 145)' }}
+          >
+            <span className="text-2xl" aria-hidden="true">🎵</span>
+            네이버 밴드로 보내기
+          </button>
+          {/* 링크 복사 */}
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-4 min-h-[64px] px-5 rounded-2xl font-bold text-lg text-left transition-colors [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            <Link2 size={24} aria-hidden="true" />
+            링크 복사
+          </button>
+        </div>
+      </SheetContent>
+    </Sheet>
+
 <div className="flex flex-col gap-4">
       {/* 그룹 헤더 카드 */}
       <div
@@ -343,6 +416,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
           className="rounded-2xl px-4 py-3 flex gap-3 overflow-x-auto mb-4 items-end"
           style={{ background: 'rgba(255,255,255,0.18)' }}
         >
+          {/* 멤버 아바타 */}
           {members.map(m => {
             const isSelected = promptTarget?.type === 'member' && promptTarget.id === m.userId
             return (
@@ -386,24 +460,42 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
             )
           })}
 
-          {/* 전체 버튼 — 멤버 2명 이상일 때만 표시 */}
-          {otherMembers.length > 1 && (
-            <div className="flex flex-col items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-                style={{
-                  background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.18)',
-                  border: `2px dashed ${promptTarget?.type === 'all' ? main : 'rgba(255,255,255,0.6)'}`,
-                  boxShadow: promptTarget?.type === 'all' ? '0 0 0 3px white' : 'none',
-                }}
-                aria-label="전체 멤버에게 활동 기록 요청"
-              >
-                <Users size={20} style={{ color: promptTarget?.type === 'all' ? main : dark }} />
-              </button>
-              <span className="text-white text-xs font-bold">전체</span>
-            </div>
-          )}
+          {/* 오른쪽 고정 버튼 그룹 — 구분선 + 전체 + 초대 */}
+          <div className="flex gap-3 ml-auto pl-3 shrink-0 items-end" style={{ borderLeft: '1.5px solid rgba(255,255,255,0.25)' }}>
+            {/* 전체 버튼 — 멤버 2명 이상일 때만 표시 */}
+            {otherMembers.length > 1 && (
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
+                  className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
+                  style={{
+                    background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.18)',
+                    border: `2px dashed ${promptTarget?.type === 'all' ? main : 'rgba(255,255,255,0.6)'}`,
+                    boxShadow: promptTarget?.type === 'all' ? '0 0 0 3px white' : 'none',
+                  }}
+                  aria-label="전체 멤버에게 활동 기록 요청"
+                >
+                  <Users size={20} style={{ color: promptTarget?.type === 'all' ? main : 'white' }} />
+                </button>
+                <span className="text-white text-xs font-bold">전체</span>
+              </div>
+            )}
+
+            {/* + 초대 버튼 — 멤버 5명 미만일 때만 표시 */}
+            {members.length < 5 && (
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={() => setInviteSheetOpen(true)}
+                  className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
+                  style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.7)' }}
+                  aria-label="가족 초대"
+                >
+                  <UserPlus size={20} style={{ color: 'white' }} />
+                </button>
+                <span className="text-white text-xs font-bold">초대</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 탭 바 */}
