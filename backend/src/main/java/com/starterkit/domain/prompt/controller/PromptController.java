@@ -61,4 +61,14 @@ public class PromptController {
         promptService.respondToPrompt(id, request, userId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{id}/dismiss")
+    @Operation(summary = "프롬프트 무시 처리")
+    public ResponseEntity<Void> dismissPrompt(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = ((User) userDetails).getId();
+        promptService.dismissPrompt(id, userId);
+        return ResponseEntity.ok().build();
+    }
 }

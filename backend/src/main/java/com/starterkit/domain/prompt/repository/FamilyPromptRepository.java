@@ -15,6 +15,8 @@ public interface FamilyPromptRepository extends JpaRepository<FamilyPrompt, Long
 
     List<FamilyPrompt> findByRecipientIdAndStatus(Long recipientId, PromptStatus status);
 
+    List<FamilyPrompt> findByRecipientIdAndStatusIn(Long recipientId, List<PromptStatus> statuses);
+
     @Query("SELECT fp FROM FamilyPrompt fp WHERE fp.status = 'PENDING' AND fp.reminderSent = false AND fp.sentAt < :cutoff")
     List<FamilyPrompt> findPendingOlderThan(@Param("cutoff") LocalDateTime cutoff);
 

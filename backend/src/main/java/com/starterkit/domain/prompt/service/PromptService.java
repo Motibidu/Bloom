@@ -109,7 +109,8 @@ public class PromptService {
     }
 
     public List<ReceivedPromptResponse> getReceivedPrompts(Long userId) {
-        List<FamilyPrompt> pending = familyPromptRepository.findByRecipientIdAndStatus(userId, PromptStatus.PENDING);
+        List<FamilyPrompt> pending = familyPromptRepository.findByRecipientIdAndStatusIn(
+                userId, List.of(PromptStatus.PENDING, PromptStatus.REMINDED));
 
         // 발신자 닉네임 일괄 조회
         List<Long> senderIds = pending.stream().map(FamilyPrompt::getSenderId).distinct().toList();
@@ -133,5 +134,17 @@ public class PromptService {
         prompt.setStatus(PromptStatus.RESPONDED);
         prompt.setLinkedCheckinId(req.checkinId());
         prompt.setRespondedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void dismissPrompt(Long promptId, Long userId) {
+        FamilyPrompt prompt = familyPromptRepository.findById(promptId)
+                .orElseThrow(() -> new ResourceNotFoundException("프롬프트를 찾을 수 없습니다."));
+
+        if (!prompt.getRecipientId().equals(userId)) {
+            throw new ResourceNotFoundException("프롬프트에 접근할 수 없습니다.");
+        }
+
+        prompt.setStatus(PromptStatus.DISMISSED);
     }
 }

@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/shadcn/sheet'
 import { type PromptDirection, type PromptTemplateItem, PROMPT_TEMPLATES } from '@/types/prompt'
-import { useSendPrompt, useReceivedPrompts } from '@/hooks/usePrompt'
+import { useSendPrompt, useReceivedPrompts, useDismissPrompt } from '@/hooks/usePrompt'
 
 // ── Warm Blue 테마 ─────────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -414,18 +414,17 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 function ReceivedPromptBanner() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [dismissedIds, setDismissedIds] = useState<number[]>([])
 
   const openPromptId = (location.state as { openPromptId?: number } | null)?.openPromptId
   const { data: receivedPrompts = [] } = useReceivedPrompts()
+  const dismissPrompt = useDismissPrompt()
 
-  const visible = receivedPrompts.filter(p => !dismissedIds.includes(p.id))
-  if (visible.length === 0) return null
+  if (receivedPrompts.length === 0) return null
 
   // 딥링크로 온 경우 해당 프롬프트를 최상단으로
   const sorted = openPromptId
-    ? [visible.find(p => p.id === openPromptId), ...visible.filter(p => p.id !== openPromptId)].filter(Boolean) as typeof visible
-    : visible
+    ? [receivedPrompts.find(p => p.id === openPromptId), ...receivedPrompts.filter(p => p.id !== openPromptId)].filter(Boolean) as typeof receivedPrompts
+    : receivedPrompts
 
   const purple = 'oklch(0.55 0.18 280)'
   const purpleA = (a: number) => `oklch(0.55 0.18 280 / ${a})`
@@ -481,7 +480,7 @@ function ReceivedPromptBanner() {
           {/* 액션 */}
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/', { state: { promptId: p.id } })}
               className="min-h-[40px] px-3 rounded-xl text-sm font-black text-white flex items-center gap-1.5 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{ background: purple }}
             >
@@ -489,10 +488,11 @@ function ReceivedPromptBanner() {
               기록
             </button>
             <button
-              onClick={() => setDismissedIds(prev => [...prev, p.id])}
-              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border-2 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              onClick={() => dismissPrompt.mutate(p.id)}
+              disabled={dismissPrompt.isPending}
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl border-2 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50"
               style={{ borderColor: purpleA(0.25), color: purpleA(0.5) }}
-              aria-label="완료"
+              aria-label="무시"
             >
               <Check size={15} />
             </button>

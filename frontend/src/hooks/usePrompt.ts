@@ -42,10 +42,25 @@ export function useSendPrompt() {
 export function useRespondPrompt() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ promptId, checkinId }: { promptId: number; checkinId: number }) =>
-      api.post(`/prompts/${promptId}/respond`, { checkinId }),
+    mutationFn: ({ promptId, checkinId }: { promptId: number; checkinId?: number }) =>
+      api.post(`/prompts/${promptId}/respond`, { checkinId: checkinId ?? null }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prompts', 'received'] })
+      queryClient.invalidateQueries({ queryKey: ['family', 'feed'] })
+    },
+  })
+}
+
+export function useDismissPrompt() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (promptId: number) =>
+      api.post(`/prompts/${promptId}/dismiss`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompts', 'received'] })
+    },
+    onError: () => {
+      toast.error('처리에 실패했어요. 다시 시도해 주세요.')
     },
   })
 }

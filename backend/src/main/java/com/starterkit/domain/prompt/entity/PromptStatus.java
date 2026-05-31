@@ -1,5 +1,5 @@
 package com.starterkit.domain.prompt.entity;
 
 public enum PromptStatus {
-    PENDING, RESPONDED, REMINDED
+    PENDING, RESPONDED, REMINDED, DISMISSED
 }

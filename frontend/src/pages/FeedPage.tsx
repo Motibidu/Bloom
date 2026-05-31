@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useScrollContainer } from '@/lib/scrollContext'
 import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
@@ -10,6 +10,7 @@ import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import BigButton from '@/components/ui/common/big-button'
 import { useInfiniteTodayFeed, useCreateCheckin, usePhotoUploadUrl, useSameCategoryUsers, useDeleteCheckin } from '@/hooks/useCheckin'
+import { useRespondPrompt } from '@/hooks/usePrompt'
 import { useFollowToggle } from '@/hooks/useFollow'
 import { useAuthStore } from '@/store/authStore'
 import { AUTO_TITLES, CATEGORY_META } from '@/lib/categories'
@@ -125,6 +126,9 @@ const SCROLL_KEY = 'feed-scroll-y'
 
 export default function FeedPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const respondPrompt = useRespondPrompt()
+  const promptIdFromState = (location.state as { promptId?: number } | null)?.promptId ?? null
   const scrollContainer = useScrollContainer()
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -186,6 +190,13 @@ export default function FeedPage() {
     observer.observe(el)
     return () => observer.disconnect()
   }, [onIntersect])
+
+  useEffect(() => {
+    if (promptIdFromState !== null) {
+      setIsFormOpen(true)
+      window.history.replaceState({}, '')
+    }
+  }, [promptIdFromState])
 
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
@@ -275,13 +286,16 @@ export default function FeedPage() {
         })
         objectKeys.push(objectKey)
       }
-      await createCheckin.mutateAsync({
+      const newCheckin = await createCheckin.mutateAsync({
         category: selectedCategory,
         title: title.trim(),
         content: content.trim(),
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
         isSimple: checkinMode === 'simple',
       })
+      if (promptIdFromState !== null) {
+        respondPrompt.mutate({ promptId: promptIdFromState, checkinId: newCheckin.id })
+      }
       if (checkinMode === 'simple') {
         toast.success('기록 완료! 가족 탭에서 확인할 수 있어요 👨‍👩‍👧')
       }
