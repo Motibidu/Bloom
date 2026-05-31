@@ -60,6 +60,7 @@ export function useCreateCheckin() {
       }).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkins', 'today'] })
+      queryClient.invalidateQueries({ queryKey: ['family', 'feed'] })
     },
   })
 }
