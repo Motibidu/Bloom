@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Send, ChevronLeft, ClipboardList, Pen } from 'lucide-react'
+import { Users, Copy, Check, UserPlus, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/shadcn/sheet'
 import { type PromptTemplateItem, PROMPT_TEMPLATES } from '@/types/prompt'
 import { useSendPrompt, useReceivedPrompts, useDismissPrompt } from '@/hooks/usePrompt'
 
@@ -286,8 +285,9 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 }) {
   const [tab, setTab] = useState<'feed' | 'settings'>('feed')
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
-  const [promptSheetOpen, setPromptSheetOpen] = useState(false)
   const leaveFamily = useLeaveFamilyGroup()
+  const [promptTarget, setPromptTarget] = useState<PromptTarget | null>(null)
+  const otherMembers = members.filter(m => m.userId !== currentUserId)
 
   const handleLeaveConfirm = async () => {
     try {
@@ -309,13 +309,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       onConfirm={handleLeaveConfirm}
       onCancel={() => setLeaveDialogOpen(false)}
     />
-    <PromptSheet
-      open={promptSheetOpen}
-      onClose={() => setPromptSheetOpen(false)}
-      members={members}
-      currentUserId={currentUserId}
-    />
-    <div className="flex flex-col gap-4">
+<div className="flex flex-col gap-4">
       {/* 그룹 헤더 카드 */}
       <div
         className="rounded-3xl p-5"
@@ -340,27 +334,72 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
           {name}
         </h1>
 
-        {/* 멤버 아바타 목록 */}
+        {/* 멤버 아바타 목록 — 탭하면 활동 기록 요청 발송 */}
         <div
-          className="rounded-2xl px-4 py-3 flex gap-4 overflow-x-auto mb-4"
+          className="rounded-2xl px-4 py-3 flex gap-3 overflow-x-auto mb-4 items-end"
           style={{ background: 'rgba(255,255,255,0.18)' }}
         >
-          {members.map(m => (
-            <div key={m.userId} className="flex flex-col items-center gap-1.5 shrink-0">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden"
-                style={{ background: 'rgba(255,255,255,0.35)', color: dark, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-                aria-hidden="true"
-              >
-                {m.profileImageUrl ? (
-                  <img src={m.profileImageUrl} alt={m.nickname} className="w-full h-full object-cover" />
-                ) : (
-                  m.nickname[0]
-                )}
+          {members.map(m => {
+            const isSelected = promptTarget?.type === 'member' && promptTarget.id === m.userId
+            return (
+              <div key={m.userId} className="flex flex-col items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => {
+                    if (m.userId === currentUserId) return
+                    setPromptTarget({ type: 'member', id: m.userId, nickname: m.nickname })
+                  }}
+                  className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
+                  aria-label={m.userId !== currentUserId ? `${m.nickname}에게 활동 기록 요청` : undefined}
+                  style={{ cursor: m.userId !== currentUserId ? 'pointer' : 'default' }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden transition-all"
+                    style={{
+                      background: isSelected ? 'white' : 'rgba(255,255,255,0.35)',
+                      color: dark,
+                      boxShadow: isSelected ? '0 0 0 3px white' : '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    {m.profileImageUrl ? (
+                      <img src={m.profileImageUrl} alt={m.nickname} className="w-full h-full object-cover" />
+                    ) : (
+                      m.nickname[0]
+                    )}
+                  </div>
+                  {m.userId !== currentUserId && (
+                    <div
+                      className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
+                      aria-hidden="true"
+                    >
+                      <Bell size={10} style={{ color: main }} />
+                    </div>
+                  )}
+                </button>
+                <span className="text-white text-xs font-bold max-w-[52px] text-center truncate">{m.nickname}</span>
               </div>
-              <span className="text-white text-xs font-bold max-w-[52px] text-center truncate">{m.nickname}</span>
+            )
+          })}
+
+          {/* 전체 버튼 — 멤버 2명 이상일 때만 표시 */}
+          {otherMembers.length > 1 && (
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
+                style={{
+                  background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.18)',
+                  border: `2px dashed ${promptTarget?.type === 'all' ? main : 'rgba(255,255,255,0.6)'}`,
+                  boxShadow: promptTarget?.type === 'all' ? '0 0 0 3px white' : 'none',
+                }}
+                aria-label="전체 멤버에게 활동 기록 요청"
+              >
+                <Users size={20} style={{ color: promptTarget?.type === 'all' ? main : dark }} />
+              </button>
+              <span className="text-white text-xs font-bold">전체</span>
             </div>
-          ))}
+          )}
         </div>
 
         {/* 탭 바 */}
@@ -386,6 +425,12 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       {/* 가족 피드 탭 */}
       {tab === 'feed' && (
         <div className="flex flex-col gap-4" role="tabpanel">
+          {promptTarget && (
+            <InlinePromptPanel
+              target={promptTarget}
+              onClose={() => setPromptTarget(null)}
+            />
+          )}
           <ReceivedPromptBanner />
           <FamilyFeed groupId={groupId} />
         </div>
@@ -395,18 +440,105 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       {tab === 'settings' && (
         <div className="flex flex-col gap-4" role="tabpanel">
           <InviteCodeBlock inviteCode={inviteCode} />
-          <button
-            onClick={() => setPromptSheetOpen(true)}
-            className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center gap-3 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ background: grad, boxShadow: `0 4px 20px ${mA(0.25)}` }}
-          >
-            <Send size={20} aria-hidden="true" />
-            공유 초대 보내기
-          </button>
         </div>
       )}
     </div>
     </>
+  )
+}
+
+// ── 인라인 활동 기록 요청 패널 ──────────────────────────────────────────────────
+type PromptTarget =
+  | { type: 'member'; id: number; nickname: string }
+  | { type: 'all'; ids: number[] }
+
+function InlinePromptPanel({
+  target,
+  onClose,
+}: {
+  target: PromptTarget
+  onClose: () => void
+}) {
+  const sendPrompt = useSendPrompt()
+  const [done, setDone] = useState(false)
+
+  const targetLabel = target.type === 'member' ? target.nickname : '가족 전체'
+
+  const purple = 'oklch(0.55 0.18 280)'
+  const purpleA = (a: number) => `oklch(0.55 0.18 280 / ${a})`
+
+  const handleSelect = async (templateCode: PromptTemplateItem['code']) => {
+    try {
+      const ids = target.type === 'member' ? [target.id] : target.ids
+      await Promise.all(
+        ids.map(id => sendPrompt.mutateAsync({ recipientId: id, templateCode }))
+      )
+      setDone(true)
+    } catch {
+      // useSendPrompt onError에서 toast 처리
+    }
+  }
+
+  if (done) {
+    return (
+      <div
+        className="rounded-2xl px-4 py-3 flex items-center gap-3"
+        style={{ background: purpleA(0.07), border: `1px solid ${purpleA(0.2)}` }}
+      >
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: purpleA(0.15) }}
+          aria-hidden="true"
+        >
+          <Check size={18} style={{ color: purple }} />
+        </div>
+        <p className="font-black text-base flex-1" style={{ color: purple }}>
+          {targetLabel}에게 요청을 보냈어요!
+        </p>
+        <button
+          onClick={onClose}
+          className="text-sm font-bold min-h-[40px] px-3"
+          style={{ color: purpleA(0.6) }}
+        >
+          닫기
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden"
+      style={{ border: `1.5px solid ${purpleA(0.3)}` }}
+    >
+      <div className="px-4 py-2.5 flex items-center justify-between" style={{ background: purpleA(0.12) }}>
+        <span className="text-sm font-black" style={{ color: purple }}>
+          {targetLabel}에게 어떤 요청을 보낼까요?
+        </span>
+        <button
+          onClick={onClose}
+          className="min-h-[36px] min-w-[36px] flex items-center justify-center"
+          aria-label="닫기"
+        >
+          <X size={15} style={{ color: purpleA(0.6) }} />
+        </button>
+      </div>
+      <div className="flex flex-col bg-white">
+        {PROMPT_TEMPLATES.map((t: PromptTemplateItem, i) => (
+          <button
+            key={t.code}
+            onClick={() => handleSelect(t.code)}
+            disabled={sendPrompt.isPending}
+            className="text-left px-4 py-3 font-bold text-base disabled:opacity-50 focus-visible:outline-none [-webkit-tap-highlight-color:transparent]"
+            style={{
+              borderTop: i > 0 ? `1px solid ${purpleA(0.10)}` : undefined,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -503,155 +635,6 @@ function ReceivedPromptBanner() {
   )
 }
 
-// ── 프롬프트 발송 바텀시트 ─────────────────────────────────────────────────────
-type PromptStep = 'template' | 'confirm'
-
-function PromptSheet({
-  open,
-  onClose,
-  members,
-  currentUserId,
-}: {
-  open: boolean
-  onClose: () => void
-  members: { userId: number; nickname: string }[]
-  currentUserId: number | null
-}) {
-  const [step, setStep] = useState<PromptStep>('template')
-  const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplateItem | null>(null)
-
-  const sendPrompt = useSendPrompt()
-  const otherMembers = members.filter(m => m.userId !== currentUserId)
-  const recipient = otherMembers[0]
-
-  function handleClose() {
-    setStep('template')
-    setSelectedTemplate(null)
-    onClose()
-  }
-
-  function handleSelectTemplate(t: PromptTemplateItem) {
-    setSelectedTemplate(t)
-    setStep('confirm')
-  }
-
-  async function handleSend() {
-    if (!selectedTemplate || !recipient) return
-    await sendPrompt.mutateAsync({
-      recipientId: recipient.userId,
-      templateCode: selectedTemplate.code,
-    })
-    handleClose()
-  }
-
-  return (
-    <Sheet open={open} onOpenChange={v => { if (!v) handleClose() }}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[70vh] overflow-y-auto px-6 pb-8">
-        <SheetTitle className="sr-only">
-          {step === 'template' ? '공유 초대 보내기' : '이렇게 보낼게요'}
-        </SheetTitle>
-        <div className="flex items-center justify-between pt-2 pb-4">
-          <div className="flex items-center gap-2">
-            {step === 'confirm' && (
-              <button
-                onClick={() => setStep('template')}
-                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{ color: dark }}
-                aria-label="이전 단계"
-              >
-                <ChevronLeft size={20} />
-              </button>
-            )}
-            <h2 className="text-xl font-black text-foreground" style={serifStyle}>
-              {step === 'template' && '공유 초대 보내기'}
-              {step === 'confirm' && '이렇게 보낼게요'}
-            </h2>
-          </div>
-          <button
-            onClick={handleClose}
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl [-webkit-tap-highlight-color:transparent]"
-            aria-label="닫기"
-          >
-            <X size={20} className="text-foreground/50" />
-          </button>
-        </div>
-
-        {/* Step 1: 문구 선택 */}
-        {step === 'template' && (
-          <div className="flex flex-col gap-2">
-            <p className="text-base text-foreground/60 font-bold mb-2" style={{ wordBreak: 'keep-all' }}>
-              어떤 공유를 초대할까요?
-            </p>
-            {PROMPT_TEMPLATES.map((t: PromptTemplateItem) => (
-              <button
-                key={t.code}
-                onClick={() => handleSelectTemplate(t)}
-                className="w-full min-h-[64px] rounded-2xl px-5 flex items-center gap-3 text-left [-webkit-tap-highlight-color:transparent] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{ background: mA(0.07), border: `2px solid ${mA(0.15)}` }}
-                onMouseEnter={e => { e.currentTarget.style.background = mA(0.13); e.currentTarget.style.borderColor = main }}
-                onMouseLeave={e => { e.currentTarget.style.background = mA(0.07); e.currentTarget.style.borderColor = mA(0.15) }}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-black text-foreground" style={{ wordBreak: 'keep-all' }}>{t.label}</p>
-                  <p className="text-sm text-foreground/50 font-bold">{t.description}</p>
-                </div>
-                <ChevronRight size={18} style={{ color: mA(0.4) }} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Step 2: 발송 확인 */}
-        {step === 'confirm' && selectedTemplate && (
-          <div className="flex flex-col gap-5">
-            <div
-              className="rounded-2xl p-5 flex flex-col gap-3"
-              style={{ background: mA(0.07), border: `2px solid ${mA(0.18)}` }}
-            >
-              {recipient && (
-                <span className="text-sm font-bold text-foreground/60">{recipient.nickname}님에게 보낼 초대예요</span>
-              )}
-              <p className="text-xl font-black text-foreground" style={serifStyle}>
-                "{selectedTemplate.label}"
-              </p>
-            </div>
-
-            {/* 가치 제안 문구 */}
-            <div
-              className="rounded-2xl p-4"
-              style={{
-                background: `linear-gradient(135deg, ${mA(0.06)}, oklch(0.76 0.12 220 / 0.08))`,
-                border: `1px solid ${mA(0.15)}`,
-                wordBreak: 'keep-all',
-              }}
-            >
-              <p className="text-sm font-bold text-foreground/70 leading-relaxed">
-                💡 이게 쌓이면 1년 후 가족의 일상 앨범이 돼요.<br />
-                오늘 한 장면을 함께 기록해 보세요.
-              </p>
-            </div>
-
-            <button
-              onClick={handleSend}
-              disabled={sendPrompt.isPending}
-              className="w-full min-h-[64px] rounded-2xl text-xl font-black text-white flex items-center justify-center gap-3 transition-opacity disabled:opacity-60 [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{ background: `linear-gradient(135deg, ${main}, oklch(0.76 0.12 220))`, boxShadow: `0 4px 20px ${mA(0.3)}` }}
-            >
-              {sendPrompt.isPending ? (
-                <div className="w-6 h-6 rounded-full border-2 border-white/40 border-t-white animate-spin" role="status" aria-label="전송 중" />
-              ) : (
-                <>
-                  <Send size={22} aria-hidden="true" />
-                  공유 초대 보내기
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
-  )
-}
 
 // ── 그룹 없는 화면 ─────────────────────────────────────────────────────────────
 function FamilyEmpty() {

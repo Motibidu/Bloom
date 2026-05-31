@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useScrollContainer } from '@/lib/scrollContext'
-import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, ChevronRight, UserCheck } from 'lucide-react'
+import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, UserCheck } from 'lucide-react'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import { Input } from '@/components/ui/shadcn/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/shadcn/sheet'
@@ -392,28 +392,61 @@ export default function FeedPage() {
   return (
     <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
 
-      {/* ── 미니 인사말 헤더 ──────────────────────────────────────────────── */}
+      {/* ── 통합 인사말 헤더 ──────────────────────────────────────────────── */}
       <div className="hidden md:flex items-stretch gap-4">
         <header
-          className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-3"
+          className="flex-1 rounded-2xl px-4 py-3 space-y-2"
           style={{
             background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
             border: `1px solid ${mA(0.15)}`,
           }}
         >
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold" style={{ color: dark }}>
-              {formatTodayKo()}
-            </p>
-            <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
-              오늘도 좋은 하루 되세요!
-            </h1>
-            {totalCheckinCount > 0 && (
-              <p className="text-sm font-medium text-muted-foreground mt-0.5">
-                🌡️ {getParticipationMessage(totalCheckinCount)}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold" style={{ color: dark }}>
+                {formatTodayKo()}
               </p>
+              <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
+                오늘도 좋은 하루 되세요!
+              </h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {totalCheckinCount > 0 && (
+              <span className="text-sm font-medium text-muted-foreground">
+                🌡️ {getParticipationMessage(totalCheckinCount)}
+              </span>
+            )}
+            {sameCategoryUserCount > 0 && (
+              <button
+                type="button"
+                onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
+                style={{ background: mA(0.12), color: dark, border: `1px solid ${mA(0.20)}`, '--tw-ring-color': main } as React.CSSProperties}
+              >
+                <Users size={11} aria-hidden="true" />
+                같은 활동 {sameCategoryUserCount}명 보기
+              </button>
             )}
           </div>
+          {activitySummary.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory">
+              {activitySummary.map((item: ActivitySummaryItem) => {
+                const { icon: Icon, label } = CATEGORY_META[item.category]
+                return (
+                  <div
+                    key={item.category}
+                    className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
+                    style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+                  >
+                    <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
+                    <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
+                    <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </header>
         {/* 데스크탑 — 헤더 오른쪽 외부 기록하기 버튼 */}
         {canWriteFeed && !isFormOpen && (
@@ -433,64 +466,62 @@ export default function FeedPage() {
           </button>
         )}
       </div>
-      {/* 모바일 헤더 */}
+      {/* 모바일 통합 헤더 */}
       <header
-        className="md:hidden rounded-2xl px-4 py-3 flex items-center gap-3"
+        className="md:hidden rounded-2xl px-4 py-3 space-y-2"
         style={{
           background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
           border: `1px solid ${mA(0.15)}`,
         }}
       >
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold" style={{ color: dark }}>
-            {formatTodayKo()}
-          </p>
-          <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
-            오늘도 좋은 하루 되세요!
-          </h1>
-          {totalCheckinCount > 0 && (
-            <p className="text-sm font-medium text-muted-foreground mt-0.5">
-              🌡️ {getParticipationMessage(totalCheckinCount)}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold" style={{ color: dark }}>
+              {formatTodayKo()}
             </p>
+            <h1 className="text-base font-black text-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
+              오늘도 좋은 하루 되세요!
+            </h1>
+          </div>
+          <span className="text-2xl shrink-0" aria-hidden="true">☀️</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {totalCheckinCount > 0 && (
+            <span className="text-sm font-medium text-muted-foreground">
+              🌡️ {getParticipationMessage(totalCheckinCount)}
+            </span>
+          )}
+          {sameCategoryUserCount > 0 && (
+            <button
+              type="button"
+              onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
+              style={{ background: mA(0.12), color: dark, border: `1px solid ${mA(0.20)}`, '--tw-ring-color': main } as React.CSSProperties}
+            >
+              <Users size={11} aria-hidden="true" />
+              같은 활동 {sameCategoryUserCount}명 보기
+            </button>
           )}
         </div>
-        <span className="text-2xl shrink-0" aria-hidden="true">☀️</span>
-      </header>
-
-      {/* ── 같은 카테고리 활동자 배너 ─────────────────────────────────────── */}
-      {sameCategoryUserCount > 0 && (
-        <button
-          type="button"
-          aria-label={`나와 같은 활동을 한 ${sameCategoryUserCount}명 보기`}
-          onClick={() => {
-            setSameCategorySheetOpen(true)
-            fetchSameCategoryUsers()
-          }}
-          className="w-full rounded-2xl px-6 py-5 flex items-center gap-4 lp-badge-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{
-            background: `linear-gradient(135deg, ${mA(0.10)}, ${lA(0.08)})`,
-            border: `1px solid ${mA(0.20)}`,
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: grad }}
-            aria-hidden="true"
-          >
-            <Users size={22} className="text-white" />
+        {activitySummary.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory">
+            {activitySummary.map((item: ActivitySummaryItem) => {
+              const { icon: Icon, label } = CATEGORY_META[item.category]
+              return (
+                <div
+                  key={item.category}
+                  className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
+                  style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+                >
+                  <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
+                  <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
+                  <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
+                </div>
+              )
+            })}
           </div>
-
-          <p className="text-lg font-bold leading-snug flex-1" style={{ color: dark }}>
-            나와 같은 활동을 한{' '}
-            <strong className="text-2xl" style={{ color: main }}>
-              {sameCategoryUserCount}명
-            </strong>
-            이 있어요!
-          </p>
-
-          <ChevronRight size={22} className="shrink-0" style={{ color: light }} aria-hidden="true" />
-        </button>
-      )}
+        )}
+      </header>
 
       {/* ── 같은 카테고리 사용자 바텀시트 ──────────────────────────────────── */}
       <Sheet open={sameCategorySheetOpen} onOpenChange={setSameCategorySheetOpen}>
@@ -841,43 +872,6 @@ export default function FeedPage() {
             팔로우 피드
           </button>
         </div>
-
-        {/* 오늘 활동 집계 섹션 */}
-        {activitySummary.length > 0 && (
-          <div className="mb-6">
-            <p className="text-sm font-bold mb-3" style={{ color: dark }}>오늘 함께 활동한 이웃</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
-              {activitySummary.map((item: ActivitySummaryItem) => {
-                const { icon: Icon, label } = CATEGORY_META[item.category]
-                return (
-                  <div
-                    key={item.category}
-                    className="shrink-0 snap-start flex items-center gap-2 px-4 rounded-2xl min-h-[52px]"
-                    style={{ background: mA(0.08), border: `1px solid ${mA(0.15)}` }}
-                  >
-                    <Icon size={18} style={{ color: dark }} aria-hidden="true" />
-                    <span className="text-base font-black" style={{ color: dark }}>{label}</span>
-                    <span className="text-base font-bold" style={{ color: dark }}>{item.count}명</span>
-                    {item.previewNicknames.length > 0 && (
-                      <div className="flex -space-x-1.5 ml-1">
-                        {item.previewNicknames.map((nick) => (
-                          <div
-                            key={nick}
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white ring-2 ring-white"
-                            style={{ background: `linear-gradient(135deg, ${main}, ${light})` }}
-                            aria-label={nick}
-                          >
-                            {nick[0]}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         {/* 섹션 헤더 */}
         <div className="flex items-center gap-4 mb-7">

@@ -139,7 +139,6 @@ export default function RegisterPage() {
   }
 
   const currentYear = new Date().getFullYear()
-  const isInvited = !!inviteCode
 
   return (
     <AuthLayout>
