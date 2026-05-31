@@ -17,6 +17,10 @@ const grad  = `linear-gradient(135deg, ${main}, ${light})`
 
 const serifStyle: React.CSSProperties = { fontFamily: "'Noto Serif KR', serif" }
 
+type PromptTarget =
+  | { type: 'member'; id: number; nickname: string }
+  | { type: 'all'; ids: number[] }
+
 // ── 초대 코드 / 링크 공유 블록 ────────────────────────────────────────────────
 const INVITE_BASE_URL = 'https://pcgear.store/invite'
 
@@ -448,10 +452,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 }
 
 // ── 인라인 활동 기록 요청 패널 ──────────────────────────────────────────────────
-type PromptTarget =
-  | { type: 'member'; id: number; nickname: string }
-  | { type: 'all'; ids: number[] }
-
 function InlinePromptPanel({
   target,
   onClose,
@@ -470,10 +470,13 @@ function InlinePromptPanel({
   const handleSelect = async (templateCode: PromptTemplateItem['code']) => {
     try {
       const ids = target.type === 'member' ? [target.id] : target.ids
-      await Promise.all(
+      const results = await Promise.allSettled(
         ids.map(id => sendPrompt.mutateAsync({ recipientId: id, templateCode }))
       )
-      setDone(true)
+      const failedCount = results.filter(r => r.status === 'rejected').length
+      if (failedCount < ids.length) {
+        setDone(true)
+      }
     } catch {
       // useSendPrompt onError에서 toast 처리
     }
@@ -497,7 +500,7 @@ function InlinePromptPanel({
         </p>
         <button
           onClick={onClose}
-          className="text-sm font-bold min-h-[40px] px-3"
+          className="text-sm font-bold min-h-[48px] px-3"
           style={{ color: purpleA(0.6) }}
         >
           닫기
