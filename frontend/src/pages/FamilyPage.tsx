@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Users, Copy, Check, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2 } from 'lucide-react'
+import { Users, Copy, Check, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2, UserPlus } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
@@ -306,7 +306,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       },
       buttons: [{ title: '가족으로 합류하기', link: { mobileWebUrl: inviteLink, webUrl: inviteLink } }],
     })
-    setInviteSheetOpen(false)
   }
 
   const handleBandShare = () => {
