@@ -411,40 +411,43 @@ export default function FeedPage() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {totalCheckinCount > 0 && (
-              <span className="text-sm font-medium text-muted-foreground">
-                🌡️ {getParticipationMessage(totalCheckinCount)}
-              </span>
-            )}
-            {sameCategoryUserCount > 0 && (
-              <button
-                type="button"
-                onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
-                style={{ background: mA(0.12), color: dark, border: `1px solid ${mA(0.20)}`, '--tw-ring-color': main } as React.CSSProperties}
-              >
-                <Users size={11} aria-hidden="true" />
-                같은 활동 {sameCategoryUserCount}명 보기
-              </button>
-            )}
-          </div>
-          {activitySummary.length > 0 && (
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory">
-              {activitySummary.map((item: ActivitySummaryItem) => {
-                const { icon: Icon, label } = CATEGORY_META[item.category]
-                return (
-                  <div
-                    key={item.category}
-                    className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
-                    style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+          {totalCheckinCount > 0 && (
+            <span className="text-sm font-medium text-muted-foreground">
+              🌡️ {getParticipationMessage(totalCheckinCount)}
+            </span>
+          )}
+          {(activitySummary.length > 0 || sameCategoryUserCount > 0) && (
+            <div className="relative">
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory" style={{ maskImage: 'linear-gradient(to right, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)' }}>
+                {sameCategoryUserCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
+                    className="shrink-0 inline-flex items-center gap-1 px-2.5 rounded-lg min-h-[28px] text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
+                    style={{ background: mA(0.14), color: dark, border: `1px solid ${mA(0.25)}`, '--tw-ring-color': main } as React.CSSProperties}
                   >
-                    <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
-                    <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
-                    <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
-                  </div>
-                )
-              })}
+                    <Users size={11} aria-hidden="true" />
+                    같은 활동 {sameCategoryUserCount}명
+                    <span aria-hidden="true">→</span>
+                  </button>
+                )}
+                {[...activitySummary]
+                  .sort((a, b) => (a.category === 'OTHER' ? 1 : b.category === 'OTHER' ? -1 : 0))
+                  .map((item: ActivitySummaryItem) => {
+                    const { icon: Icon, label } = CATEGORY_META[item.category]
+                    return (
+                      <div
+                        key={item.category}
+                        className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
+                        style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+                      >
+                        <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
+                        <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
+                        <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
+                      </div>
+                    )
+                  })}
+              </div>
             </div>
           )}
         </header>
@@ -485,40 +488,43 @@ export default function FeedPage() {
           </div>
           <span className="text-2xl shrink-0" aria-hidden="true">☀️</span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {totalCheckinCount > 0 && (
-            <span className="text-sm font-medium text-muted-foreground">
-              🌡️ {getParticipationMessage(totalCheckinCount)}
-            </span>
-          )}
-          {sameCategoryUserCount > 0 && (
-            <button
-              type="button"
-              onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
-              style={{ background: mA(0.12), color: dark, border: `1px solid ${mA(0.20)}`, '--tw-ring-color': main } as React.CSSProperties}
-            >
-              <Users size={11} aria-hidden="true" />
-              같은 활동 {sameCategoryUserCount}명 보기
-            </button>
-          )}
-        </div>
-        {activitySummary.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory">
-            {activitySummary.map((item: ActivitySummaryItem) => {
-              const { icon: Icon, label } = CATEGORY_META[item.category]
-              return (
-                <div
-                  key={item.category}
-                  className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
-                  style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+        {totalCheckinCount > 0 && (
+          <span className="text-sm font-medium text-muted-foreground">
+            🌡️ {getParticipationMessage(totalCheckinCount)}
+          </span>
+        )}
+        {(activitySummary.length > 0 || sameCategoryUserCount > 0) && (
+          <div className="relative">
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 snap-x snap-mandatory" style={{ maskImage: 'linear-gradient(to right, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)' }}>
+              {sameCategoryUserCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setSameCategorySheetOpen(true); fetchSameCategoryUsers() }}
+                  className="shrink-0 inline-flex items-center gap-1 px-2.5 rounded-lg min-h-[28px] text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 hover:opacity-80 transition-opacity"
+                  style={{ background: mA(0.14), color: dark, border: `1px solid ${mA(0.25)}`, '--tw-ring-color': main } as React.CSSProperties}
                 >
-                  <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
-                  <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
-                  <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
-                </div>
-              )
-            })}
+                  <Users size={11} aria-hidden="true" />
+                  같은 활동 {sameCategoryUserCount}명
+                  <span aria-hidden="true">→</span>
+                </button>
+              )}
+              {[...activitySummary]
+                .sort((a, b) => (a.category === 'OTHER' ? 1 : b.category === 'OTHER' ? -1 : 0))
+                .map((item: ActivitySummaryItem) => {
+                  const { icon: Icon, label } = CATEGORY_META[item.category]
+                  return (
+                    <div
+                      key={item.category}
+                      className="shrink-0 snap-start flex items-center gap-1 px-2.5 rounded-lg min-h-[28px]"
+                      style={{ background: mA(0.06), border: `1px solid ${mA(0.10)}` }}
+                    >
+                      <Icon size={12} style={{ color: mA(0.45) }} aria-hidden="true" />
+                      <span className="text-xs font-medium" style={{ color: mA(0.55) }}>{label}</span>
+                      <span className="text-xs font-semibold" style={{ color: mA(0.55) }}>{item.count}명</span>
+                    </div>
+                  )
+                })}
+            </div>
           </div>
         )}
       </header>
