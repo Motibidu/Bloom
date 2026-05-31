@@ -73,7 +73,6 @@ public class PromptService {
                         .familyGroupId(groupId)
                         .senderId(senderId)
                         .recipientId(req.recipientId())
-                        .direction(req.direction())
                         .templateCode(req.templateCode())
                         .build()
         );
@@ -95,7 +94,7 @@ public class PromptService {
         // FCM 푸시 알림 (비동기)
         notificationService.sendPush(
                 req.recipientId(),
-                "공유 초대가 도착했어요",
+                "활동 기록 요청이 도착했어요",
                 senderNickname + "님: " + req.templateCode().getLabel()
         );
 

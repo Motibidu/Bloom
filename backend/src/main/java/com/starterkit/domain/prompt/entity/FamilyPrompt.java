@@ -31,10 +31,6 @@ public class FamilyPrompt {
     private Long recipientId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private PromptDirection direction;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "template_code", nullable = false, length = 20)
     private PromptTemplate templateCode;
 
