@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, Copy, Check, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2, UserPlus } from 'lucide-react'
+import { Users, Check, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2, UserPlus } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import { useMyFamily, useCreateFamily, useJoinFamily, useFamilyFeed, useLeaveFamilyGroup } from '@/hooks/useFamily'
