@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/shadcn/textarea'
 import { useCheckinDetail, useDeleteCheckin } from '@/hooks/useCheckin'
 import { useComments, useCreateComment } from '@/hooks/useComment'
 import { useAuthStore } from '@/store/authStore'
+import { useScrollContainer } from '@/lib/scrollContext'
 import { isKakaoShareReady } from '@/lib/kakao'
 import type { CheckIn, Comment } from '@/types'
 
@@ -41,6 +42,13 @@ export default function ActivityDetailPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   const currentUser = useAuthStore((s) => s.user)
+  const scrollContainer = useScrollContainer()
+
+  // 상세 페이지 진입 시 스크롤 항상 최상단으로
+  useEffect(() => {
+    const el = scrollContainer?.current
+    if (el) el.scrollTop = 0
+  }, [checkinId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: checkinData, isLoading, isError } = useCheckinDetail(checkinId)
   const checkin = checkinData as CheckIn | undefined
