@@ -529,12 +529,14 @@ export default function CheckInCard({
   return (
     <article
       className={`
-        group relative rounded-none sm:rounded-2xl bg-white overflow-hidden flex flex-col
+        group relative rounded-none sm:rounded-2xl bg-white flex flex-col
         checkin-card
         ${isClickable ? 'checkin-card--clickable cursor-pointer' : ''}
       `}
       style={{
         boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}`,
+        overflowX: 'clip',
+        overflowY: 'visible',
       }}
     >
       <style>{`
@@ -555,18 +557,13 @@ export default function CheckInCard({
         }
       `}</style>
 
-      {/* 카드 전체 클릭 영역 */}
-      {isClickable && (
-        <button
-          type="button"
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring rounded-2xl"
-          aria-label={`${checkin.nickname}님의 ${label} 활동: ${checkin.title}`}
-          onClick={onClick}
-        />
-      )}
-
       {/* 헤더 */}
-      <div className="pl-3 pr-3 sm:pl-5 sm:pr-5 pt-2 sm:pt-4 pb-2">
+      <div
+        className={`pl-3 pr-3 sm:pl-5 sm:pr-5 pt-2 sm:pt-4 pb-2 ${isClickable ? 'cursor-pointer' : ''}`}
+        onClick={isClickable ? onClick : undefined}
+        role={isClickable ? 'button' : undefined}
+        aria-label={isClickable ? `${checkin.nickname}님의 ${label} 활동: ${checkin.title}` : undefined}
+      >
         <div className="flex items-center gap-3">
           <div
             className="w-12 h-12 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-lg font-black"
@@ -690,7 +687,10 @@ export default function CheckInCard({
       {/* 본문 + 사진 wrapper */}
       <div className="flex-1 flex flex-col">
         {/* 본문 */}
-        <div className="pl-4 pr-3 sm:pl-7 sm:pr-5 pt-4 pb-5">
+        <div
+          className={`pl-4 pr-3 sm:pl-7 sm:pr-5 pt-4 pb-5 ${isClickable ? 'cursor-pointer' : ''}`}
+          onClick={isClickable ? onClick : undefined}
+        >
           <h3
             className="text-xl font-black text-foreground mb-2 leading-snug"
             style={{ textWrap: 'balance' } as React.CSSProperties}
@@ -704,7 +704,7 @@ export default function CheckInCard({
 
         {/* 사진 */}
         {checkin.photoUrls && checkin.photoUrls.length > 0 && (
-        <div className="px-3 sm:px-5 pb-5">
+        <div className={checkin.photoUrls.length === 1 ? "px-3 sm:px-5 pb-5" : "pb-5"}>
           {checkin.photoUrls.length === 1 ? (
             <img
               src={checkin.photoUrls[0]}
@@ -717,7 +717,10 @@ export default function CheckInCard({
               onClick={onPhotoClick ? () => onPhotoClick(0) : undefined}
             />
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+            <div
+              className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory relative"
+              style={{ paddingLeft: '12px', paddingRight: '12px', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+            >
               {checkin.photoUrls.map((url, i) => (
                 <img
                   key={i}
@@ -728,7 +731,7 @@ export default function CheckInCard({
                   className={`shrink-0 w-64 h-52 rounded-xl object-cover snap-start ${onPhotoClick ? 'cursor-pointer' : ''}`}
                   style={{ boxShadow: `0 2px 12px ${mA(0.10)}` }}
                   loading="lazy"
-                  onClick={onPhotoClick ? () => onPhotoClick(i) : undefined}
+                  onClick={onPhotoClick ? (e) => { e.stopPropagation(); onPhotoClick(i) } : undefined}
                 />
               ))}
             </div>
