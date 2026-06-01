@@ -287,7 +287,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
   isOwner: boolean
   currentUserId: number | null
 }) {
-  const [tab, setTab] = useState<'feed' | 'settings'>('feed')
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
   const leaveFamily = useLeaveFamilyGroup()
   const [promptTarget, setPromptTarget] = useState<PromptTarget | null>(null)
@@ -368,8 +367,8 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 
         {/* 멤버 아바타 목록 — 탭하면 활동 기록 요청 발송 */}
         <div
-          className="rounded-2xl px-4 py-3 flex gap-0 mb-4 items-center"
-          style={{ background: 'rgba(255,255,255,0.18)' }}
+          className="rounded-2xl px-4 py-3 mb-2"
+          style={{ background: 'rgba(255,255,255,0.22)' }}
         >
           {/* 아바타 스크롤 행 */}
           <div className="flex gap-3 overflow-x-auto items-end" style={{ scrollbarWidth: 'none' }}>
@@ -388,11 +387,11 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
                   style={{ cursor: m.userId !== currentUserId ? 'pointer' : 'default' }}
                 >
                   <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden transition-all"
+                    className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden transition-all"
                     style={{
-                      background: isSelected ? 'white' : 'rgba(255,255,255,0.35)',
+                      background: isSelected ? 'white' : 'rgba(255,255,255,0.40)',
                       color: dark,
-                      boxShadow: isSelected ? '0 0 0 3px white' : '0 2px 8px rgba(0,0,0,0.15)',
+                      boxShadow: isSelected ? '0 0 0 3px white' : '0 2px 10px rgba(0,0,0,0.18)',
                     }}
                     aria-hidden="true"
                   >
@@ -422,7 +421,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
             <div className="flex flex-col items-center gap-1.5 shrink-0">
               <button
                 onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
-                className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
+                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
                 style={{
                   background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.18)',
                   border: `2px dashed ${promptTarget?.type === 'all' ? main : 'rgba(255,255,255,0.6)'}`,
@@ -437,86 +436,59 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
           )}
 
           </div>{/* /아바타 스크롤 행 */}
+        </div>
 
-          {/* C안: 공유 아이콘 28px 2열 세로 배치, 아바타 옆 고정 */}
-          {members.length < 5 && (
-            <div className="flex flex-col gap-1.5 shrink-0 pl-3 justify-center" style={{ borderLeft: '1.5px solid rgba(255,255,255,0.25)' }}>
-              <div className="flex gap-1.5">
-                {isKakaoShareReady() && (
-                  <button
-                    onClick={handleKakaoShare}
-                    className="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-                    style={{ background: 'oklch(0.88 0.14 85)' }}
-                    aria-label="카카오톡으로 초대"
-                  >
-                    <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" alt="" className="w-full h-full" aria-hidden="true" />
-                  </button>
-                )}
+        {/* 가족 초대 — D안: 레이블 좌측, 버튼 우측, opacity 낮음 */}
+        {members.length < 5 && (
+          <div className="flex items-center gap-3 mb-2" style={{ opacity: 0.75 }}>
+            <span className="text-white text-xs font-bold shrink-0">가족 초대</span>
+            <div className="flex gap-2 flex-1">
+              {isKakaoShareReady() && (
                 <button
-                  onClick={handleBandShare}
-                  className="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-                  style={{ background: 'oklch(0.88 0.16 145)' }}
-                  aria-label="네이버 밴드로 초대"
+                  onClick={handleKakaoShare}
+                  className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  style={{ background: '#FEE500', color: '#191919' }}
+                  aria-label="카카오톡으로 초대"
                 >
-                  <img src="https://developers.band.us/assets/img/share/band_share_btn_small.png" alt="" className="w-full h-full" aria-hidden="true"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" alt="" className="w-4 h-4" aria-hidden="true" />
+                  카카오톡
                 </button>
-              </div>
-              <div className="flex gap-1.5 items-center">
-                <button
-                  onClick={handleCopyLink}
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-                  style={{ background: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.5)' }}
-                  aria-label="초대 링크 복사"
-                >
-                  <Link2 size={13} style={{ color: 'white' }} aria-hidden="true" />
-                </button>
-                <span className="text-white font-bold" style={{ fontSize: 9 }}>공유</span>
-              </div>
+              )}
+              <button
+                onClick={handleBandShare}
+                className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                style={{ background: '#03C75A', color: 'white' }}
+                aria-label="네이버 밴드로 초대"
+              >
+                <img src="https://developers.band.us/assets/img/share/band_share_btn_small.png" alt="" className="w-4 h-4" aria-hidden="true"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                밴드
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                style={{ background: 'rgba(255,255,255,0.18)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}
+                aria-label="초대 링크 복사"
+              >
+                <Link2 size={13} aria-hidden="true" />
+                링크
+              </button>
             </div>
-          )}
-        </div>
-
-        {/* 탭 바 */}
-        <div className="flex gap-2" role="tablist">
-          {([['feed', '가족 피드'], ['settings', '그룹 설정']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => setTab(key)}
-              className="flex-1 min-h-[44px] rounded-xl text-base font-black transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={tab === key
-                ? { background: 'white', color: dark }
-                : { background: 'rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.85)' }
-              }
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* 가족 피드 탭 */}
-      {tab === 'feed' && (
-        <div className="flex flex-col gap-4" role="tabpanel">
-          {promptTarget && (
-            <InlinePromptPanel
-              target={promptTarget}
-              onClose={() => setPromptTarget(null)}
-            />
-          )}
-          <ReceivedPromptBanner />
-          <FamilyFeed groupId={groupId} />
-        </div>
-      )}
-
-      {/* 그룹 설정 탭 */}
-      {tab === 'settings' && (
-        <div className="flex flex-col gap-4" role="tabpanel">
-          <InviteCodeBlock inviteCode={inviteCode} />
-        </div>
-      )}
+      {/* 피드 */}
+      <div className="flex flex-col gap-4">
+        {promptTarget && (
+          <InlinePromptPanel
+            target={promptTarget}
+            onClose={() => setPromptTarget(null)}
+          />
+        )}
+        <ReceivedPromptBanner />
+        <FamilyFeed groupId={groupId} />
+      </div>
     </div>
     </>
   )
