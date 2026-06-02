@@ -41,9 +41,10 @@ function getCalendarDays(year: number, month: number): (string | null)[] {
 export default function MyActivityPage() {
   const navigate = useNavigate()
   const now = new Date()
+  const today = new Date().toISOString().slice(0, 10)
   const [currentYear, setCurrentYear] = useState(now.getFullYear())
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedDate, setSelectedDate] = useState<string | null>(today)
 
   const { data: calendarData = [] } = useMyCalendar(currentYear, currentMonth)
   const { data: dateCheckins = [] } = useMyCheckins(selectedDate ?? '')
@@ -63,8 +64,6 @@ export default function MyActivityPage() {
     ),
     [calendarData, currentYear, currentMonth],
   )
-
-  const today = new Date().toISOString().slice(0, 10)
 
   const prevMonth = () => {
     setSelectedDate(null)
@@ -224,8 +223,8 @@ export default function MyActivityPage() {
                 style={{
                   background: isSelected
                     ? grad
-                    : hasActivity && catColor
-                      ? catColor.bg
+                    : isToday
+                      ? 'oklch(0.93 0 0)'
                       : 'transparent',
                   cursor: hasActivity ? 'pointer' : 'default',
                   minHeight: 56,
@@ -250,16 +249,8 @@ export default function MyActivityPage() {
                   {dayNum}
                 </span>
 
-                {/* 오늘 표시 dot */}
-                {isToday && !isSelected && (
-                  <span
-                    className="mt-0.5 w-1.5 h-1.5 rounded-full"
-                    style={{ background: main }}
-                  />
-                )}
-
                 {/* 카테고리 dot */}
-                {hasActivity && !isToday && (
+                {hasActivity && (
                   <div className="flex gap-0.5 mt-1">
                     {entry.categories.slice(0, 3).map((cat: Category, i: number) => (
                       <span
