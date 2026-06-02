@@ -310,7 +310,7 @@ export default function FeedPage() {
   // ── 로딩 ────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div
           role="status"
           aria-live="polite"
@@ -341,7 +341,7 @@ export default function FeedPage() {
   // ── 에러 ────────────────────────────────────────────────────────────────────
   if (isError) {
     return (
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <div role="alert" className="flex flex-col items-center gap-6 py-20 px-4 text-center">
           <div
             className="w-24 h-24 rounded-3xl flex items-center justify-center"
@@ -390,10 +390,10 @@ export default function FeedPage() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-6 pt-4 pb-8 sm:py-8 space-y-5 sm:space-y-8">
+    <main className="max-w-6xl mx-auto pt-4 pb-8 sm:py-8 sm:px-6 space-y-5 sm:space-y-8">
 
       {/* ── 통합 인사말 헤더 ──────────────────────────────────────────────── */}
-      <div className="hidden md:flex items-stretch gap-4">
+      <div className="hidden md:flex items-stretch gap-4 sm:px-0">
         <header
           className="flex-1 rounded-2xl px-4 py-3 space-y-2"
           style={{
@@ -471,10 +471,11 @@ export default function FeedPage() {
       </div>
       {/* 모바일 통합 헤더 */}
       <header
-        className="md:hidden rounded-2xl px-4 py-3 space-y-2"
+        className="md:hidden px-4 py-3 space-y-2"
         style={{
           background: `linear-gradient(135deg, ${mA(0.08)}, ${lA(0.12)})`,
-          border: `1px solid ${mA(0.15)}`,
+          borderTop: `1px solid ${mA(0.15)}`,
+          borderBottom: `1px solid ${mA(0.15)}`,
         }}
       >
         <div className="flex items-center gap-3">
@@ -557,7 +558,7 @@ export default function FeedPage() {
       {/* ── 체크인 작성 영역 (GUEST 제외) ──────────────────────────────────── */}
       {!canWriteFeed && (
         <div
-          className="rounded-2xl px-6 py-5 flex items-center gap-3"
+          className="mx-4 sm:mx-0 rounded-2xl px-6 py-5 flex items-center gap-3"
           style={{ background: mA(0.05), border: `1px dashed ${mA(0.2)}` }}
           role="note"
           aria-label="가족 피드 열람 전용"
@@ -572,7 +573,7 @@ export default function FeedPage() {
         <section
           ref={formRef}
           aria-label="활동 기록 작성"
-          className="rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
+          className="mx-4 sm:mx-0 rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
           style={{ border: `2px solid ${mA(0.20)}` }}
         >
           {/* 폼 헤더 */}
@@ -847,7 +848,7 @@ export default function FeedPage() {
       <section aria-label="오늘의 활동 피드">
         {/* 피드 탭 — 항상 표시 */}
         <div
-          className="flex gap-2 mb-6"
+          className="flex gap-2 mb-6 px-4 sm:px-0"
           role="tablist"
           aria-label="피드 유형 선택"
         >
@@ -880,7 +881,7 @@ export default function FeedPage() {
         </div>
 
         {/* 섹션 헤더 */}
-        <div className="flex items-center gap-4 mb-7">
+        <div className="flex items-center gap-4 mb-7 px-4 sm:px-0">
           <h2 className="text-2xl font-black text-foreground shrink-0">
             오늘의 활동들
           </h2>
@@ -940,7 +941,7 @@ export default function FeedPage() {
             </div>
           )
         ) : (
-          <div className="-mx-6 w-[calc(100%+3rem)] sm:mx-0 sm:w-full flex flex-col sm:gap-6">
+          <div className="flex flex-col sm:gap-6">
             {checkins.map((checkin: any, idx: number) => (
               <React.Fragment key={checkin.id}>
                 {idx > 0 && <div className="sm:hidden h-4" style={{ background: 'oklch(0.96 0.01 220)' }} aria-hidden="true" />}
