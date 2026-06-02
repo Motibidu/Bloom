@@ -535,8 +535,7 @@ export default function CheckInCard({
       `}
       style={{
         boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}`,
-        overflowX: 'clip',
-        overflowY: 'visible',
+        overflow: 'visible',
       }}
     >
       <style>{`
@@ -718,8 +717,8 @@ export default function CheckInCard({
             />
           ) : (
             <div
-              className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory relative"
-              style={{ paddingLeft: '12px', paddingRight: '12px', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+              className="flex gap-2 overflow-x-auto pb-1 relative"
+              style={{ paddingLeft: '16px', paddingRight: '16px', WebkitOverflowScrolling: 'touch', scrollPaddingLeft: '16px' } as React.CSSProperties}
             >
               {checkin.photoUrls.map((url, i) => (
                 <img
@@ -728,7 +727,7 @@ export default function CheckInCard({
                   alt={`${checkin.nickname}님의 ${label} 활동 사진 ${i + 1}`}
                   width={256}
                   height={208}
-                  className={`shrink-0 w-64 h-52 rounded-xl object-cover snap-start ${onPhotoClick ? 'cursor-pointer' : ''}`}
+                  className={`shrink-0 w-64 h-52 rounded-xl object-cover ${onPhotoClick ? 'cursor-pointer' : ''}`}
                   style={{ boxShadow: `0 2px 12px ${mA(0.10)}` }}
                   loading="lazy"
                   onClick={onPhotoClick ? (e) => { e.stopPropagation(); onPhotoClick(i) } : undefined}
