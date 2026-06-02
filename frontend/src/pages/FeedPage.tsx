@@ -1015,7 +1015,7 @@ export default function FeedPage() {
           type="button"
           aria-label="오늘 활동 기록하기"
           onClick={() => setIsFormOpen(true)}
-          className={`fixed right-15 z-40 w-16 h-16 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform] md:w-auto md:h-auto md:rounded-2xl md:px-5 md:py-6 md:gap-2 ${isScrolledDown ? 'md:flex' : 'md:hidden'}`}
+          className={`fixed right-5 z-40 w-16 h-16 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform] md:w-32 md:h-24 md:rounded-2xl md:flex-col md:gap-1 ${isScrolledDown ? 'md:flex' : 'md:hidden'}`}
           style={{
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
             background: grad,
