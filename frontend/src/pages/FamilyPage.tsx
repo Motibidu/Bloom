@@ -238,33 +238,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 
         {/* 멤버 아바타 목록 — 탭하면 활동 기록 요청 발송 */}
         <div
-<<<<<<< HEAD
-          className="rounded-2xl px-4 py-3 mb-2"
-          style={{ background: 'rgba(255,255,255,0.22)' }}
-        >
-          {/* 아바타 스크롤 행 */}
-          <div className="flex gap-3 overflow-x-auto items-end" style={{ scrollbarWidth: 'none' }}>
-          {/* 멤버 아바타 */}
-          {members.map(m => {
-            const isSelected = promptTarget?.type === 'member' && promptTarget.id === m.userId
-            return (
-              <div key={m.userId} className="flex flex-col items-center gap-1.5 shrink-0">
-                <button
-                  onClick={() => {
-                    if (m.userId === currentUserId) return
-                    setPromptTarget({ type: 'member', id: m.userId, nickname: m.nickname })
-                  }}
-                  className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-                  aria-label={m.userId !== currentUserId ? `${m.nickname}에게 활동 기록 요청` : undefined}
-                  style={{ cursor: m.userId !== currentUserId ? 'pointer' : 'default' }}
-                >
-                  <div
-                    className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-black shrink-0 overflow-hidden transition-all"
-                    style={{
-                      background: isSelected ? 'white' : 'rgba(255,255,255,0.40)',
-                      color: dark,
-                      boxShadow: isSelected ? '0 0 0 3px white' : '0 2px 10px rgba(0,0,0,0.18)',
-=======
           className="rounded-2xl px-4 py-3 flex items-center justify-between mb-4"
           style={{ background: 'rgba(255,255,255,0.18)' }}
         >
@@ -279,7 +252,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
                     onClick={() => {
                       if (m.userId === currentUserId) return
                       setPromptTarget({ type: 'member', id: m.userId, nickname: m.nickname })
->>>>>>> 44da39d (✨ feat: 가족 페이지 초대 드롭다운 + UX 개선)
+                    }}
                     }}
                     className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
                     aria-label={m.userId !== currentUserId ? `${m.nickname}에게 활동 기록 요청` : undefined}
@@ -342,13 +315,8 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
             )}
             <div className="flex flex-col items-center gap-1.5">
               <button
-<<<<<<< HEAD
-                onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
-                className="w-[52px] h-[52px] rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
-=======
                 onClick={() => setInviteDropdownOpen(v => !v)}
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
->>>>>>> 44da39d (✨ feat: 가족 페이지 초대 드롭다운 + UX 개선)
                 style={{
                   background: inviteDropdownOpen ? 'white' : 'rgba(255,255,255,0.92)',
                   boxShadow: inviteDropdownOpen
@@ -364,54 +332,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
               </button>
               <span className="text-white text-xs font-bold">초대</span>
             </div>
-<<<<<<< HEAD
-          )}
-
-          </div>{/* /아바타 스크롤 행 */}
-        </div>
-
-        {/* 가족 초대 — D안: 레이블 좌측, 버튼 우측, opacity 낮음 */}
-        {members.length < 5 && (
-          <div className="flex items-center gap-3 mb-2" style={{ opacity: 0.75 }}>
-            <span className="text-white text-xs font-bold shrink-0">가족 초대</span>
-            <div className="flex gap-2 flex-1">
-              {isKakaoShareReady() && (
-                <button
-                  onClick={handleKakaoShare}
-                  className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  style={{ background: '#FEE500', color: '#191919' }}
-                  aria-label="카카오톡으로 초대"
-                >
-                  <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" alt="" className="w-4 h-4" aria-hidden="true" />
-                  카카오톡
-                </button>
-              )}
-              <button
-                onClick={handleBandShare}
-                className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                style={{ background: '#03C75A', color: 'white' }}
-                aria-label="네이버 밴드로 초대"
-              >
-                <img src="https://developers.band.us/assets/img/share/band_share_btn_small.png" alt="" className="w-4 h-4" aria-hidden="true"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                밴드
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="flex-1 flex items-center justify-center gap-1 min-h-[42px] rounded-xl font-bold text-xs transition-all [-webkit-tap-highlight-color:transparent] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                style={{ background: 'rgba(255,255,255,0.18)', color: 'white', border: '1px solid rgba(255,255,255,0.3)' }}
-                aria-label="초대 링크 복사"
-              >
-                <Link2 size={13} aria-hidden="true" />
-                링크
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 피드 */}
-=======
             {/* 드롭다운 */}
             {inviteDropdownOpen && (
               <div
@@ -462,7 +382,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
       </div>
 
       {/* 피드 + 요청 패널 */}
->>>>>>> 44da39d (✨ feat: 가족 페이지 초대 드롭다운 + UX 개선)
       <div className="flex flex-col gap-4">
         {promptTarget && (
           <InlinePromptPanel
