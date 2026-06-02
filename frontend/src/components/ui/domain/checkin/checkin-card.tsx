@@ -515,6 +515,17 @@ export default function CheckInCard({
   const menuBtnRef = useRef<HTMLButtonElement>(null)
   const [menuPos, setMenuPos] = useState<React.CSSProperties>({})
 
+  // 사진 가로 스크롤 시에만 스크롤바 표시
+  const photoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handlePhotoScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    el.classList.add('is-scrolling')
+    if (photoScrollTimerRef.current) clearTimeout(photoScrollTimerRef.current)
+    photoScrollTimerRef.current = setTimeout(() => {
+      el.classList.remove('is-scrolling')
+    }, 800)
+  }
+
   const openMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (!menuOpen && menuBtnRef.current) {
@@ -553,6 +564,26 @@ export default function CheckInCard({
           .checkin-card--clickable:hover {
             transform: none;
           }
+        }
+        .checkin-card__photo-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: transparent transparent;
+        }
+        .checkin-card__photo-scroll.is-scrolling {
+          scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+        }
+        .checkin-card__photo-scroll::-webkit-scrollbar {
+          height: 4px;
+        }
+        .checkin-card__photo-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .checkin-card__photo-scroll::-webkit-scrollbar-thumb {
+          background: transparent;
+          border-radius: 9999px;
+        }
+        .checkin-card__photo-scroll.is-scrolling::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.3);
         }
       `}</style>
 
@@ -717,7 +748,8 @@ export default function CheckInCard({
             />
           ) : (
             <div
-              className="flex gap-2 overflow-x-auto pb-1 relative"
+              className="checkin-card__photo-scroll flex gap-2 overflow-x-auto pb-1 relative"
+              onScroll={handlePhotoScroll}
               style={{ paddingLeft: '16px', paddingRight: '16px', WebkitOverflowScrolling: 'touch', scrollPaddingLeft: '16px' } as React.CSSProperties}
             >
               {checkin.photoUrls.map((url, i) => (
