@@ -82,7 +82,7 @@ export default function App() {
       <BrowserRouter>
         <AuthInitializer>
         <Routes>
-          {/* 비로그인 전용 라우트 */}
+{/* 비로그인 전용 라우트 */}
           <Route path="/landing" element={<LandingPage />} />
           <Route
             path="/login"
