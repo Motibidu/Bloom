@@ -253,7 +253,6 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
                       if (m.userId === currentUserId) return
                       setPromptTarget({ type: 'member', id: m.userId, nickname: m.nickname })
                     }}
-                    }}
                     className="relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
                     aria-label={m.userId !== currentUserId ? `${m.nickname}에게 활동 기록 요청` : undefined}
                     style={{ cursor: m.userId !== currentUserId ? 'pointer' : 'default' }}
