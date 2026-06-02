@@ -207,8 +207,6 @@ export default function MyActivityPage() {
             const isToday = dateStr === today
             const dayNum = Number(dateStr.split('-')[2])
             const dayOfWeek = new Date(dateStr).getDay()
-            const primaryCat = hasActivity ? entry.categories[0] : null
-            const catColor = primaryCat ? CAT_COLORS[primaryCat] : null
 
             return (
               <button
