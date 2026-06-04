@@ -238,7 +238,7 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 
         {/* 멤버 아바타 목록 — 탭하면 활동 기록 요청 발송 */}
         <div
-          className="rounded-2xl px-4 py-3 flex items-center justify-between mb-4"
+          className="rounded-2xl px-4 py-3 flex items-center mb-4"
           style={{ background: 'rgba(255,255,255,0.18)' }}
         >
           {/* 아바타 스크롤 행 */}
