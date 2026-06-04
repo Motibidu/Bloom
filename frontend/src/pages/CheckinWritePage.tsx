@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ImagePlus, X } from 'lucide-react'
+import { ArrowLeft, ImagePlus, X, Zap, AlignLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/shadcn/input'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import { useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
+import { AUTO_TITLES } from '@/lib/categories'
 import type { Category } from '@/types'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -15,8 +16,13 @@ const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
 const grad  = `linear-gradient(135deg, ${main}, ${light})`
 const serifStyle = { fontFamily: "'Noto Serif KR', serif" }
 
+type Mode = 'simple' | 'detail'
+
 export default function CheckinWritePage() {
   const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>(() =>
+    (localStorage.getItem('checkinMode') as Mode) ?? 'simple'
+  )
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -28,6 +34,23 @@ export default function CheckinWritePage() {
 
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
+
+  const handleModeChange = (next: Mode) => {
+    setMode(next)
+    localStorage.setItem('checkinMode', next)
+    // 모드 전환 시 카테고리 선택은 유지, 입력 필드만 초기화
+    setTitle('')
+    setContent('')
+    setPhotoFiles([])
+    setPhotoPreviews([])
+  }
+
+  const handleCategorySelect = (cat: Category) => {
+    setSelectedCategory(cat)
+    if (mode === 'simple') {
+      setTitle(AUTO_TITLES[cat])
+    }
+  }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? [])
@@ -49,11 +72,12 @@ export default function CheckinWritePage() {
   }
 
   const handleSubmit = async () => {
-    if (!selectedCategory || !title.trim()) return
+    if (!selectedCategory) return
+    if (mode === 'detail' && !title.trim()) return
     setIsSubmitting(true)
     try {
       const objectKeys: string[] = []
-      setUploadingCount(photoFiles.length)
+      if (photoFiles.length > 0) setUploadingCount(photoFiles.length)
       for (const file of photoFiles) {
         const { uploadUrl, objectKey } = await getUploadUrl.mutateAsync({
           filename: file.name,
@@ -69,12 +93,16 @@ export default function CheckinWritePage() {
       }
       await createCheckin.mutateAsync({
         category: selectedCategory,
-        title: title.trim(),
-        content: content.trim(),
+        title: mode === 'simple' ? AUTO_TITLES[selectedCategory] : title.trim(),
+        content: mode === 'simple' ? AUTO_TITLES[selectedCategory] : content.trim(),
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
-        isSimple: false,
+        isSimple: mode === 'simple',
       })
-      toast.success('활동을 기록했어요 🎉')
+      if (mode === 'simple') {
+        toast.success('기록 완료! 가족 탭에서 확인할 수 있어요 👨‍👩‍👧')
+      } else {
+        toast.success('활동을 기록했어요 🎉')
+      }
       navigate('/')
     } catch {
       toast.error('기록에 실패했어요. 다시 시도해 주세요.')
@@ -84,7 +112,9 @@ export default function CheckinWritePage() {
     }
   }
 
-  const canSubmit = !!selectedCategory && !!title.trim() && !isSubmitting
+  const canSubmitSimple = !!selectedCategory && !isSubmitting
+  const canSubmitDetail = !!selectedCategory && !!title.trim() && !isSubmitting
+  const canSubmit = mode === 'simple' ? canSubmitSimple : canSubmitDetail
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
@@ -109,150 +139,215 @@ export default function CheckinWritePage() {
         className="rounded-2xl bg-card px-6 py-7 space-y-7"
         style={{ border: `2px solid ${mA(0.20)}` }}
       >
-        {/* 페이지 제목 */}
-        <h1
-          className="text-2xl font-black text-foreground leading-snug"
-          style={serifStyle}
-        >
-          오늘 활동 기록하기
-        </h1>
+        {/* 헤더: 제목 + 모드 탭 */}
+        <div className="flex items-center justify-between gap-3">
+          <h1
+            className="text-2xl font-black text-foreground leading-snug shrink-0"
+            style={serifStyle}
+          >
+            오늘 활동 기록하기
+          </h1>
+          {/* 간편/상세 탭 */}
+          <div
+            className="flex gap-1.5 p-1 rounded-2xl shrink-0"
+            style={{ background: mA(0.07) }}
+            role="tablist"
+            aria-label="기록 모드 선택"
+          >
+            <button
+              role="tab"
+              aria-selected={mode === 'simple'}
+              onClick={() => handleModeChange('simple')}
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+              style={mode === 'simple'
+                ? { background: grad, color: 'white', '--tw-ring-color': main } as React.CSSProperties
+                : { color: dark, '--tw-ring-color': main } as React.CSSProperties}
+            >
+              <Zap size={14} aria-hidden="true" />
+              간편
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === 'detail'}
+              onClick={() => handleModeChange('detail')}
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-4 rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+              style={mode === 'detail'
+                ? { background: grad, color: 'white', '--tw-ring-color': main } as React.CSSProperties
+                : { color: dark, '--tw-ring-color': main } as React.CSSProperties}
+            >
+              <AlignLeft size={14} aria-hidden="true" />
+              상세
+            </button>
+          </div>
+        </div>
 
-        {/* 1. 카테고리 */}
+        {/* 카테고리 선택 (공통) */}
         <section aria-labelledby="category-label" className="space-y-4">
           <p id="category-label" className="text-lg font-bold text-foreground">
             어떤 활동을 했나요?{' '}
             <span className="text-base font-medium text-muted-foreground">(필수)</span>
           </p>
-          <CategoryIconGrid selected={selectedCategory} onSelect={setSelectedCategory} />
+          <CategoryIconGrid selected={selectedCategory} onSelect={handleCategorySelect} />
         </section>
 
-        {/* 2. 제목 */}
-        <section aria-labelledby="title-label" className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label id="title-label" htmlFor="write-title" className="text-lg font-bold text-foreground">
-              제목 <span className="text-base font-medium text-muted-foreground">(필수)</span>
-            </label>
-            <span className="text-base font-medium text-foreground/50" aria-live="polite">
-              {title.length}/50
-            </span>
-          </div>
-          <Input
-            id="write-title"
-            className="h-14 text-lg px-4 rounded-xl border-2 focus-visible:ring-0"
-            style={title.length > 0 ? { borderColor: mA(0.45) } : undefined}
-            maxLength={50}
-            placeholder="활동 제목을 입력해 주세요"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            autoComplete="off"
-          />
-        </section>
-
-        {/* 3. 본문 */}
-        <section aria-labelledby="content-label" className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label id="content-label" htmlFor="write-content" className="text-lg font-bold text-foreground">
-              내용 <span className="text-base font-medium text-muted-foreground">(선택)</span>
-            </label>
-            <span className="text-base font-medium text-foreground/50" aria-live="polite">
-              {content.length}/500
-            </span>
-          </div>
-          <Textarea
-            id="write-content"
-            className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
-            style={content.length > 0 ? { borderColor: mA(0.45) } : undefined}
-            rows={6}
-            maxLength={500}
-            placeholder="오늘 활동을 자유롭게 적어보세요"
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            autoComplete="off"
-          />
-        </section>
-
-        {/* 4. 사진 첨부 */}
-        <section aria-labelledby="photo-label" className="space-y-3">
-          <p id="photo-label" className="text-lg font-bold text-foreground">
-            사진 첨부{' '}
-            <span className="text-base font-medium text-muted-foreground">(선택, 최대 3장)</span>
-          </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="hidden"
-            onChange={handlePhotoChange}
-          />
-
-          {/* 3칸 그리드 */}
-          <div className="grid grid-cols-3 gap-3">
-            {photoPreviews.map((src, i) => (
+        {/* ── 간편 모드 ── */}
+        {mode === 'simple' && (
+          <>
+            {selectedCategory ? (
               <div
-                key={i}
-                className="relative aspect-square rounded-xl overflow-hidden"
-                style={{ border: `2px solid ${mA(0.15)}` }}
+                className="flex items-center gap-3 px-5 py-4 rounded-2xl"
+                style={{ background: mA(0.07), border: `1px solid ${mA(0.15)}` }}
               >
-                {/* 업로드 중 스피너 */}
-                {isSubmitting && uploadingCount > 0 && i < uploadingCount && (
-                  <div
-                    className="absolute inset-0 z-10 flex items-center justify-center"
-                    style={{ background: 'oklch(0 0 0 / 0.40)' }}
-                  >
-                    <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                  </div>
-                )}
-                <img
-                  src={src}
-                  alt={`첨부 사진 ${i + 1} 미리보기`}
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  aria-label={`${i + 1}번째 사진 제거`}
-                  className="absolute top-1.5 right-1.5 w-8 h-8 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  style={{ background: 'oklch(0 0 0 / 0.65)' }}
-                >
-                  <X size={15} className="text-white" aria-hidden="true" />
-                </button>
+                <Zap size={20} style={{ color: main }} aria-hidden="true" className="shrink-0" />
+                <p className="text-base font-semibold text-muted-foreground leading-snug" style={{ wordBreak: 'keep-all' }}>
+                  <span className="font-black" style={{ color: dark }}>
+                    '{AUTO_TITLES[selectedCategory]}'
+                  </span>
+                  {' '}로 등록돼요
+                </p>
               </div>
-            ))}
-
-            {/* 빈 슬롯 — 3장 미만일 때만 표시 */}
-            {photoPreviews.length < 3 && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="사진 추가하기"
-                className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  borderColor: mA(0.22),
-                  '--tw-ring-color': main,
-                } as React.CSSProperties}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = mA(0.45); e.currentTarget.style.background = mA(0.04) }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = mA(0.22); e.currentTarget.style.background = 'transparent' }}
+            ) : (
+              <p
+                className="text-center text-base font-semibold py-3"
+                style={{ color: mA(0.55) }}
+                aria-live="polite"
               >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{ background: mA(0.10) }}
-                  aria-hidden="true"
-                >
-                  <ImagePlus size={20} style={{ color: main }} />
-                </div>
-                <span className="text-sm font-bold" style={{ color: mA(0.6) }}>
-                  {photoPreviews.length}/3
-                </span>
-              </button>
+                위에서 카테고리를 선택해 주세요
+              </p>
             )}
-          </div>
-        </section>
+            <p className="text-base font-semibold text-center" style={{ color: mA(0.6) }}>
+              👨‍👩‍👧 가족 탭에만 공유돼요
+            </p>
+          </>
+        )}
 
-        {/* 5. 제출 버튼 */}
+        {/* ── 상세 모드 ── */}
+        {mode === 'detail' && (
+          <>
+            {/* 제목 */}
+            <section aria-labelledby="title-label" className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label id="title-label" htmlFor="write-title" className="text-lg font-bold text-foreground">
+                  제목 <span className="text-base font-medium text-muted-foreground">(필수)</span>
+                </label>
+                <span className="text-base font-medium text-foreground/50" aria-live="polite">
+                  {title.length}/50
+                </span>
+              </div>
+              <Input
+                id="write-title"
+                className="h-14 text-lg px-4 rounded-xl border-2 focus-visible:ring-0"
+                style={title.length > 0 ? { borderColor: mA(0.45) } : undefined}
+                maxLength={50}
+                placeholder="활동 제목을 입력해 주세요"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                autoComplete="off"
+              />
+            </section>
+
+            {/* 본문 */}
+            <section aria-labelledby="content-label" className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label id="content-label" htmlFor="write-content" className="text-lg font-bold text-foreground">
+                  내용 <span className="text-base font-medium text-muted-foreground">(선택)</span>
+                </label>
+                <span className="text-base font-medium text-foreground/50" aria-live="polite">
+                  {content.length}/500
+                </span>
+              </div>
+              <Textarea
+                id="write-content"
+                className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
+                style={content.length > 0 ? { borderColor: mA(0.45) } : undefined}
+                rows={6}
+                maxLength={500}
+                placeholder="오늘 활동을 자유롭게 적어보세요"
+                value={content}
+                onChange={e => setContent(e.target.value)}
+                autoComplete="off"
+              />
+            </section>
+
+            {/* 사진 첨부 */}
+            <section aria-labelledby="photo-label" className="space-y-3">
+              <p id="photo-label" className="text-lg font-bold text-foreground">
+                사진 첨부{' '}
+                <span className="text-base font-medium text-muted-foreground">(선택, 최대 3장)</span>
+              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+              <div className="grid grid-cols-3 gap-3">
+                {photoPreviews.map((src, i) => (
+                  <div
+                    key={i}
+                    className="relative aspect-square rounded-xl overflow-hidden"
+                    style={{ border: `2px solid ${mA(0.15)}` }}
+                  >
+                    {isSubmitting && uploadingCount > 0 && i < uploadingCount && (
+                      <div
+                        className="absolute inset-0 z-10 flex items-center justify-center"
+                        style={{ background: 'oklch(0 0 0 / 0.40)' }}
+                      >
+                        <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                      </div>
+                    )}
+                    <img
+                      src={src}
+                      alt={`첨부 사진 ${i + 1} 미리보기`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      aria-label={`${i + 1}번째 사진 제거`}
+                      className="absolute top-1.5 right-1.5 w-8 h-8 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                      style={{ background: 'oklch(0 0 0 / 0.65)' }}
+                    >
+                      <X size={15} className="text-white" aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+                {photoPreviews.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="사진 추가하기"
+                    className="aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style={{
+                      borderColor: mA(0.22),
+                      '--tw-ring-color': main,
+                    } as React.CSSProperties}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = mA(0.45); e.currentTarget.style.background = mA(0.04) }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = mA(0.22); e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: mA(0.10) }}
+                      aria-hidden="true"
+                    >
+                      <ImagePlus size={20} style={{ color: main }} />
+                    </div>
+                    <span className="text-sm font-bold" style={{ color: mA(0.6) }}>
+                      {photoPreviews.length}/3
+                    </span>
+                  </button>
+                )}
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* 제출 버튼 */}
         <button
           type="button"
           onClick={handleSubmit}
@@ -266,7 +361,9 @@ export default function CheckinWritePage() {
           onMouseEnter={e => { if (canSubmit) e.currentTarget.style.opacity = '0.88' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
         >
-          {isSubmitting ? '등록하는 중이에요...' : '등록하기'}
+          {isSubmitting
+            ? '등록하는 중이에요...'
+            : mode === 'simple' ? '바로 등록하기' : '등록하기'}
         </button>
       </div>
     </main>
