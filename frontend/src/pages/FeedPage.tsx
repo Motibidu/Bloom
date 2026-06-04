@@ -1,20 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { toast } from 'sonner'
 import { useScrollContainer } from '@/lib/scrollContext'
-import { Users, X, ImagePlus, PenLine, ClipboardList, Zap, AlignLeft, UserCheck } from 'lucide-react'
-import { Textarea } from '@/components/ui/shadcn/textarea'
-import { Input } from '@/components/ui/shadcn/input'
+import { Users, PenLine, ClipboardList, UserCheck } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/shadcn/sheet'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
-import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
-import BigButton from '@/components/ui/common/big-button'
-import { useInfiniteTodayFeed, useCreateCheckin, usePhotoUploadUrl, useSameCategoryUsers, useDeleteCheckin } from '@/hooks/useCheckin'
-import { useRespondPrompt } from '@/hooks/usePrompt'
+import { useInfiniteTodayFeed, useSameCategoryUsers, useDeleteCheckin } from '@/hooks/useCheckin'
 import { useFollowToggle } from '@/hooks/useFollow'
 import { useAuthStore } from '@/store/authStore'
-import { AUTO_TITLES, CATEGORY_META } from '@/lib/categories'
-import type { Category, ActivitySummaryItem } from '@/types'
+import { CATEGORY_META } from '@/lib/categories'
+import type { ActivitySummaryItem } from '@/types'
 
 // ── Warm Blue 테마 상수 ────────────────────────────────────────────────────────
 const main  = 'oklch(0.62 0.15 220)'
@@ -127,23 +121,9 @@ const SCROLL_KEY = 'feed-scroll-y'
 export default function FeedPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const respondPrompt = useRespondPrompt()
   const promptIdFromState = (location.state as { promptId?: number } | null)?.promptId ?? null
   const scrollContainer = useScrollContainer()
 
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [photoFiles, setPhotoFiles] = useState<File[]>([])
-  const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLElement>(null)
-
-  const [checkinMode, setCheckinMode] = useState<'simple' | 'detail'>(() => {
-    return (localStorage.getItem('checkinMode') as 'simple' | 'detail') ?? 'simple'
-  })
   const [feedTab, setFeedTab] = useState<'all' | 'following'>('all')
 
   const [sameCategorySheetOpen, setSameCategorySheetOpen] = useState(false)
@@ -193,13 +173,10 @@ export default function FeedPage() {
 
   useEffect(() => {
     if (promptIdFromState !== null) {
-      setIsFormOpen(true)
       window.history.replaceState({}, '')
     }
   }, [promptIdFromState])
 
-  const createCheckin = useCreateCheckin()
-  const getUploadUrl = usePhotoUploadUrl()
   const { data: sameCategoryUsers, refetch: fetchSameCategoryUsers, isFetching: isFetchingUsers } = useSameCategoryUsers()
   const currentUser = useAuthStore((s) => s.user)
   const canWriteFeed = currentUser?.canWriteFeed ?? false
@@ -233,79 +210,6 @@ export default function FeedPage() {
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
   }, [scrollContainer])
-
-  const handleModeToggle = () => {
-    const next = checkinMode === 'simple' ? 'detail' : 'simple'
-    setCheckinMode(next)
-    localStorage.setItem('checkinMode', next)
-  }
-
-  const handleCloseForm = () => {
-    setIsFormOpen(false)
-    setSelectedCategory(null)
-    setTitle('')
-    setContent('')
-    setPhotoFiles([])
-    setPhotoPreviews([])
-  }
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = Array.from(e.target.files ?? [])
-    if (selected.length === 0) return
-    const remaining = 3 - photoFiles.length
-    const toAdd = selected.slice(0, remaining)
-    setPhotoFiles(prev => [...prev, ...toAdd])
-    toAdd.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = () => setPhotoPreviews(prev => [...prev, reader.result as string])
-      reader.readAsDataURL(file)
-    })
-    e.target.value = ''
-  }
-
-  const removePhoto = (index: number) => {
-    setPhotoFiles(prev => prev.filter((_, i) => i !== index))
-    setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmit = async () => {
-    if (!selectedCategory) return
-    if (checkinMode === 'detail' && (!title.trim() || !content.trim())) return
-    setIsSubmitting(true)
-    try {
-      const objectKeys: string[] = []
-      for (const file of photoFiles) {
-        const { uploadUrl, objectKey } = await getUploadUrl.mutateAsync({
-          filename: file.name,
-          contentType: file.type,
-        })
-        await fetch(uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type },
-        })
-        objectKeys.push(objectKey)
-      }
-      const newCheckin = await createCheckin.mutateAsync({
-        category: selectedCategory,
-        title: title.trim(),
-        content: content.trim(),
-        photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
-        isSimple: checkinMode === 'simple',
-      })
-      if (promptIdFromState !== null) {
-        respondPrompt.mutate({ promptId: promptIdFromState, checkinId: newCheckin.id })
-      }
-      if (checkinMode === 'simple') {
-        toast.success('기록 완료! 가족 탭에서 확인할 수 있어요 👨‍👩‍👧')
-      }
-      handleCloseForm()
-    } catch {
-      // 에러는 각 mutation에서 처리됨
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
 
   // ── 로딩 ────────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -452,11 +356,11 @@ export default function FeedPage() {
           )}
         </header>
         {/* 데스크탑 — 헤더 오른쪽 외부 기록하기 버튼 */}
-        {canWriteFeed && !isFormOpen && (
+        {canWriteFeed && (
           <button
             type="button"
             aria-label="오늘 활동 기록하기"
-            onClick={() => setIsFormOpen(true)}
+            onClick={() => navigate('/checkin/write')}
             className="inline-flex items-center gap-2 px-6 rounded-2xl text-base font-bold text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 transition-opacity"
             style={{
               background: grad,
@@ -569,280 +473,6 @@ export default function FeedPage() {
           </p>
         </div>
       )}
-      {canWriteFeed && isFormOpen && (
-        <section
-          ref={formRef}
-          aria-label="활동 기록 작성"
-          className="mx-4 sm:mx-0 rounded-2xl bg-card px-7 py-7 space-y-6 shadow-sm"
-          style={{ border: `2px solid ${mA(0.20)}` }}
-        >
-          {/* 폼 헤더 */}
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-xl sm:text-2xl font-black text-foreground shrink-0">
-              오늘 활동 기록하기
-            </h2>
-            <button
-              type="button"
-              onClick={handleCloseForm}
-              aria-label="작성 취소하기"
-              className="inline-flex items-center gap-1.5 min-h-[48px] min-w-[48px] px-3 rounded-xl text-base font-semibold text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 shrink-0"
-              style={{ '--tw-ring-color': main } as React.CSSProperties}
-            >
-              <X size={20} aria-hidden="true" />
-              <span>취소</span>
-            </button>
-          </div>
-
-          {/* 구분선 */}
-          <div
-            className="h-px w-full rounded-full"
-            style={{ background: `linear-gradient(90deg, ${mA(0.30)}, ${lA(0.15)}, transparent)` }}
-            aria-hidden="true"
-          />
-
-          {/* STEP 1 — 카테고리 선택 */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
-                  style={{ background: grad }}
-                  aria-hidden="true"
-                >
-                  1
-                </span>
-                <p className="text-xl font-bold text-foreground">어떤 활동을 했나요?</p>
-              </div>
-              {/* 모드 토글 버튼 */}
-              <button
-                type="button"
-                onClick={handleModeToggle}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 min-h-[48px]"
-                style={{
-                  color: dark,
-                  background: mA(0.08),
-                  '--tw-ring-color': main,
-                } as React.CSSProperties}
-                aria-pressed={checkinMode === 'detail'}
-                aria-label={checkinMode === 'simple' ? '상세 모드로 전환' : '간편 모드로 전환'}
-              >
-                {checkinMode === 'simple' ? (
-                  <>
-                    <AlignLeft size={15} aria-hidden="true" />
-                    <span>상세하게 쓰기</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap size={15} aria-hidden="true" />
-                    <span>간편하게 쓰기</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <CategoryIconGrid selected={selectedCategory} onSelect={(cat) => {
-              setSelectedCategory(cat)
-              if (checkinMode === 'simple') {
-                const autoTitle = AUTO_TITLES[cat]
-                setTitle(autoTitle)
-                setContent(autoTitle)
-              }
-            }} />
-          </div>
-
-          {/* 간편 모드 — 카테고리 선택 후 바로 등록 */}
-          {checkinMode === 'simple' && (
-            <div className="space-y-4">
-              <div
-                className="h-px w-full rounded-full"
-                style={{ background: `linear-gradient(90deg, ${mA(0.20)}, transparent)` }}
-                aria-hidden="true"
-              />
-              {selectedCategory ? (
-                <>
-                  {/* 자동 제목 미리보기 */}
-                  <div
-                    className="flex items-center gap-3 px-5 py-4 rounded-2xl"
-                    style={{ background: mA(0.07), border: `1px solid ${mA(0.15)}` }}
-                  >
-                    <Zap size={20} style={{ color: main }} aria-hidden="true" className="shrink-0" />
-                    <p className="text-base font-semibold text-muted-foreground leading-snug">
-                      <span className="font-black" style={{ color: dark }}>'{AUTO_TITLES[selectedCategory]}'</span>
-                      {' '}로 등록돼요
-                    </p>
-                  </div>
-                  {/* 가족 탭 공유 안내 */}
-                  <p className="text-base font-semibold text-center" style={{ color: mA(0.6) }} aria-live="polite">
-                    👨‍👩‍👧 가족 탭에만 공유돼요
-                  </p>
-                  {/* 바로 등록 버튼 */}
-                  <BigButton
-                    fullWidth
-                    loading={isSubmitting}
-                    disabled={isSubmitting}
-                    aria-label={isSubmitting ? '등록하는 중이에요' : '바로 등록하기'}
-                    onClick={handleSubmit}
-                    className="h-16 text-xl font-black rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed"
-                    style={btnPrimary}
-                  >
-                    {isSubmitting ? '등록하는 중이에요...' : '바로 등록하기'}
-                  </BigButton>
-                </>
-              ) : (
-                <p
-                  className="text-center text-base font-semibold py-3"
-                  style={{ color: mA(0.55) }}
-                  aria-live="polite"
-                >
-                  위에서 카테고리를 선택해 주세요
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* STEP 2 — 제목 · 내용 · 사진 (상세 모드) */}
-          {checkinMode === 'detail' && selectedCategory && (
-            <div className="space-y-5">
-              <div
-                className="h-px w-full rounded-full"
-                style={{ background: `linear-gradient(90deg, ${mA(0.20)}, transparent)` }}
-                aria-hidden="true"
-              />
-
-              <div className="flex items-center gap-3">
-                <span
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-black text-white shrink-0"
-                  style={{ background: grad }}
-                  aria-hidden="true"
-                >
-                  2
-                </span>
-                <p className="text-xl font-bold text-foreground">활동을 설명해 주세요</p>
-              </div>
-
-              {/* 제목 입력 */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="activity-title" className="text-lg font-bold text-foreground">
-                    제목
-                  </label>
-                  <span className="text-base font-medium text-foreground/50" aria-live="polite">
-                    {title.length}/30
-                  </span>
-                </div>
-                <Input
-                  id="activity-title"
-                  className="text-lg px-4 py-3 rounded-xl border-2 h-auto focus-visible:ring-0"
-                  style={title.length > 0 ? { borderColor: mA(0.45) } : undefined}
-                  maxLength={30}
-                  placeholder="활동 제목을 입력해 주세요"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              {/* 내용 입력 */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label htmlFor="activity-content" className="text-lg font-bold text-foreground">
-                    내용
-                  </label>
-                  <span className="text-base font-medium text-foreground/50" aria-live="polite">
-                    {content.length}/300
-                  </span>
-                </div>
-                <Textarea
-                  id="activity-content"
-                  className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
-                  style={content.length > 0 ? { borderColor: mA(0.45) } : undefined}
-                  rows={4}
-                  maxLength={300}
-                  placeholder="오늘 활동을 간단히 설명해 주세요"
-                  value={content}
-                  onChange={e => setContent(e.target.value)}
-                  autoComplete="off"
-                />
-              </div>
-
-              {/* 사진 첨부 */}
-              <div className="space-y-3">
-                <p className="text-lg font-bold text-foreground">
-                  사진 첨부{' '}
-                  <span className="text-base font-medium text-muted-foreground">(선택, 최대 3장)</span>
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  className="hidden"
-                  onChange={handlePhotoChange}
-                />
-                {/* 썸네일 미리보기 */}
-                {photoPreviews.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1">
-                    {photoPreviews.map((src, i) => (
-                      <div key={i} className="relative shrink-0 w-28 h-28 rounded-xl overflow-hidden">
-                        <img
-                          src={src}
-                          alt={`첨부 사진 ${i + 1} 미리보기`}
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(i)}
-                          aria-label={`${i + 1}번째 사진 제거`}
-                          className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                        >
-                          <X size={14} className="text-white" aria-hidden="true" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {/* 추가 버튼 — 3장 미만일 때만 표시 */}
-                {photoPreviews.length < 3 && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center gap-3 min-h-[68px] px-4 rounded-2xl border-2 border-dashed text-lg font-medium text-muted-foreground transition-all duration-200 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    style={{
-                      borderColor: mA(0.22),
-                      '--tw-ring-color': main,
-                    } as React.CSSProperties}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = mA(0.45); e.currentTarget.style.background = mA(0.04) }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = mA(0.22); e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: mA(0.10) }}
-                      aria-hidden="true"
-                    >
-                      <ImagePlus size={20} style={{ color: main }} />
-                    </div>
-                    <span>사진 추가하기 ({photoPreviews.length}/3)</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* 등록 버튼 — 상세 모드 전용 */}
-          {checkinMode === 'detail' && selectedCategory && (
-            <BigButton
-              fullWidth
-              loading={isSubmitting}
-              disabled={!title.trim() || !content.trim() || isSubmitting}
-              aria-label={isSubmitting ? '등록하는 중이에요' : '활동 등록하기'}
-              onClick={handleSubmit}
-              className="h-16 text-xl font-black rounded-2xl disabled:opacity-40 disabled:cursor-not-allowed"
-              style={btnPrimary}
-            >
-              {isSubmitting ? '등록하는 중이에요...' : '등록하기'}
-            </BigButton>
-          )}
-        </section>
-      )}
 
       {/* ── 피드 목록 ────────────────────────────────────────────────────────── */}
       <section aria-label="오늘의 활동 피드">
@@ -930,7 +560,7 @@ export default function FeedPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setIsFormOpen(true)}
+                onClick={() => navigate('/checkin/write')}
                 className="h-16 px-12 text-xl font-black rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{ ...btnPrimary, '--tw-ring-color': main } as React.CSSProperties}
                 onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; e.currentTarget.style.transform = 'translateY(-2px)' }}
@@ -950,13 +580,7 @@ export default function FeedPage() {
                   currentUserId={currentUser?.id}
                   canInteract={canWriteFeed}
                   onNavigate={() => { saveScroll(); navigate(`/checkin/${checkin.id}`) }}
-                  onAlsoCheckin={() => {
-                    setSelectedCategory(checkin.category as Category)
-                    setIsFormOpen(true)
-                    setTimeout(() => {
-                      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }, 50)
-                  }}
+                  onAlsoCheckin={() => navigate('/checkin/write')}
                 />
               </React.Fragment>
             ))}
@@ -1010,11 +634,11 @@ export default function FeedPage() {
 
       {/* ── 활동 기록 FAB ────────────────────────────────────────────────────── */}
       {/* 모바일: 항상 표시 / 데스크탑: 200px 이상 스크롤 시 표시 */}
-      {canWriteFeed && !isFormOpen && (
+      {canWriteFeed && (
         <button
           type="button"
           aria-label="오늘 활동 기록하기"
-          onClick={() => setIsFormOpen(true)}
+          onClick={() => navigate('/checkin/write')}
           className={`fixed right-5 z-40 w-16 h-16 rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 hover:opacity-90 active:opacity-80 active:scale-95 transition-[opacity,transform] md:w-32 md:h-24 md:rounded-2xl md:flex-col md:gap-1 ${isScrolledDown ? 'md:flex' : 'md:hidden'}`}
           style={{
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
