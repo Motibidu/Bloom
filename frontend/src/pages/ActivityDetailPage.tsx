@@ -116,7 +116,8 @@ export default function ActivityDetailPage() {
   }
 
   const handleBandShare = (c: CheckIn) => {
-    const shareUrl = `${window.location.origin}/share/checkin/${c.id}`
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin
+    const shareUrl = `${baseUrl}/share/checkin/${c.id}`
     const text = encodeURIComponent(`${c.nickname}님의 활동: ${c.title}\n${shareUrl}`)
     const route = encodeURIComponent(window.location.hostname)
     // 모바일: 밴드 앱 직접 호출, 앱 미설치 시 웹 팝업으로 fallback
