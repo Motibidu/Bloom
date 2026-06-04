@@ -224,7 +224,7 @@ export default function ActivityDetailPage() {
           onClick={() => handleBandShare(checkin)}
           aria-label="네이버 밴드로 이 활동 공유하기"
           className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ background: '#00C73C', color: 'white', '--tw-ring-color': '#00C73C' } as React.CSSProperties}
+          style={{ background: '#00ee65', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
         >
