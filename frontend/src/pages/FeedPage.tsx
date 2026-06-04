@@ -174,8 +174,9 @@ export default function FeedPage() {
   useEffect(() => {
     if (promptIdFromState !== null) {
       window.history.replaceState({}, '')
+      navigate('/checkin/write', { state: { promptId: promptIdFromState } })
     }
-  }, [promptIdFromState])
+  }, [promptIdFromState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: sameCategoryUsers, refetch: fetchSameCategoryUsers, isFetching: isFetchingUsers } = useSameCategoryUsers()
   const currentUser = useAuthStore((s) => s.user)

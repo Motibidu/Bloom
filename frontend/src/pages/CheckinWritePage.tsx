@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, ImagePlus, X, Zap, AlignLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/shadcn/input'
 import { Textarea } from '@/components/ui/shadcn/textarea'
 import CategoryIconGrid from '@/components/ui/domain/checkin/category-icon-grid'
 import { useCreateCheckin, usePhotoUploadUrl } from '@/hooks/useCheckin'
+import { useRespondPrompt } from '@/hooks/usePrompt'
 import { AUTO_TITLES } from '@/lib/categories'
 import type { Category } from '@/types'
 
@@ -20,6 +21,8 @@ type Mode = 'simple' | 'detail'
 
 export default function CheckinWritePage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const promptId = (location.state as { promptId?: number } | null)?.promptId ?? null
   const [mode, setMode] = useState<Mode>(() =>
     (localStorage.getItem('checkinMode') as Mode) ?? 'simple'
   )
@@ -34,6 +37,7 @@ export default function CheckinWritePage() {
 
   const createCheckin = useCreateCheckin()
   const getUploadUrl = usePhotoUploadUrl()
+  const respondPrompt = useRespondPrompt()
 
   const handleModeChange = (next: Mode) => {
     setMode(next)
@@ -91,13 +95,16 @@ export default function CheckinWritePage() {
         objectKeys.push(objectKey)
         setUploadingCount(prev => prev - 1)
       }
-      await createCheckin.mutateAsync({
+      const newCheckin = await createCheckin.mutateAsync({
         category: selectedCategory,
         title: mode === 'simple' ? AUTO_TITLES[selectedCategory] : title.trim(),
         content: mode === 'simple' ? AUTO_TITLES[selectedCategory] : content.trim(),
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
         isSimple: mode === 'simple',
       })
+      if (promptId !== null) {
+        respondPrompt.mutate({ promptId, checkinId: newCheckin.id })
+      }
       if (mode === 'simple') {
         toast.success('기록 완료! 가족 탭에서 확인할 수 있어요 👨‍👩‍👧')
       } else {
