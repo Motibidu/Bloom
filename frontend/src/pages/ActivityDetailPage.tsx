@@ -230,7 +230,7 @@ export default function ActivityDetailPage() {
             height={22}
             aria-hidden="true"
           />
-          <span>카카오톡</span>
+          <span>카카오톡으로 공유</span>
         </button>
 
         {/* 네이버 밴드 */}
@@ -249,7 +249,7 @@ export default function ActivityDetailPage() {
             height={22}
             aria-hidden="true"
           />
-          <span>밴드</span>
+          <span>밴드로 공유</span>
         </button>
       </div>
 
