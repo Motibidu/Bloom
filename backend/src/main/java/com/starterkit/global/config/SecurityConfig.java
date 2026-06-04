@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/families/preview").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/checkins/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/share/checkin/*").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // FAMILY_VIEWER 허용 엔드포인트
                         .requestMatchers("/api/prompts/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")

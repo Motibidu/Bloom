@@ -115,6 +115,27 @@ export default function ActivityDetailPage() {
     }
   }
 
+  const handleBandShare = (c: CheckIn) => {
+    const baseUrl = import.meta.env.VITE_PUBLIC_URL || window.location.origin
+    const shareUrl = `${baseUrl}/share/checkin/${c.id}`
+    const text = encodeURIComponent(`${c.nickname}님의 활동: ${c.title}\n${shareUrl}`)
+    const route = encodeURIComponent(window.location.hostname)
+    // 모바일: 밴드 앱 직접 호출, 앱 미설치 시 웹 팝업으로 fallback
+    const appScheme = `bandapp://create/post?text=${text}&route=${route}`
+    const webUrl = `https://band.us/plugin/share?body=${text}&route=${route}`
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const timer = setTimeout(() => {
+        window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+      }, 1500)
+      window.location.href = appScheme
+      window.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearTimeout(timer)
+      }, { once: true })
+    } else {
+      window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+    }
+  }
+
   // ── 로딩 ─────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -191,24 +212,46 @@ export default function ActivityDetailPage() {
         commentCount={commentList.length}
       />
 
-      {/* ── 카카오톡 공유 버튼 ────────────────────────────────────────────────── */}
-      <button
-        onClick={() => handleShare(checkin)}
-        aria-label="카카오톡으로 이 활동 공유하기"
-        className="w-full inline-flex items-center justify-center gap-2.5 min-h-[56px] rounded-2xl text-lg font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-      >
-        <img
-          src="/kakao/kakaotalk_sharing_btn_medium.png"
-          alt=""
-          width={28}
-          height={28}
-          aria-hidden="true"
-        />
-        <span>카카오톡으로 공유하기</span>
-      </button>
+      {/* ── 공유 버튼 그룹 ───────────────────────────────────────────────────── */}
+      <div className="flex gap-3">
+        {/* 카카오톡 */}
+        <button
+          onClick={() => handleShare(checkin)}
+          aria-label="카카오톡으로 이 활동 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        >
+          <img
+            src="/kakao/kakaotalk_sharing_btn_medium.png"
+            alt=""
+            width={22}
+            height={22}
+            aria-hidden="true"
+          />
+          <span>카카오톡</span>
+        </button>
+
+        {/* 네이버 밴드 */}
+        <button
+          onClick={() => handleBandShare(checkin)}
+          aria-label="네이버 밴드로 이 활동 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: '#00ee65', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        >
+          <img
+            src="/band/band_icon.png"
+            alt=""
+            width={22}
+            height={22}
+            aria-hidden="true"
+          />
+          <span>밴드</span>
+        </button>
+      </div>
 
       {/* ── 삭제 확인 모달 ────────────────────────────────────────────────────── */}
       {deleteConfirmOpen && (
