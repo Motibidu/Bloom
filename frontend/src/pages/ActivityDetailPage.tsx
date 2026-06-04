@@ -115,6 +115,13 @@ export default function ActivityDetailPage() {
     }
   }
 
+  const handleBandShare = (c: CheckIn) => {
+    const url = `${window.location.origin}/share/checkin/${c.id}`
+    const body = encodeURIComponent(`${c.nickname}님의 활동: ${c.title}\n${url}`)
+    const route = encodeURIComponent(url)
+    window.open(`https://band.us/share?body=${body}&route=${route}`, '_blank', 'noopener,noreferrer')
+  }
+
   // ── 로딩 ─────────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -208,6 +215,19 @@ export default function ActivityDetailPage() {
           aria-hidden="true"
         />
         <span>카카오톡으로 공유하기</span>
+      </button>
+
+      {/* ── 네이버 밴드 공유 버튼 ─────────────────────────────────────────────── */}
+      <button
+        onClick={() => handleBandShare(checkin)}
+        aria-label="네이버 밴드로 이 활동 공유하기"
+        className="w-full inline-flex items-center justify-center gap-2.5 min-h-[56px] rounded-2xl text-lg font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={{ background: '#00C73C', color: 'white', '--tw-ring-color': '#00C73C' } as React.CSSProperties}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+      >
+        <span aria-hidden="true" style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎵</span>
+        <span>네이버 밴드로 공유하기</span>
       </button>
 
       {/* ── 삭제 확인 모달 ────────────────────────────────────────────────────── */}
