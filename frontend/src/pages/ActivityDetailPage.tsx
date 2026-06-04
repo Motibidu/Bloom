@@ -228,9 +228,13 @@ export default function ActivityDetailPage() {
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
-            <path d="M12 2C6.48 2 2 6.02 2 11c0 3.19 1.72 6.0 4.36 7.72L5.5 22l3.36-1.76C9.82 20.73 10.9 21 12 21c5.52 0 10-4.02 10-9S17.52 2 12 2zm1 13H7v-2h6v2zm2-4H7V9h8v2z"/>
-          </svg>
+          <img
+            src="/band/band_icon.png"
+            alt=""
+            width={22}
+            height={22}
+            aria-hidden="true"
+          />
           <span>밴드</span>
         </button>
       </div>
