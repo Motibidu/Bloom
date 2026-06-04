@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Users, Check, Home, ChevronRight, X, LogOut, Bell, ClipboardList, Pen, Link2, UserPlus } from 'lucide-react'
 import { isKakaoShareReady } from '@/lib/kakao'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
@@ -160,6 +160,8 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
 }) {
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false)
   const [inviteDropdownOpen, setInviteDropdownOpen] = useState(false)
+  const inviteBtnRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
   const leaveFamily = useLeaveFamilyGroup()
   const [promptTarget, setPromptTarget] = useState<PromptTarget | null>(null)
   const otherMembers = members.filter(m => m.userId !== currentUserId)
@@ -294,13 +296,14 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
                   onClick={() => setPromptTarget({ type: 'all', ids: otherMembers.map(m => m.userId) })}
                   className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
                   style={{
-                    background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.18)',
-                    border: `2px dashed ${promptTarget?.type === 'all' ? main : 'rgba(255,255,255,0.6)'}`,
-                    boxShadow: promptTarget?.type === 'all' ? '0 0 0 3px white' : 'none',
+                    background: promptTarget?.type === 'all' ? 'white' : 'rgba(255,255,255,0.92)',
+                    boxShadow: promptTarget?.type === 'all'
+                      ? `0 0 0 3px white, 0 4px 16px ${mA(0.4)}`
+                      : '0 2px 12px rgba(0,0,0,0.18)',
                   }}
                   aria-label="전체 멤버에게 활동 기록 요청"
                 >
-                  <Users size={20} style={{ color: promptTarget?.type === 'all' ? main : 'white' }} />
+                  <Users size={20} style={{ color: promptTarget?.type === 'all' ? main : dark }} />
                 </button>
                 <span className="text-white text-xs font-bold">전체</span>
               </div>
@@ -314,29 +317,38 @@ function FamilyGroupView({ groupId, name, inviteCode, members, isOwner, currentU
             )}
             <div className="flex flex-col items-center gap-1.5">
               <button
-                onClick={() => setInviteDropdownOpen(v => !v)}
+                ref={inviteBtnRef}
+                onClick={() => {
+                  if (!inviteDropdownOpen && inviteBtnRef.current) {
+                    const rect = inviteBtnRef.current.getBoundingClientRect()
+                    const dropW = 208 // w-52
+                    const left = Math.min(rect.left, window.innerWidth - dropW - 8)
+                    setDropdownPos({ top: rect.bottom + 8, left: Math.max(8, left) })
+                  }
+                  setInviteDropdownOpen(v => !v)
+                }}
                 className="w-12 h-12 rounded-full flex items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white [-webkit-tap-highlight-color:transparent]"
                 style={{
-                  background: inviteDropdownOpen ? 'white' : 'rgba(255,255,255,0.92)',
-                  boxShadow: inviteDropdownOpen
-                    ? `0 0 0 3px white, 0 4px 16px ${mA(0.4)}`
-                    : '0 2px 12px rgba(0,0,0,0.18)',
-                  color: inviteDropdownOpen ? main : dark,
+                  background: inviteDropdownOpen ? 'white' : 'rgba(255,255,255,0.18)',
+                  border: `2px dashed ${inviteDropdownOpen ? main : 'rgba(255,255,255,0.6)'}`,
+                  boxShadow: inviteDropdownOpen ? '0 0 0 3px white' : 'none',
                 }}
                 aria-label="가족 초대"
                 aria-expanded={inviteDropdownOpen}
                 aria-haspopup="menu"
               >
-                <span className="text-2xl font-black leading-none" style={{ color: inviteDropdownOpen ? main : dark }}>+</span>
+                <span className="text-2xl font-black leading-none" style={{ color: inviteDropdownOpen ? main : 'white' }}>+</span>
               </button>
               <span className="text-white text-xs font-bold">초대</span>
             </div>
             {/* 드롭다운 */}
-            {inviteDropdownOpen && (
+            {inviteDropdownOpen && dropdownPos && (
               <div
-                className="absolute right-0 top-full mt-2 z-20 w-52 rounded-2xl overflow-hidden"
+                className="fixed z-50 w-52 rounded-2xl overflow-hidden"
                 role="menu"
                 style={{
+                  top: dropdownPos.top,
+                  left: dropdownPos.left,
                   background: 'white',
                   boxShadow: `0 8px 32px ${mA(0.3)}`,
                   border: `1px solid ${mA(0.12)}`,
