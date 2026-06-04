@@ -198,37 +198,42 @@ export default function ActivityDetailPage() {
         commentCount={commentList.length}
       />
 
-      {/* ── 카카오톡 공유 버튼 ────────────────────────────────────────────────── */}
-      <button
-        onClick={() => handleShare(checkin)}
-        aria-label="카카오톡으로 이 활동 공유하기"
-        className="w-full inline-flex items-center justify-center gap-2.5 min-h-[56px] rounded-2xl text-lg font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-      >
-        <img
-          src="/kakao/kakaotalk_sharing_btn_medium.png"
-          alt=""
-          width={28}
-          height={28}
-          aria-hidden="true"
-        />
-        <span>카카오톡으로 공유하기</span>
-      </button>
+      {/* ── 공유 버튼 그룹 ───────────────────────────────────────────────────── */}
+      <div className="flex gap-3">
+        {/* 카카오톡 */}
+        <button
+          onClick={() => handleShare(checkin)}
+          aria-label="카카오톡으로 이 활동 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        >
+          <img
+            src="/kakao/kakaotalk_sharing_btn_medium.png"
+            alt=""
+            width={22}
+            height={22}
+            aria-hidden="true"
+          />
+          <span>카카오톡</span>
+        </button>
 
-      {/* ── 네이버 밴드 공유 버튼 ─────────────────────────────────────────────── */}
-      <button
-        onClick={() => handleBandShare(checkin)}
-        aria-label="네이버 밴드로 이 활동 공유하기"
-        className="w-full inline-flex items-center justify-center gap-2.5 min-h-[56px] rounded-2xl text-lg font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-        style={{ background: '#00C73C', color: 'white', '--tw-ring-color': '#00C73C' } as React.CSSProperties}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-      >
-        <span aria-hidden="true" style={{ fontSize: '1.4rem', lineHeight: 1 }}>🎵</span>
-        <span>네이버 밴드로 공유하기</span>
-      </button>
+        {/* 네이버 밴드 */}
+        <button
+          onClick={() => handleBandShare(checkin)}
+          aria-label="네이버 밴드로 이 활동 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: '#00C73C', color: 'white', '--tw-ring-color': '#00C73C' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M12 2C6.48 2 2 6.02 2 11c0 3.19 1.72 6.0 4.36 7.72L5.5 22l3.36-1.76C9.82 20.73 10.9 21 12 21c5.52 0 10-4.02 10-9S17.52 2 12 2zm1 13H7v-2h6v2zm2-4H7V9h8v2z"/>
+          </svg>
+          <span>밴드</span>
+        </button>
+      </div>
 
       {/* ── 삭제 확인 모달 ────────────────────────────────────────────────────── */}
       {deleteConfirmOpen && (
