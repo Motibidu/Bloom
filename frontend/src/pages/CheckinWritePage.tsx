@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ImagePlus, X, Zap, AlignLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/shadcn/input'
@@ -22,7 +22,10 @@ type Mode = 'simple' | 'detail'
 export default function CheckinWritePage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const promptId = (location.state as { promptId?: number } | null)?.promptId ?? null
+  const [searchParams] = useSearchParams()
+  const promptId =
+    (location.state as { promptId?: number } | null)?.promptId ??
+    (searchParams.get('promptId') ? Number(searchParams.get('promptId')) : null)
   const [mode, setMode] = useState<Mode>(() =>
     (localStorage.getItem('checkinMode') as Mode) ?? 'simple'
   )

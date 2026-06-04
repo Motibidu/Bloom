@@ -91,11 +91,12 @@ public class PromptService {
                 req.templateCode().getLabel() + " 기록해볼까요?"
         );
 
-        // FCM 푸시 알림 (비동기)
+        // FCM 푸시 알림 (비동기) — url로 바로 작성 페이지 진입
         notificationService.sendPush(
                 req.recipientId(),
                 "활동 기록 요청이 도착했어요",
-                senderNickname + "님: " + req.templateCode().getLabel()
+                senderNickname + "님: " + req.templateCode().getLabel(),
+                "/checkin/write?promptId=" + prompt.getId()
         );
 
         return new SendPromptResponse(prompt.getId(), warning, weeklyCount + 1);
