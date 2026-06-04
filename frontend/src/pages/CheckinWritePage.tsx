@@ -152,10 +152,10 @@ export default function CheckinWritePage() {
         {/* 헤더: 제목 + 모드 탭 */}
         <div className="flex items-center justify-between gap-3">
           <h1
-            className="text-2xl font-black text-foreground leading-snug shrink-0"
+            className="text-xl font-black text-foreground leading-snug"
             style={serifStyle}
           >
-            오늘 활동 기록하기
+            활동 기록하기
           </h1>
           {/* 간편/상세 탭 */}
           <div
