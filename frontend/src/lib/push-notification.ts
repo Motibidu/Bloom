@@ -14,6 +14,13 @@ const firebaseConfig = {
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined
 
+// 사용자 클릭 등 명시적 제스처 컨텍스트에서만 호출해야 함
+export async function requestFcmPermissionAndRegister(): Promise<void> {
+  if (!('serviceWorker' in navigator) || !VAPID_KEY) return
+  const permission = await Notification.requestPermission()
+  if (permission === 'granted') await registerFcmWeb()
+}
+
 export async function registerFcmWeb(): Promise<void> {
   if (!('serviceWorker' in navigator)) return
   if (!VAPID_KEY) {
@@ -25,8 +32,9 @@ export async function registerFcmWeb(): Promise<void> {
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
     const messaging = getMessaging(app)
 
-    const permission = await Notification.requestPermission()
-    if (permission !== 'granted') return
+    // 이미 허용된 경우에만 토큰 등록 — requestPermission()을 여기서 호출하면
+    // 앱 초기화 시 보류됐다가 다음 사용자 클릭(카카오 공유 버튼 등)에 편승해 팝업이 뜸
+    if (Notification.permission !== 'granted') return
 
     const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
 
