@@ -101,8 +101,13 @@ public class NotificationService {
 
     @Async
     public void sendPush(Long userId, String title, String body) {
+        sendPush(userId, title, body, null);
+    }
+
+    @Async
+    public void sendPush(Long userId, String title, String body, String url) {
         List<FcmToken> tokens = loadFcmTokens(userId);
-        sendFcmToTokens(tokens, title, body);
+        sendFcmToTokens(tokens, title, body, url);
     }
 
     @Transactional(readOnly = true)
@@ -110,7 +115,7 @@ public class NotificationService {
         return fcmTokenRepository.findByUserId(userId);
     }
 
-    private void sendFcmToTokens(List<FcmToken> tokens, String title, String body) {
+    private void sendFcmToTokens(List<FcmToken> tokens, String title, String body, String url) {
         if (FirebaseApp.getApps().isEmpty()) {
             log.debug("Firebase 미초기화 — FCM 발송 skip");
             return;
@@ -119,15 +124,18 @@ public class NotificationService {
 
         for (FcmToken fcmToken : tokens) {
             try {
-                Message message = Message.builder()
+                Message.Builder builder = Message.builder()
                         .setNotification(com.google.firebase.messaging.Notification.builder()
                                 .setTitle(title)
                                 .setBody(body)
                                 .build())
                         .putData("title", title)
                         .putData("body", body)
-                        .setToken(fcmToken.getToken())
-                        .build();
+                        .setToken(fcmToken.getToken());
+                if (url != null && !url.isBlank()) {
+                    builder.putData("url", url);
+                }
+                Message message = builder.build();
                 String messageId = FirebaseMessaging.getInstance().send(message);
                 log.info("FCM 발송 성공: messageId={}", messageId);
             } catch (Exception e) {

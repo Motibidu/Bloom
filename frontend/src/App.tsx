@@ -28,6 +28,7 @@ import PrivacyPage from '@/pages/PrivacyPage'
 import TermsPage from '@/pages/TermsPage'
 import InviteLandingPage from '@/pages/InviteLandingPage'
 import SharePreviewPage from '@/pages/SharePreviewPage'
+import CheckinWritePage from '@/pages/CheckinWritePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -105,6 +106,7 @@ export default function App() {
           >
             <Route index element={<FeedPage />} />
             <Route path="checkin/:id" element={<ActivityDetailPage />} />
+            <Route path="checkin/write" element={<CheckinWritePage />} />
             <Route path="family" element={<FamilyPage />} />
             <Route path="family/invite" element={<FamilyInvitePage />} />
             <Route path="discover" element={<DiscoverPage />} />
