@@ -116,10 +116,23 @@ export default function ActivityDetailPage() {
   }
 
   const handleBandShare = (c: CheckIn) => {
-    const url = `${window.location.origin}/share/checkin/${c.id}`
-    const body = encodeURIComponent(`${c.nickname}님의 활동: ${c.title}\n${url}`)
-    const route = encodeURIComponent(url)
-    window.open(`https://band.us/share?body=${body}&route=${route}`, '_blank', 'noopener,noreferrer')
+    const shareUrl = `${window.location.origin}/share/checkin/${c.id}`
+    const text = encodeURIComponent(`${c.nickname}님의 활동: ${c.title}\n${shareUrl}`)
+    const route = encodeURIComponent(window.location.hostname)
+    // 모바일: 밴드 앱 직접 호출, 앱 미설치 시 웹 팝업으로 fallback
+    const appScheme = `bandapp://create/post?text=${text}&route=${route}`
+    const webUrl = `https://band.us/plugin/share?body=${text}&route=${route}`
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const timer = setTimeout(() => {
+        window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+      }, 1500)
+      window.location.href = appScheme
+      window.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearTimeout(timer)
+      }, { once: true })
+    } else {
+      window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+    }
   }
 
   // ── 로딩 ─────────────────────────────────────────────────────────────────────
