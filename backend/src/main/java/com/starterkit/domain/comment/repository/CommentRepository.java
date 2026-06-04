@@ -12,6 +12,13 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     List<Comment> findByCheckinIdOrderByCreatedAtDesc(Long checkinId);
 
+    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.replies r WHERE c.checkin.id = :checkinId AND c.parent IS NULL ORDER BY c.createdAt DESC")
+    List<Comment> findRootCommentsByCheckinId(@Param("checkinId") Long checkinId);
+
+    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.replies r WHERE c.checkin.id = :checkinId AND c.parent IS NULL AND c.user.id NOT IN :excludeUserIds ORDER BY c.createdAt DESC")
+    List<Comment> findRootCommentsByCheckinIdExcludingUsers(@Param("checkinId") Long checkinId,
+                                                             @Param("excludeUserIds") List<Long> excludeUserIds);
+
     @Modifying
     @Query("DELETE FROM Comment c WHERE c.checkin.id = :checkinId")
     void deleteByCheckinId(@Param("checkinId") Long checkinId);

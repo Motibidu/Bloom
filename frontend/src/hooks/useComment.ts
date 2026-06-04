@@ -16,11 +16,35 @@ export function useCreateComment(checkinId: number) {
       content?: string
       commentType: 'TEXT' | 'PRAISE_CARD'
       praiseCardType?: string
+      parentId?: number | null
     }) =>
       api.post(`/checkins/${checkinId}/comments`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', checkinId] })
       queryClient.invalidateQueries({ queryKey: ['checkins', checkinId] })
+    },
+  })
+}
+
+export function useDeleteComment(checkinId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (commentId: number) =>
+      api.delete(`/checkins/${checkinId}/comments/${commentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', checkinId] })
+      queryClient.invalidateQueries({ queryKey: ['checkins', checkinId] })
+    },
+  })
+}
+
+export function useUpdateComment(checkinId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) =>
+      api.put(`/checkins/${checkinId}/comments/${commentId}`, { content }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', checkinId] })
     },
   })
 }

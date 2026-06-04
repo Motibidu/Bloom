@@ -40,6 +40,8 @@ export interface Comment {
   createdAt: string
   commentType?: 'TEXT' | 'PRAISE_CARD'
   praiseCardType?: 'GREAT_JOB' | 'KEEP_IT_UP' | 'IMPRESSIVE' | 'HEALTHY' | 'INSPIRING'
+  parentId?: number | null
+  replies?: Comment[]
 }
 
 export interface TodayFeedResponse {

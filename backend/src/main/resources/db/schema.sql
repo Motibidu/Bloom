@@ -83,11 +83,14 @@ CREATE TABLE IF NOT EXISTS comments (
     id               BIGINT       NOT NULL AUTO_INCREMENT,
     user_id          BIGINT       NOT NULL,
     checkin_id       BIGINT       NOT NULL,
+    parent_id        BIGINT       NULL,
     content          VARCHAR(200) NULL,
     comment_type     ENUM('TEXT','PRAISE_CARD') NOT NULL DEFAULT 'TEXT',
     praise_card_type ENUM('GREAT_JOB','KEEP_IT_UP','IMPRESSIVE','HEALTHY','INSPIRING') NULL,
     created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_comments_user    FOREIGN KEY (user_id)    REFERENCES users    (id),
-    CONSTRAINT fk_comments_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id)
+    CONSTRAINT fk_comments_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id),
+    CONSTRAINT fk_comments_parent  FOREIGN KEY (parent_id)  REFERENCES comments (id) ON DELETE CASCADE,
+    INDEX idx_comments_parent (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

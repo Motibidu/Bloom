@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "comments")
@@ -34,12 +36,25 @@ public class Comment {
     @Column(name = "comment_type", nullable = false, length = 20)
     private CommentType commentType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", nullable = true)
+    private Comment parent;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
+    private List<Comment> replies = new ArrayList<>();
+
     @Enumerated(EnumType.STRING)
     @Column(name = "praise_card_type", nullable = true, length = 20)
     private PraiseCardType praiseCardType;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void setContent(String content) {
+        this.content = content;
+    }
 
     @PrePersist
     protected void onCreate() {

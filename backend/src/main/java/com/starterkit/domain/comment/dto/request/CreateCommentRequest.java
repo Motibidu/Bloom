@@ -7,7 +7,8 @@ import jakarta.validation.constraints.Size;
 public record CreateCommentRequest(
         @Size(max = 200) String content,
         CommentType commentType,
-        PraiseCardType praiseCardType
+        PraiseCardType praiseCardType,
+        Long parentId
 ) {
     public CommentType resolvedCommentType() {
         return commentType != null ? commentType : CommentType.TEXT;
