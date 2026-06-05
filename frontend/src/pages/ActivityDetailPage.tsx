@@ -18,7 +18,6 @@ const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
 const light = 'oklch(0.76 0.12 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
-const lA = (a: number) => `oklch(0.76 0.12 220 / ${a})`
 const grad  = `linear-gradient(135deg, ${main}, ${light})`
 
 function formatRelativeTime(createdAt: string): string {

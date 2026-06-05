@@ -48,31 +48,6 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId, UserDetails userDetails) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
-        if (!comment.getUser().getId().equals(user.getId())) {
-            throw new org.springframework.security.access.AccessDeniedException("본인 댓글만 삭제할 수 있습니다.");
-        }
-        commentRepository.delete(comment);
-    }
-
-    @Transactional
-    public CommentResponse updateComment(Long commentId, String content, UserDetails userDetails) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
-        if (!comment.getUser().getId().equals(user.getId())) {
-            throw new org.springframework.security.access.AccessDeniedException("본인 댓글만 수정할 수 있습니다.");
-        }
-        comment.setContent(content);
-        return CommentResponse.fromReply(comment);
-    }
-
-    @Transactional
     public CommentResponse addComment(Long checkinId, CreateCommentRequest req, UserDetails userDetails) {
         Checkin checkin = checkinRepository.findById(checkinId)
                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));

@@ -52,10 +52,6 @@ public class Comment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public void setContent(String content) {
-        this.content = content;
-    }
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now(java.time.ZoneOffset.UTC);
