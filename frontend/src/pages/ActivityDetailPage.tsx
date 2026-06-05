@@ -259,7 +259,7 @@ export default function ActivityDetailPage() {
         <button
           onClick={() => handleShare(checkin)}
           aria-label="카카오톡으로 이 활동 공유하기"
-          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           style={{ background: '#FEE500', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.80' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
@@ -272,7 +272,7 @@ export default function ActivityDetailPage() {
         <button
           onClick={() => handleBandShare(checkin)}
           aria-label="네이버 밴드로 이 활동 공유하기"
-          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-sm font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           style={{ background: '#00ee65', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.80' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
@@ -285,7 +285,7 @@ export default function ActivityDetailPage() {
         <button
           onClick={() => handleCopyLink(checkin)}
           aria-label="링크 복사"
-          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl text-sm font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl text-base font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
           style={{ background: mA(0.10), color: dark, border: `1px solid ${mA(0.18)}`, '--tw-ring-color': main } as React.CSSProperties}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
@@ -397,7 +397,7 @@ export default function ActivityDetailPage() {
                   role="tab"
                   aria-selected={commentTab === 'text'}
                   onClick={() => setCommentTab('text')}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black transition-all focus-visible:outline-none focus-visible:ring-2"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2"
                   style={{
                     background: commentTab === 'text' ? grad : mA(0.07),
                     color: commentTab === 'text' ? 'white' : dark,
@@ -410,7 +410,7 @@ export default function ActivityDetailPage() {
                   role="tab"
                   aria-selected={commentTab === 'praise'}
                   onClick={() => setCommentTab('praise')}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black transition-all focus-visible:outline-none focus-visible:ring-2"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2"
                   style={{
                     background: commentTab === 'praise' ? grad : mA(0.07),
                     color: commentTab === 'praise' ? 'white' : dark,
@@ -535,11 +535,11 @@ export default function ActivityDetailPage() {
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       {/* 1행: 닉네임 + 시간 + 더보기 */}
                       <div className="flex items-center gap-2 leading-none">
-                        <span className="text-sm font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>
+                        <span className="text-base font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>
                           {comment.nickname}
                         </span>
                         <time
-                          className="text-xs font-medium shrink-0"
+                          className="text-sm font-medium shrink-0"
                           style={{ color: `oklch(0.65 0.02 220)` }}
                           dateTime={comment.createdAt}
                         >
@@ -582,7 +582,7 @@ export default function ActivityDetailPage() {
                       {editingCommentId === comment.id ? (
                         <div className="mt-1 flex gap-2 items-start">
                           <Textarea
-                            className="text-sm px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
+                            className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
                             style={{ borderColor: mA(0.45) }}
                             rows={2}
                             maxLength={200}
@@ -594,12 +594,12 @@ export default function ActivityDetailPage() {
                             <button
                               onClick={() => handleUpdateComment(comment.id)}
                               disabled={!editText.trim() || updateComment.isPending}
-                              className="px-3 py-1.5 rounded-lg text-xs font-black text-white disabled:opacity-40"
+                              className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
                               style={{ background: grad }}
                             >저장</button>
                             <button
                               onClick={() => { setEditingCommentId(null); setEditText('') }}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                              className="px-3 py-1.5 rounded-lg text-sm font-bold"
                               style={{ background: mA(0.08), color: dark }}
                             >취소</button>
                           </div>
@@ -611,11 +611,11 @@ export default function ActivityDetailPage() {
                           role="img"
                           aria-label={`칭찬 카드: ${praiseCardMeta.label}`}
                         >
-                          <span className="text-sm leading-none" aria-hidden="true">{praiseCardMeta.emoji}</span>
-                          <span className="text-xs font-black" style={{ color: praiseCardMeta.color }}>{praiseCardMeta.label}</span>
+                          <span className="text-base leading-none" aria-hidden="true">{praiseCardMeta.emoji}</span>
+                          <span className="text-sm font-black" style={{ color: praiseCardMeta.color }}>{praiseCardMeta.label}</span>
                         </div>
                       ) : (
-                        <p className="text-sm text-foreground leading-snug mt-0.5">
+                        <p className="text-base text-foreground leading-snug mt-0.5">
                           {comment.content}
                         </p>
                       )}
@@ -634,7 +634,7 @@ export default function ActivityDetailPage() {
                         {comment.replies.map((reply) => (
                           <div key={reply.id} className="flex gap-2 items-start">
                             <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white"
+                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-black text-white"
                               style={{ background: mA(0.45) }}
                               aria-hidden="true"
                             >
@@ -642,12 +642,12 @@ export default function ActivityDetailPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>{reply.nickname}</span>
-                                <time className="text-xs font-medium shrink-0" style={{ color: `oklch(0.65 0.02 220)` }} dateTime={reply.createdAt}>
+                                <span className="text-base font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>{reply.nickname}</span>
+                                <time className="text-sm font-medium shrink-0" style={{ color: `oklch(0.65 0.02 220)` }} dateTime={reply.createdAt}>
                                   {formatRelativeTime(reply.createdAt)}
                                 </time>
                               </div>
-                              <p className="text-sm text-foreground leading-snug mt-0.5">{reply.content}</p>
+                              <p className="text-base text-foreground leading-snug mt-0.5">{reply.content}</p>
                             </div>
                           </div>
                         ))}
@@ -657,7 +657,7 @@ export default function ActivityDetailPage() {
                     {/* 답글 달기 버튼 */}
                     <button
                       onClick={() => setReplyTargetId(replyTargetId === comment.id ? null : comment.id)}
-                      className="text-xs font-bold focus-visible:outline-none focus-visible:ring-2 rounded px-2 py-1"
+                      className="text-sm font-bold focus-visible:outline-none focus-visible:ring-2 rounded px-2 py-1"
                       style={{ color: mA(0.5), background: mA(0.06) }}
                     >
                       {replyTargetId === comment.id ? '취소' : '↩ 답글 달기'}
@@ -679,7 +679,7 @@ export default function ActivityDetailPage() {
                         <button
                           onClick={() => handleReplySubmit(comment.id)}
                           disabled={!replyText.trim() || createComment.isPending}
-                          className="min-h-[44px] px-4 rounded-xl text-sm font-black text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-40"
+                          className="min-h-[44px] px-4 rounded-xl text-base font-black text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-40"
                           style={{ background: grad, '--tw-ring-color': main } as React.CSSProperties}
                         >
                           <Send size={16} aria-hidden="true" />
