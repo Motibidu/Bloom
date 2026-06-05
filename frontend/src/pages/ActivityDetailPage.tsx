@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle, MoreVertical, Pencil, Trash2, Flag, Link } from 'lucide-react'
 import { toast } from 'sonner'
@@ -48,6 +48,8 @@ export default function ActivityDetailPage() {
   const [editText, setEditText] = useState('')
   const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null)
   const [reportCommentId, setReportCommentId] = useState<number | null>(null)
+  const praiseCardSubmitRef = useRef<HTMLButtonElement>(null)
+  const commentInputRef = useRef<HTMLDivElement>(null)
 
   const currentUser = useAuthStore((s) => s.user)
   const scrollContainer = useScrollContainer()
@@ -385,7 +387,7 @@ export default function ActivityDetailPage() {
             </div>
           ) : (
             /* 펼친 상태: 탭 + 입력 + 취소/등록 */
-            <div className="rounded-2xl overflow-hidden" style={{ border: `1.5px solid ${mA(0.18)}` }}>
+            <div ref={commentInputRef} className="rounded-2xl overflow-hidden" style={{ border: `1.5px solid ${mA(0.18)}` }}>
               {/* 탭 */}
               <div
                 className="flex gap-2 px-3 pt-3 pb-2"
@@ -409,7 +411,10 @@ export default function ActivityDetailPage() {
                 <button
                   role="tab"
                   aria-selected={commentTab === 'praise'}
-                  onClick={() => setCommentTab('praise')}
+                  onClick={() => {
+                    setCommentTab('praise')
+                    setTimeout(() => commentInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+                  }}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2"
                   style={{
                     background: commentTab === 'praise' ? grad : mA(0.07),
@@ -472,6 +477,7 @@ export default function ActivityDetailPage() {
                       취소
                     </button>
                     <button
+                      ref={praiseCardSubmitRef}
                       onClick={handlePraiseCardSubmit}
                       disabled={!selectedPraiseCard || createComment.isPending}
                       aria-busy={createComment.isPending}
