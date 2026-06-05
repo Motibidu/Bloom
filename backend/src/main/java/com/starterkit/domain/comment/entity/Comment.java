@@ -56,4 +56,8 @@ public class Comment {
     protected void onCreate() {
         createdAt = LocalDateTime.now(java.time.ZoneOffset.UTC);
     }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }
