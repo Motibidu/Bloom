@@ -42,4 +42,24 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(commentService.addComment(id, req, userDetails));
     }
+
+    @DeleteMapping("/{id}/comments/{commentId}")
+    @Operation(summary = "댓글 삭제")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable("id") Long id,
+            @PathVariable("commentId") Long commentId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        commentService.deleteComment(commentId, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/comments/{commentId}")
+    @Operation(summary = "댓글 수정")
+    public ResponseEntity<CommentResponse> updateComment(
+            @PathVariable("id") Long id,
+            @PathVariable("commentId") Long commentId,
+            @RequestBody java.util.Map<String, String> body,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(commentService.updateComment(commentId, body.get("content"), userDetails));
+    }
 }

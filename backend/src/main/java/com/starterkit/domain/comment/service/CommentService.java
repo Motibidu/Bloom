@@ -12,6 +12,7 @@ import com.starterkit.domain.user.entity.User;
 import com.starterkit.domain.user.repository.UserRepository;
 import com.starterkit.global.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,12 +37,12 @@ public class CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
         List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
         if (!blockedIds.isEmpty()) {
-            return commentRepository.findByCheckinIdExcludingUsersOrderByCreatedAtDesc(checkinId, blockedIds)
+            return commentRepository.findRootCommentsByCheckinIdExcludingUsers(checkinId, blockedIds)
                     .stream()
                     .map(CommentResponse::from)
                     .toList();
         }
-        return commentRepository.findByCheckinIdOrderByCreatedAtDesc(checkinId)
+        return commentRepository.findRootCommentsByCheckinId(checkinId)
                 .stream()
                 .map(CommentResponse::from)
                 .toList();
@@ -54,22 +55,33 @@ public class CommentService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
 
+        Comment parent = null;
+        if (req.parentId() != null) {
+            parent = commentRepository.findById(req.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("부모 댓글을 찾을 수 없습니다."));
+        }
+
         String content = req.content() != null ? req.content() : "";
         Comment comment = Comment.builder()
                 .user(user)
                 .checkin(checkin)
+                .parent(parent)
                 .content(content)
                 .commentType(req.resolvedCommentType())
                 .praiseCardType(req.praiseCardType())
                 .build();
 
-        CommentResponse response = CommentResponse.from(commentRepository.save(comment));
+        CommentResponse response = CommentResponse.fromReply(commentRepository.save(comment));
 
         if (!checkin.getUser().getId().equals(user.getId())) {
-            String msg = user.getNickname() + "님이 댓글을 남겼어요";
-            notificationService.sendPush(checkin.getUser().getId(), "새 댓글", msg);
+            boolean isReply = parent != null;
+            String msg = isReply
+                    ? user.getNickname() + "님이 대댓글을 남겼어요"
+                    : user.getNickname() + "님이 댓글을 남겼어요";
+            Long notifyUserId = isReply ? parent.getUser().getId() : checkin.getUser().getId();
+            notificationService.sendPush(notifyUserId, isReply ? "새 대댓글" : "새 댓글", msg);
             notificationService.sendInApp(
-                    checkin.getUser().getId(),
+                    notifyUserId,
                     user.getNickname(),
                     com.starterkit.domain.notification.entity.NotificationType.COMMENT,
                     checkinId,
@@ -78,5 +90,30 @@ public class CommentService {
         }
 
         return response;
+    }
+
+    @Transactional
+    public void deleteComment(Long commentId, UserDetails userDetails) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("본인 댓글만 삭제할 수 있습니다.");
+        }
+        commentRepository.delete(comment);
+    }
+
+    @Transactional
+    public CommentResponse updateComment(Long commentId, String content, UserDetails userDetails) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        if (!comment.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("본인 댓글만 수정할 수 있습니다.");
+        }
+        comment.updateContent(content);
+        return CommentResponse.from(comment);
     }
 }

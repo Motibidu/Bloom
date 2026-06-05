@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Send, X as XIcon, AlertTriangle, MoreVertical, Pencil, Trash2, Flag, Link } from 'lucide-react'
 import { toast } from 'sonner'
 import CheckInCard from '@/components/ui/domain/checkin/checkin-card'
 import PraiseCardPicker, { PRAISE_CARDS } from '@/components/ui/domain/checkin/praise-card-picker'
 import { Textarea } from '@/components/ui/shadcn/textarea'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/shadcn/dropdown-menu'
 import { useCheckinDetail, useDeleteCheckin } from '@/hooks/useCheckin'
-import { useComments, useCreateComment } from '@/hooks/useComment'
+import { useComments, useCreateComment, useDeleteComment, useUpdateComment } from '@/hooks/useComment'
+import { useCreateReport } from '@/hooks/useReport'
 import { useAuthStore } from '@/store/authStore'
 import { useScrollContainer } from '@/lib/scrollContext'
 import { isKakaoShareReady } from '@/lib/kakao'
@@ -16,7 +18,6 @@ const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
 const light = 'oklch(0.76 0.12 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
-const lA = (a: number) => `oklch(0.76 0.12 220 / ${a})`
 const grad  = `linear-gradient(135deg, ${main}, ${light})`
 
 function formatRelativeTime(createdAt: string): string {
@@ -36,10 +37,19 @@ export default function ActivityDetailPage() {
   const checkinId = Number(id)
 
   const [commentText, setCommentText] = useState('')
+  const [commentExpanded, setCommentExpanded] = useState(false)
   const [commentTab, setCommentTab] = useState<'text' | 'praise'>('text')
   const [selectedPraiseCard, setSelectedPraiseCard] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
+  const [replyText, setReplyText] = useState('')
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null)
+  const [editText, setEditText] = useState('')
+  const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null)
+  const [reportCommentId, setReportCommentId] = useState<number | null>(null)
+  const praiseCardSubmitRef = useRef<HTMLButtonElement>(null)
+  const commentInputRef = useRef<HTMLDivElement>(null)
 
   const currentUser = useAuthStore((s) => s.user)
   const scrollContainer = useScrollContainer()
@@ -55,6 +65,9 @@ export default function ActivityDetailPage() {
   const { data: comments = [] } = useComments(checkinId)
   const deleteCheckin = useDeleteCheckin(checkinId)
   const createComment = useCreateComment(checkinId)
+  const deleteComment = useDeleteComment(checkinId)
+  const updateComment = useUpdateComment(checkinId)
+  const createReport = useCreateReport()
 
   const handleDeleteConfirm = () => {
     deleteCheckin.mutate(undefined, {
@@ -65,7 +78,51 @@ export default function ActivityDetailPage() {
   const handleCommentSubmit = () => {
     if (!commentText.trim()) return
     createComment.mutate({ content: commentText.trim(), commentType: 'TEXT' }, {
-      onSuccess: () => setCommentText(''),
+      onSuccess: () => { setCommentText(''); setCommentExpanded(false) },
+    })
+  }
+
+  const handleDeleteComment = () => {
+    if (!deleteCommentId) return
+    deleteComment.mutate(deleteCommentId, {
+      onSuccess: () => {
+        setDeleteCommentId(null)
+        toast.success('댓글을 삭제했어요')
+      },
+      onError: () => toast.error('삭제에 실패했어요'),
+    })
+  }
+
+  const handleUpdateComment = (commentId: number) => {
+    if (!editText.trim()) return
+    updateComment.mutate({ commentId, content: editText.trim() }, {
+      onSuccess: () => {
+        setEditingCommentId(null)
+        setEditText('')
+        toast.success('댓글을 수정했어요')
+      },
+      onError: () => toast.error('수정에 실패했어요'),
+    })
+  }
+
+  const handleReport = (reason: 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER') => {
+    if (!reportCommentId) return
+    createReport.mutate({ targetType: 'COMMENT', targetId: reportCommentId, reason }, {
+      onSuccess: () => {
+        setReportCommentId(null)
+        toast.success('신고가 접수됐어요')
+      },
+      onError: () => toast.error('신고에 실패했어요'),
+    })
+  }
+
+  const handleReplySubmit = (parentId: number) => {
+    if (!replyText.trim()) return
+    createComment.mutate({ content: replyText.trim(), commentType: 'TEXT', parentId }, {
+      onSuccess: () => {
+        setReplyText('')
+        setReplyTargetId(null)
+      },
     })
   }
 
@@ -77,12 +134,13 @@ export default function ActivityDetailPage() {
         onSuccess: () => {
           setSelectedPraiseCard(null)
           setCommentTab('text')
+          setCommentExpanded(false)
         },
       }
     )
   }
 
-  const handleShare = async (c: CheckIn) => {
+  const handleShare = (c: CheckIn) => {
     const url = `${window.location.origin}/share/checkin/${c.id}`
     if (isKakaoShareReady()) {
       const thumbnail = c.photoUrls?.[0]
@@ -97,16 +155,13 @@ export default function ActivityDetailPage() {
         },
         buttons: [{ title: '활동 보러 가기', link: { mobileWebUrl: url, webUrl: url } }],
       })
-      return
+    } else {
+      toast('카카오톡 앱이 필요해요')
     }
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: c.title, url })
-      } catch {
-        // 사용자가 공유 시트를 닫으면 무시
-      }
-      return
-    }
+  }
+
+  const handleCopyLink = async (c: CheckIn) => {
+    const url = `${window.location.origin}/share/checkin/${c.id}`
     try {
       await navigator.clipboard.writeText(url)
       toast.success('링크를 복사했어요')
@@ -185,22 +240,10 @@ export default function ActivityDetailPage() {
   const commentList = comments as Comment[]
 
   return (
-    <main className="max-w-2xl mx-auto px-4 md:px-6 pt-5 pb-10 space-y-6">
+    <main className="w-full md:max-w-2xl md:mx-auto md:px-6 pt-5 pb-10 space-y-6">
 
       {/* ── 상단 바: 뒤로가기 ──────────────────────────────────────────────────── */}
-      <div className="flex items-center mb-4">
-        <button
-          onClick={() => navigate('/')}
-          aria-label="피드로 돌아가기"
-          className="inline-flex items-center gap-1.5 min-h-[44px] px-2 py-1 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ color: dark, '--tw-ring-color': main } as React.CSSProperties}
-          onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-        >
-          <ArrowLeft size={20} aria-hidden="true" />
-          <span className="text-base font-bold">피드로 돌아가기</span>
-        </button>
-      </div>
+
 
       {/* ── 본문 카드 ─────────────────────────────────────────────────────────── */}
       <CheckInCard
@@ -213,23 +256,17 @@ export default function ActivityDetailPage() {
       />
 
       {/* ── 공유 버튼 그룹 ───────────────────────────────────────────────────── */}
-      <div className="flex gap-3">
+      <div className="flex gap-2 justify-center">
         {/* 카카오톡 */}
         <button
           onClick={() => handleShare(checkin)}
           aria-label="카카오톡으로 이 활동 공유하기"
-          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ background: '#FEE500', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: '#FEE500', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.80' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
         >
-          <img
-            src="/kakao/kakaotalk_sharing_btn_medium.png"
-            alt=""
-            width={22}
-            height={22}
-            aria-hidden="true"
-          />
+          <img src="/kakao/kakaotalk_sharing_btn_medium.png" alt="" width={20} height={20} aria-hidden="true" />
           <span>카카오톡</span>
         </button>
 
@@ -237,19 +274,26 @@ export default function ActivityDetailPage() {
         <button
           onClick={() => handleBandShare(checkin)}
           aria-label="네이버 밴드로 이 활동 공유하기"
-          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[56px] rounded-2xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ background: '#00ee65', color: 'rgba(0,0,0,0.85)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '0.88' }}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: '#00ee65', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.80' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
         >
-          <img
-            src="/band/band_icon.png"
-            alt=""
-            width={22}
-            height={22}
-            aria-hidden="true"
-          />
+          <img src="/band/band_icon.png" alt="" width={20} height={20} aria-hidden="true" />
           <span>밴드</span>
+        </button>
+
+        {/* 링크 복사 */}
+        <button
+          onClick={() => handleCopyLink(checkin)}
+          aria-label="링크 복사"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl text-base font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: mA(0.10), color: dark, border: `1px solid ${mA(0.18)}`, '--tw-ring-color': main } as React.CSSProperties}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '0.75' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+        >
+          <Link size={16} aria-hidden="true" />
+          <span>링크 복사</span>
         </button>
       </div>
 
@@ -309,24 +353,149 @@ export default function ActivityDetailPage() {
       {/* ── 댓글 영역 ──────────────────────────────────────────────────────────── */}
       <section aria-label="댓글" className="w-full space-y-5">
 
-        {/* 섹션 헤더 */}
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-black text-foreground shrink-0">댓글</h2>
-          <div
-            className="flex-1 h-0.5 rounded-full"
-            style={{ background: `linear-gradient(90deg, ${mA(0.30)}, ${lA(0.12)}, transparent)` }}
-            aria-hidden="true"
-          />
-          <span
-            className="text-sm font-black px-3 py-1.5 rounded-full text-white shrink-0"
-            style={{ background: grad }}
-          >
-            {commentList.length}개
-          </span>
+        {/* 댓글 입력 */}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'white',
+            border: `1px solid ${mA(0.12)}`,
+            boxShadow: `0 2px 10px ${mA(0.07)}`,
+          }}
+        >
+          {!commentExpanded ? (
+            /* 접힌 상태: 아바타 + 한 줄 입력창 */
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-base font-black text-white"
+                style={{ background: grad }}
+                aria-hidden="true"
+              >
+                {currentUser?.nickname?.[0] ?? '?'}
+              </div>
+              <button
+                onClick={() => setCommentExpanded(true)}
+                className="flex-1 h-10 rounded-full text-left px-4 text-base focus-visible:outline-none focus-visible:ring-2"
+                style={{
+                  border: `1px solid ${mA(0.20)}`,
+                  color: mA(0.40),
+                  background: mA(0.04),
+                  '--tw-ring-color': main,
+                } as React.CSSProperties}
+              >
+                댓글 추가...
+              </button>
+            </div>
+          ) : (
+            /* 펼친 상태: 탭 + 입력 + 취소/등록 */
+            <div ref={commentInputRef} className="rounded-2xl overflow-hidden" style={{ border: `1.5px solid ${mA(0.18)}` }}>
+              {/* 탭 */}
+              <div
+                className="flex gap-2 px-3 pt-3 pb-2"
+                style={{ borderBottom: `1px solid ${mA(0.10)}` }}
+                role="tablist"
+                aria-label="댓글 유형 선택"
+              >
+                <button
+                  role="tab"
+                  aria-selected={commentTab === 'text'}
+                  onClick={() => setCommentTab('text')}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2"
+                  style={{
+                    background: commentTab === 'text' ? grad : mA(0.07),
+                    color: commentTab === 'text' ? 'white' : dark,
+                    '--tw-ring-color': main,
+                  } as React.CSSProperties}
+                >
+                  <span aria-hidden="true">💬</span> 댓글
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={commentTab === 'praise'}
+                  onClick={() => {
+                    setCommentTab('praise')
+                    setTimeout(() => commentInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2"
+                  style={{
+                    background: commentTab === 'praise' ? grad : mA(0.07),
+                    color: commentTab === 'praise' ? 'white' : dark,
+                    '--tw-ring-color': main,
+                  } as React.CSSProperties}
+                >
+                  <span aria-hidden="true">💌</span> 칭찬카드
+                </button>
+              </div>
+
+              {/* 댓글 패널 */}
+              {commentTab === 'text' && (
+                <div className="px-4 py-3 space-y-3">
+                  <Textarea
+                    className="text-base px-3 py-2.5 resize-none rounded-xl border-2 focus-visible:ring-0"
+                    style={commentText.length > 0 ? { borderColor: mA(0.45) } : { borderColor: mA(0.15) }}
+                    rows={3}
+                    placeholder="따뜻한 댓글을 남겨보세요..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    aria-label="댓글 입력"
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => { setCommentExpanded(false); setCommentText('') }}
+                      className="inline-flex items-center min-h-[44px] px-5 rounded-2xl text-base font-bold focus-visible:outline-none focus-visible:ring-2"
+                      style={{ color: dark, background: mA(0.07), '--tw-ring-color': main } as React.CSSProperties}
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleCommentSubmit}
+                      disabled={!commentText.trim() || createComment.isPending}
+                      aria-busy={createComment.isPending}
+                      className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-2xl text-base font-black text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2"
+                      style={{ background: grad, '--tw-ring-color': main } as React.CSSProperties}
+                    >
+                      <Send size={16} aria-hidden="true" />
+                      {createComment.isPending ? '보내는 중...' : '등록'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 칭찬카드 패널 */}
+              {commentTab === 'praise' && (
+                <div className="px-4 py-3 space-y-3">
+                  <PraiseCardPicker
+                    selectedCard={selectedPraiseCard}
+                    onSelect={setSelectedPraiseCard}
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => { setCommentExpanded(false); setSelectedPraiseCard(null); setCommentTab('text') }}
+                      className="inline-flex items-center min-h-[44px] px-5 rounded-2xl text-base font-bold focus-visible:outline-none focus-visible:ring-2"
+                      style={{ color: dark, background: mA(0.07), '--tw-ring-color': main } as React.CSSProperties}
+                    >
+                      취소
+                    </button>
+                    <button
+                      ref={praiseCardSubmitRef}
+                      onClick={handlePraiseCardSubmit}
+                      disabled={!selectedPraiseCard || createComment.isPending}
+                      aria-busy={createComment.isPending}
+                      className="inline-flex items-center gap-2 min-h-[44px] px-6 rounded-2xl text-base font-black text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2"
+                      style={{ background: grad, '--tw-ring-color': main } as React.CSSProperties}
+                    >
+                      <span aria-hidden="true">💌</span>
+                      {createComment.isPending ? '보내는 중...' : '카드 보내기'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 댓글 목록 */}
-        <div className="space-y-3">
+        <div className="divide-y" style={{ borderColor: mA(0.10) }}>
           {commentList.length === 0 ? (
             <div
               className="rounded-2xl px-6 py-10 flex flex-col items-center gap-3 text-center"
@@ -350,215 +519,186 @@ export default function ActivityDetailPage() {
               return (
                 <div
                   key={comment.id}
-                  className="rounded-2xl px-6 py-5 space-y-2"
+                  className="rounded-2xl px-6 py-5"
                   style={{
                     background: 'white',
                     border: `1px solid ${mA(0.10)}`,
                     boxShadow: `0 2px 8px ${mA(0.06)}`,
                   }}
                 >
-                  {/* 작성자 헤더 */}
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-sm font-black text-white"
-                        style={{ background: grad }}
-                        aria-hidden="true"
-                      >
-                        {comment.nickname[0]}
-                      </div>
-                      <span className="text-base font-black text-foreground truncate">
-                        {comment.nickname}
-                      </span>
-                    </div>
-                    <time
-                      className="text-sm font-medium shrink-0"
-                      style={{ color: `oklch(0.60 0.03 220)` }}
-                      dateTime={comment.createdAt}
+                  {/* 작성자 헤더 + 본문 — 유튜브 댓글 레이아웃 */}
+                  <div className="flex gap-3 items-center">
+                    {/* 아바타 */}
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-lg font-black text-white"
+                      style={{ background: grad }}
+                      aria-hidden="true"
                     >
-                      {formatRelativeTime(comment.createdAt)}
-                    </time>
+                      {comment.nickname[0]}
+                    </div>
+
+                    {/* 우측 콘텐츠: 닉네임(1줄) + 본문 */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      {/* 1행: 닉네임 + 시간 + 더보기 */}
+                      <div className="flex items-center gap-2 leading-none">
+                        <span className="text-base font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>
+                          {comment.nickname}
+                        </span>
+                        <time
+                          className="text-sm font-medium shrink-0"
+                          style={{ color: `oklch(0.65 0.02 220)` }}
+                          dateTime={comment.createdAt}
+                        >
+                          {formatRelativeTime(comment.createdAt)}
+                        </time>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              aria-label="댓글 더보기"
+                              className="ml-auto shrink-0 w-7 h-7 flex items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2"
+                              style={{ color: `oklch(0.60 0.03 220)` }}
+                              onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                            >
+                              <MoreVertical size={16} aria-hidden="true" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {comment.userId === currentUser?.id ? (
+                              <>
+                                <DropdownMenuItem onClick={() => { setEditingCommentId(comment.id); setEditText(comment.content ?? '') }}>
+                                  <Pencil size={14} className="mr-2" />수정
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteCommentId(comment.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 size={14} className="mr-2" />삭제
+                                </DropdownMenuItem>
+                              </>
+                            ) : (
+                              <DropdownMenuItem onClick={() => setReportCommentId(comment.id)}>
+                                <Flag size={14} className="mr-2" />신고
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      {/* 2행: 본문 */}
+                      {editingCommentId === comment.id ? (
+                        <div className="mt-1 flex gap-2 items-start">
+                          <Textarea
+                            className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
+                            style={{ borderColor: mA(0.45) }}
+                            rows={2}
+                            maxLength={200}
+                            value={editText}
+                            onChange={e => setEditText(e.target.value)}
+                            autoFocus
+                          />
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleUpdateComment(comment.id)}
+                              disabled={!editText.trim() || updateComment.isPending}
+                              className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
+                              style={{ background: grad }}
+                            >저장</button>
+                            <button
+                              onClick={() => { setEditingCommentId(null); setEditText('') }}
+                              className="px-3 py-1.5 rounded-lg text-sm font-bold"
+                              style={{ background: mA(0.08), color: dark }}
+                            >취소</button>
+                          </div>
+                        </div>
+                      ) : isPraiseCard && praiseCardMeta ? (
+                        <div
+                          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 mt-0.5 self-start"
+                          style={{ background: praiseCardMeta.bg, border: `1px solid ${praiseCardMeta.borderColor}` }}
+                          role="img"
+                          aria-label={`칭찬 카드: ${praiseCardMeta.label}`}
+                        >
+                          <span className="text-base leading-none" aria-hidden="true">{praiseCardMeta.emoji}</span>
+                          <span className="text-sm font-black" style={{ color: praiseCardMeta.color }}>{praiseCardMeta.label}</span>
+                        </div>
+                      ) : (
+                        <p className="text-base text-foreground leading-snug mt-0.5">
+                          {comment.content}
+                        </p>
+                      )}
+                    </div>
+
                   </div>
 
-                  {/* 칭찬 카드 렌더링 */}
-                  {isPraiseCard && praiseCardMeta ? (
-                    <div className="pl-12 space-y-1.5">
+                  {/* 답글 달기 + 대댓글 목록 + 입력창 */}
+                  <div className="mt-3 ml-[60px] space-y-2">
+                    {/* 대댓글 목록 */}
+                    {comment.replies && comment.replies.length > 0 && (
                       <div
-                        className="inline-flex items-center gap-3 rounded-2xl px-5 py-3"
-                        style={{
-                          background: praiseCardMeta.bg,
-                          border: `1.5px solid ${praiseCardMeta.borderColor}`,
-                        }}
-                        role="img"
-                        aria-label={`칭찬 카드: ${praiseCardMeta.label}`}
+                        className="rounded-xl px-4 py-3 space-y-3"
+                        style={{ background: mA(0.04), borderLeft: `3px solid ${mA(0.20)}` }}
                       >
-                        <span className="text-2xl leading-none" aria-hidden="true">
-                          {praiseCardMeta.emoji}
-                        </span>
-                        <span
-                          className="text-base font-black"
-                          style={{ color: praiseCardMeta.color }}
-                        >
-                          {praiseCardMeta.label}
-                        </span>
+                        {comment.replies.map((reply) => (
+                          <div key={reply.id} className="flex gap-2 items-start">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-black text-white"
+                              style={{ background: mA(0.45) }}
+                              aria-hidden="true"
+                            >
+                              {reply.nickname[0]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-base font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>{reply.nickname}</span>
+                                <time className="text-sm font-medium shrink-0" style={{ color: `oklch(0.65 0.02 220)` }} dateTime={reply.createdAt}>
+                                  {formatRelativeTime(reply.createdAt)}
+                                </time>
+                              </div>
+                              <p className="text-base text-foreground leading-snug mt-0.5">{reply.content}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: `oklch(0.60 0.04 220)` }}
-                      >
-                        칭찬 카드를 보냈어요 <span aria-hidden="true">💌</span>
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-base font-medium text-foreground/80 leading-relaxed pl-12">
-                      {comment.content}
-                    </p>
-                  )}
+                    )}
+
+                    {/* 답글 달기 버튼 */}
+                    <button
+                      onClick={() => setReplyTargetId(replyTargetId === comment.id ? null : comment.id)}
+                      className="text-sm font-bold focus-visible:outline-none focus-visible:ring-2 rounded px-2 py-1"
+                      style={{ color: mA(0.5), background: mA(0.06) }}
+                    >
+                      {replyTargetId === comment.id ? '취소' : '↩ 답글 달기'}
+                    </button>
+
+                    {/* 답글 입력창 */}
+                    {replyTargetId === comment.id && (
+                      <div className="flex gap-2 items-start">
+                        <Textarea
+                          className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
+                          style={replyText.length > 0 ? { borderColor: mA(0.45) } : { borderColor: mA(0.15) }}
+                          rows={2}
+                          placeholder="답글을 입력하세요..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          aria-label="답글 입력"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleReplySubmit(comment.id)}
+                          disabled={!replyText.trim() || createComment.isPending}
+                          className="min-h-[44px] px-4 rounded-xl text-base font-black text-white shrink-0 focus-visible:outline-none focus-visible:ring-2 disabled:opacity-40"
+                          style={{ background: grad, '--tw-ring-color': main } as React.CSSProperties}
+                        >
+                          <Send size={16} aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )
             })
           )}
         </div>
 
-        {/* 댓글 입력 */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: 'white',
-            border: `2px solid ${mA(0.18)}`,
-            boxShadow: `0 2px 12px ${mA(0.08)}`,
-          }}
-        >
-          {/* 탭 */}
-          <div
-            className="flex gap-2 p-3"
-            style={{ background: mA(0.04), borderBottom: `1px solid ${mA(0.10)}` }}
-            role="tablist"
-            aria-label="댓글 유형 선택"
-          >
-            <button
-              role="tab"
-              aria-selected={commentTab === 'text'}
-              aria-controls="comment-panel-text"
-              onClick={() => setCommentTab('text')}
-              className="flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
-              style={{
-                background: commentTab === 'text' ? grad : mA(0.08),
-                color: commentTab === 'text' ? 'white' : dark,
-                '--tw-ring-color': main,
-              } as React.CSSProperties}
-            >
-              <span aria-hidden="true">💬</span>
-              댓글 쓰기
-            </button>
-            <button
-              role="tab"
-              aria-selected={commentTab === 'praise'}
-              aria-controls="comment-panel-praise"
-              onClick={() => setCommentTab('praise')}
-              className="flex items-center gap-2 min-h-[44px] px-5 rounded-xl text-base font-black transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
-              style={{
-                background: commentTab === 'praise' ? grad : mA(0.08),
-                color: commentTab === 'praise' ? 'white' : dark,
-                '--tw-ring-color': main,
-              } as React.CSSProperties}
-            >
-              <span aria-hidden="true">💌</span>
-              칭찬 카드
-            </button>
-          </div>
-
-          {/* 탭 패널: 댓글 쓰기 */}
-          <div
-            id="comment-panel-text"
-            role="tabpanel"
-            aria-label="댓글 쓰기"
-            hidden={commentTab !== 'text'}
-            className="p-5 space-y-4"
-          >
-              <Textarea
-                className="text-lg px-4 py-3 resize-none rounded-xl border-2 focus-visible:ring-0"
-                style={commentText.length > 0 ? { borderColor: mA(0.45) } : { borderColor: mA(0.15) }}
-                rows={3}
-                maxLength={200}
-                placeholder="따뜻한 댓글을 남겨보세요..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                aria-label="댓글 입력"
-              />
-              <div className="flex items-center justify-between">
-                <span
-                  className="text-base font-medium"
-                  style={{ color: `oklch(0.60 0.04 220)` }}
-                  aria-live="polite"
-                >
-                  {commentText.length}/200
-                </span>
-                <button
-                  onClick={handleCommentSubmit}
-                  disabled={!commentText.trim() || createComment.isPending}
-                  aria-busy={createComment.isPending}
-                  className="inline-flex items-center gap-2 min-h-[52px] px-7 rounded-2xl text-lg font-black text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{
-                    background: grad,
-                    '--tw-ring-color': main,
-                  } as React.CSSProperties}
-                  onMouseEnter={e => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.opacity = '0.88'
-                      e.currentTarget.style.transform = 'translateY(-1px)'
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.opacity = '1'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  <Send size={18} aria-hidden="true" />
-                  {createComment.isPending ? '보내는 중...' : '댓글 보내기'}
-                </button>
-              </div>
-          </div>
-
-          {/* 탭 패널: 칭찬 카드 */}
-          <div
-            id="comment-panel-praise"
-            role="tabpanel"
-            aria-label="칭찬 카드 선택"
-            hidden={commentTab !== 'praise'}
-            className="p-5 space-y-4"
-          >
-            <PraiseCardPicker
-              selectedCard={selectedPraiseCard}
-              onSelect={setSelectedPraiseCard}
-            />
-            <div className="flex justify-end">
-              <button
-                onClick={handlePraiseCardSubmit}
-                disabled={!selectedPraiseCard || createComment.isPending}
-                aria-busy={createComment.isPending}
-                className="inline-flex items-center gap-2 min-h-[52px] px-7 rounded-2xl text-lg font-black text-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{
-                  background: grad,
-                  '--tw-ring-color': main,
-                } as React.CSSProperties}
-                onMouseEnter={e => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.opacity = '0.88'
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.opacity = '1'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }}
-              >
-                <span aria-hidden="true">💌</span>
-                {createComment.isPending ? '보내는 중...' : '카드 보내기'}
-              </button>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* 라이트박스 오버레이 */}
@@ -624,6 +764,85 @@ export default function ActivityDetailPage() {
               {lightboxIndex + 1} / {checkin.photoUrls.length}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 댓글 삭제 확인 모달 */}
+      {deleteCommentId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: 'oklch(0 0 0 / 0.50)' }}
+          onClick={() => setDeleteCommentId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="댓글 삭제 확인"
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl px-7 py-8 space-y-6"
+            style={{ background: 'white', boxShadow: `0 8px 40px ${mA(0.25)}` }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'oklch(0.95 0.02 25)' }} aria-hidden="true">
+                <AlertTriangle size={32} className="text-destructive" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-black text-foreground">댓글을 삭제할까요?</h3>
+                <p className="text-base font-medium text-muted-foreground">삭제한 댓글은 복구할 수 없어요</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setDeleteCommentId(null)}
+                className="flex-1 min-h-[52px] rounded-2xl text-lg font-black focus-visible:outline-none focus-visible:ring-2"
+                style={{ background: mA(0.08), color: dark }}>취소</button>
+              <button type="button" onClick={handleDeleteComment} disabled={deleteComment.isPending}
+                className="flex-1 min-h-[52px] rounded-2xl text-lg font-black text-white focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+                style={{ background: 'oklch(0.55 0.18 25)' }}>
+                {deleteComment.isPending ? '삭제 중...' : '삭제하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 신고 바텀시트 */}
+      {reportCommentId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: 'oklch(0 0 0 / 0.50)' }}
+          onClick={() => setReportCommentId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="댓글 신고"
+        >
+          <div
+            className="w-full max-w-lg rounded-t-3xl px-6 pb-10 pt-6 space-y-4"
+            style={{ background: 'white', boxShadow: `0 -4px 30px ${mA(0.15)}` }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-black text-foreground">신고 사유 선택</h3>
+              <button onClick={() => setReportCommentId(null)} aria-label="닫기" className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: mA(0.08) }}>
+                <XIcon size={18} aria-hidden="true" />
+              </button>
+            </div>
+            {(['SPAM', 'INAPPROPRIATE', 'ABUSE', 'OTHER'] as const).map((reason) => {
+              const labels = { SPAM: '스팸', INAPPROPRIATE: '부적절한 내용', ABUSE: '욕설·비하', OTHER: '기타' }
+              return (
+                <button
+                  key={reason}
+                  onClick={() => handleReport(reason)}
+                  disabled={createReport.isPending}
+                  className="w-full min-h-[56px] rounded-2xl text-lg font-bold text-left px-5 transition-colors disabled:opacity-50"
+                  style={{ background: mA(0.06), color: dark }}
+                  onMouseEnter={e => { e.currentTarget.style.background = mA(0.12) }}
+                  onMouseLeave={e => { e.currentTarget.style.background = mA(0.06) }}
+                >
+                  {labels[reason]}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
     </main>
