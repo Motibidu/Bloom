@@ -311,7 +311,11 @@ export default function LandingPage() {
                     무료로 기록 시작하기
                   </button>
                 </Link>
-                <Link to="/login">
+                {/* 데스크톱: outline 버튼 / 모바일: 텍스트 링크 */}
+                <Link
+                  to="/login"
+                  className="hidden sm:inline-flex"
+                >
                   <button
                     className="w-full sm:w-auto h-16 text-xl font-black px-12 rounded-2xl
                                bg-white border-2 transition-colors
@@ -326,10 +330,17 @@ export default function LandingPage() {
                     로그인하기
                   </button>
                 </Link>
+                <Link
+                  to="/login"
+                  className="sm:hidden text-base font-bold underline underline-offset-4 self-center"
+                  style={coralColor}
+                >
+                  이미 계정이 있어요
+                </Link>
               </div>
 
               <p
-                className="text-sm text-foreground/50 font-medium animate-fade-up"
+                className="text-sm text-foreground/65 font-semibold animate-fade-up"
                 style={{ animationDelay: '0.35s' }}
               >
                 가입비 없음 · 1분이면 충분해요

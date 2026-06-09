@@ -105,9 +105,9 @@ export default function Header({ variant = 'internal' }: HeaderProps) {
           </Link>
           <Link
             to="/register"
-            className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap text-white inline-flex items-center
+            className="min-h-[44px] px-3 sm:px-5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap inline-flex items-center border-2
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ background: grad }}
+            style={{ borderColor: main, color: dark }}
           >
             회원가입
           </Link>
