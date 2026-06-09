@@ -46,6 +46,7 @@ export default function ActivityDetailPage() {
   const [replyText, setReplyText] = useState('')
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null)
   const [editText, setEditText] = useState('')
+  const [editPraiseCard, setEditPraiseCard] = useState<string | null>(null)
   const [deleteCommentId, setDeleteCommentId] = useState<number | null>(null)
   const [reportCommentId, setReportCommentId] = useState<number | null>(null)
   const praiseCardSubmitRef = useRef<HTMLButtonElement>(null)
@@ -94,15 +95,26 @@ export default function ActivityDetailPage() {
   }
 
   const handleUpdateComment = (commentId: number) => {
-    if (!editText.trim()) return
-    updateComment.mutate({ commentId, content: editText.trim() }, {
-      onSuccess: () => {
-        setEditingCommentId(null)
-        setEditText('')
-        toast.success('댓글을 수정했어요')
-      },
-      onError: () => toast.error('수정에 실패했어요'),
-    })
+    if (editPraiseCard) {
+      updateComment.mutate({ commentId, praiseCardType: editPraiseCard }, {
+        onSuccess: () => {
+          setEditingCommentId(null)
+          setEditPraiseCard(null)
+          toast.success('칭찬 카드를 바꿨어요')
+        },
+        onError: () => toast.error('수정에 실패했어요'),
+      })
+    } else {
+      if (!editText.trim()) return
+      updateComment.mutate({ commentId, content: editText.trim() }, {
+        onSuccess: () => {
+          setEditingCommentId(null)
+          setEditText('')
+          toast.success('댓글을 수정했어요')
+        },
+        onError: () => toast.error('수정에 실패했어요'),
+      })
+    }
   }
 
   const handleReport = (reason: 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER') => {
@@ -566,7 +578,14 @@ export default function ActivityDetailPage() {
                           <DropdownMenuContent align="end">
                             {comment.userId === currentUser?.id ? (
                               <>
-                                <DropdownMenuItem onClick={() => { setEditingCommentId(comment.id); setEditText(comment.content ?? '') }}>
+                                <DropdownMenuItem onClick={() => {
+                                  setEditingCommentId(comment.id)
+                                  if (isPraiseCard) {
+                                    setEditPraiseCard(comment.praiseCardType ?? null)
+                                  } else {
+                                    setEditText(comment.content ?? '')
+                                  }
+                                }}>
                                   <Pencil size={14} className="mr-2" />수정
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -586,30 +605,52 @@ export default function ActivityDetailPage() {
                       </div>
                       {/* 2행: 본문 */}
                       {editingCommentId === comment.id ? (
-                        <div className="mt-1 flex gap-2 items-start">
-                          <Textarea
-                            className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
-                            style={{ borderColor: mA(0.45) }}
-                            rows={2}
-                            maxLength={200}
-                            value={editText}
-                            onChange={e => setEditText(e.target.value)}
-                            autoFocus
-                          />
-                          <div className="flex flex-col gap-1">
-                            <button
-                              onClick={() => handleUpdateComment(comment.id)}
-                              disabled={!editText.trim() || updateComment.isPending}
-                              className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
-                              style={{ background: grad }}
-                            >저장</button>
-                            <button
-                              onClick={() => { setEditingCommentId(null); setEditText('') }}
-                              className="px-3 py-1.5 rounded-lg text-sm font-bold"
-                              style={{ background: mA(0.08), color: dark }}
-                            >취소</button>
+                        isPraiseCard ? (
+                          <div className="mt-2 space-y-2">
+                            <PraiseCardPicker
+                              selectedCard={editPraiseCard}
+                              onSelect={setEditPraiseCard}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => { setEditingCommentId(null); setEditPraiseCard(null) }}
+                                className="px-3 py-1.5 rounded-lg text-sm font-bold"
+                                style={{ background: mA(0.08), color: dark }}
+                              >취소</button>
+                              <button
+                                onClick={() => handleUpdateComment(comment.id)}
+                                disabled={!editPraiseCard || updateComment.isPending}
+                                className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
+                                style={{ background: grad }}
+                              >저장</button>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="mt-1 flex gap-2 items-start">
+                            <Textarea
+                              className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
+                              style={{ borderColor: mA(0.45) }}
+                              rows={2}
+                              maxLength={200}
+                              value={editText}
+                              onChange={e => setEditText(e.target.value)}
+                              autoFocus
+                            />
+                            <div className="flex flex-col gap-1">
+                              <button
+                                onClick={() => handleUpdateComment(comment.id)}
+                                disabled={!editText.trim() || updateComment.isPending}
+                                className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
+                                style={{ background: grad }}
+                              >저장</button>
+                              <button
+                                onClick={() => { setEditingCommentId(null); setEditText('') }}
+                                className="px-3 py-1.5 rounded-lg text-sm font-bold"
+                                style={{ background: mA(0.08), color: dark }}
+                              >취소</button>
+                            </div>
+                          </div>
+                        )
                       ) : isPraiseCard && praiseCardMeta ? (
                         <div
                           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 mt-0.5 self-start"
@@ -647,13 +688,72 @@ export default function ActivityDetailPage() {
                               {reply.nickname[0]}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 leading-none">
                                 <span className="text-base font-bold shrink-0" style={{ color: `oklch(0.50 0.03 220)` }}>{reply.nickname}</span>
                                 <time className="text-sm font-medium shrink-0" style={{ color: `oklch(0.65 0.02 220)` }} dateTime={reply.createdAt}>
                                   {formatRelativeTime(reply.createdAt)}
                                 </time>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      aria-label="대댓글 더보기"
+                                      className="ml-auto shrink-0 w-6 h-6 flex items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2"
+                                      style={{ color: `oklch(0.60 0.03 220)` }}
+                                      onMouseEnter={e => { e.currentTarget.style.background = mA(0.08) }}
+                                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                                    >
+                                      <MoreVertical size={14} aria-hidden="true" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {reply.userId === currentUser?.id ? (
+                                      <>
+                                        <DropdownMenuItem onClick={() => { setEditingCommentId(reply.id); setEditText(reply.content ?? '') }}>
+                                          <Pencil size={14} className="mr-2" />수정
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => setDeleteCommentId(reply.id)}
+                                          className="text-destructive focus:text-destructive"
+                                        >
+                                          <Trash2 size={14} className="mr-2" />삭제
+                                        </DropdownMenuItem>
+                                      </>
+                                    ) : (
+                                      <DropdownMenuItem onClick={() => setReportCommentId(reply.id)}>
+                                        <Flag size={14} className="mr-2" />신고
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
-                              <p className="text-base text-foreground leading-snug mt-0.5">{reply.content}</p>
+                              {editingCommentId === reply.id ? (
+                                <div className="mt-1 flex gap-2 items-start">
+                                  <Textarea
+                                    className="text-base px-3 py-2 resize-none rounded-xl border-2 focus-visible:ring-0 flex-1"
+                                    style={{ borderColor: mA(0.45) }}
+                                    rows={2}
+                                    maxLength={200}
+                                    value={editText}
+                                    onChange={e => setEditText(e.target.value)}
+                                    autoFocus
+                                  />
+                                  <div className="flex flex-col gap-1">
+                                    <button
+                                      onClick={() => handleUpdateComment(reply.id)}
+                                      disabled={!editText.trim() || updateComment.isPending}
+                                      className="px-3 py-1.5 rounded-lg text-sm font-black text-white disabled:opacity-40"
+                                      style={{ background: grad }}
+                                    >저장</button>
+                                    <button
+                                      onClick={() => { setEditingCommentId(null); setEditText('') }}
+                                      className="px-3 py-1.5 rounded-lg text-sm font-bold"
+                                      style={{ background: mA(0.08), color: dark }}
+                                    >취소</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-base text-foreground leading-snug mt-0.5">{reply.content}</p>
+                              )}
                             </div>
                           </div>
                         ))}

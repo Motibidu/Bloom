@@ -60,4 +60,8 @@ public class Comment {
     public void updateContent(String content) {
         this.content = content;
     }
+
+    public void updatePraiseCard(PraiseCardType praiseCardType) {
+        this.praiseCardType = praiseCardType;
+    }
 }

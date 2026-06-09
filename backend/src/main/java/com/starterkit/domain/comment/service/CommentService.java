@@ -105,7 +105,7 @@ public class CommentService {
     }
 
     @Transactional
-    public CommentResponse updateComment(Long commentId, String content, UserDetails userDetails) {
+    public CommentResponse updateComment(Long commentId, String content, String praiseCardTypeStr, UserDetails userDetails) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("댓글을 찾을 수 없습니다."));
         User user = userRepository.findByEmail(userDetails.getUsername())
@@ -113,7 +113,11 @@ public class CommentService {
         if (!comment.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("본인 댓글만 수정할 수 있습니다.");
         }
-        comment.updateContent(content);
+        if (praiseCardTypeStr != null) {
+            comment.updatePraiseCard(com.starterkit.domain.comment.entity.PraiseCardType.valueOf(praiseCardTypeStr));
+        } else {
+            comment.updateContent(content);
+        }
         return CommentResponse.from(comment);
     }
 }

@@ -41,8 +41,8 @@ export function useDeleteComment(checkinId: number) {
 export function useUpdateComment(checkinId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ commentId, content }: { commentId: number; content: string }) =>
-      api.put(`/checkins/${checkinId}/comments/${commentId}`, { content }).then(r => r.data),
+    mutationFn: ({ commentId, content, praiseCardType }: { commentId: number; content?: string; praiseCardType?: string }) =>
+      api.put(`/checkins/${checkinId}/comments/${commentId}`, { content, praiseCardType }).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', checkinId] })
     },
