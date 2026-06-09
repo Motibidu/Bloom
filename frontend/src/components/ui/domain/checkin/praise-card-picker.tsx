@@ -126,13 +126,13 @@ export default function PraiseCardPicker({ selectedCard, onSelect }: PraiseCardP
               {/* 텍스트 */}
               <div className="flex-1 min-w-0">
                 <p
-                  className="text-base font-black leading-snug"
+                  className="text-base font-black leading-snug whitespace-nowrap"
                   style={{ color: card.color }}
                 >
                   {card.label}
                 </p>
                 <p
-                  className="text-sm font-medium leading-snug mt-0.5"
+                  className="text-sm font-medium leading-snug mt-0.5 whitespace-nowrap"
                   style={{ color: card.subTextColor }}
                 >
                   {card.subText}
