@@ -395,11 +395,11 @@ export default function LandingPage() {
               <h2
                 id="feed-preview-heading"
                 className="text-3xl md:text-4xl font-black text-foreground"
-                style={serifStyle}
+                style={{ ...serifStyle, wordBreak: 'keep-all' }}
               >
-                지금도 누군가 기록하고 있어요
+                지금도 누군가 기록 중이에요
               </h2>
-              <p className="text-lg text-foreground/60 font-medium leading-relaxed">
+              <p className="text-lg text-foreground/60 font-medium leading-relaxed" style={{ wordBreak: 'keep-all' }}>
                 오늘 한강 산책한 이웃, 직접 김치찌개 끓인 이웃 — 나도 합류해 보세요.
               </p>
             </div>
@@ -498,7 +498,7 @@ export default function LandingPage() {
                 style={{ background: gradientBg }}
                 aria-hidden="true"
               />
-              <p className="text-lg text-foreground/60 font-medium leading-relaxed">
+              <p className="text-lg text-foreground/60 font-medium leading-relaxed" style={{ wordBreak: 'keep-all' }}>
                 복잡하지 않아요. 누구나 쉽게 시작할 수 있어요.
               </p>
             </div>
@@ -533,8 +533,8 @@ export default function LandingPage() {
                   >
                     <Icon size={28} style={coralColor} />
                   </div>
-                  <h3 className="text-xl font-black text-foreground">{title}</h3>
-                  <p className="text-lg text-foreground/70 leading-relaxed font-medium">{description}</p>
+                  <h3 className="text-xl font-black text-foreground" style={{ wordBreak: 'keep-all' }}>{title}</h3>
+                  <p className="text-lg text-foreground/70 leading-relaxed font-medium" style={{ wordBreak: 'keep-all' }}>{description}</p>
                 </div>
               ))}
             </div>
