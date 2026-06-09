@@ -1,4 +1,4 @@
-// 시드 전체 실행: 가입 → 글 작성 → 좋아요·댓글 → created_at 분산.
+// 시드 전체 실행: 가입 → 글 작성(오래된 날짜순) → 좋아요·댓글 → 댓글 시각 보정.
 import { personas, emailFor, checkins, commentPool, replyPool } from './data.js';
 import { api } from './api.js';
 import { query, fetchVerificationCode } from './ssh.js';
@@ -40,10 +40,28 @@ async function registerAll() {
 }
 
 // checkin 데이터 → 생성된 checkinId 매핑
-const createdCheckins = []; // { id, authorIdx, category }
+const createdCheckins = []; // { id, authorIdx, category, assignedAt }
+
+// 40개 글에 과거 SPREAD_DAYS 범위 날짜를 오래된 순서로 균등 배정.
+// 가장 먼저 올리는 글 = 가장 오래된 날짜 → id 오름차순 = created_at 오름차순 보장.
+function assignTimestamps(count) {
+  const nowMs = Date.now();
+  const totalMs = SPREAD_DAYS * 24 * 60 * 60 * 1000;
+  const step = totalMs / count;
+  return Array.from({ length: count }, (_, i) => {
+    const jitter = (Math.random() - 0.5) * step * 0.5;
+    const ms = nowMs - totalMs + step * i + step * 0.5 + jitter;
+    return new Date(ms);
+  });
+}
 
 async function createCheckins() {
-  for (const c of checkins) {
+  const shuffled = shuffle(checkins);
+  const timestamps = assignTimestamps(shuffled.length);
+  const domain = SEED.emailDomain;
+
+  for (let i = 0; i < shuffled.length; i++) {
+    const c = shuffled[i];
     const acc = accounts.get(c.authorIdx);
     let photoObjectKeys;
     if (c.photo) {
@@ -57,8 +75,12 @@ async function createCheckins() {
       photoObjectKeys,
       isSimple: false,
     });
-    createdCheckins.push({ id: res.id, authorIdx: c.authorIdx, category: c.category });
-    console.log(`  글 작성: [${c.category}] ${c.title} (id=${res.id})`);
+    const assignedAt = timestamps[i];
+    // 글 생성 직후 created_at을 배정된 시각으로 덮어씀
+    const ts = assignedAt.toISOString().replace('T', ' ').substring(0, 19);
+    query(`UPDATE checkins SET created_at = '${ts}' WHERE id = ${res.id}`);
+    createdCheckins.push({ id: res.id, authorIdx: c.authorIdx, category: c.category, assignedAt });
+    console.log(`  글 작성: [${c.category}] ${c.title} (id=${res.id}, at=${ts})`);
     await sleep(200);
   }
 }
@@ -114,28 +136,17 @@ async function addInteractions() {
   }
 }
 
-// 시드 계정의 checkins.created_at을 과거 SPREAD_DAYS 범위에 랜덤 분산.
-// updated_at 컬럼 없음 확인됨 — SET 절에서 제외.
-function spreadTimestamps() {
+// 댓글 시각을 해당 글 created_at 이후로 보정 (글 시각 + 0~48시간).
+function fixCommentTimestamps() {
   const domain = SEED.emailDomain;
-
-  const sql1 = `
-    UPDATE checkins c
-    JOIN users u ON c.user_id = u.id
-    SET c.created_at = DATE_SUB(NOW(), INTERVAL FLOOR(RAND()*${SPREAD_DAYS}*24*60) MINUTE)
-    WHERE u.email LIKE '%@${domain}'`;
-  query(sql1);
-
-  // 댓글을 글 시각 이후로 (글 시각 + 0~48시간)
-  const sql2 = `
+  const sql = `
     UPDATE comments cm
     JOIN checkins c ON cm.checkin_id = c.id
     JOIN users u ON c.user_id = u.id
     SET cm.created_at = c.created_at + INTERVAL FLOOR(RAND()*48*60) MINUTE
     WHERE u.email LIKE '%@${domain}'`;
-  query(sql2);
-
-  console.log('created_at 분산 완료');
+  query(sql);
+  console.log('댓글 created_at 보정 완료');
 }
 
 async function main() {
@@ -151,7 +162,7 @@ async function main() {
   console.log('\n=== 좋아요·댓글 ===');
   await addInteractions();
 
-  spreadTimestamps();
+  fixCommentTimestamps();
   console.log('=== 시드 완료 ===');
 }
 
