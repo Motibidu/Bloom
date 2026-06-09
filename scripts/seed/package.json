@@ -1,0 +1,12 @@
+{
+  "name": "bloom-seed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "pcgear.store 프로덕션 시드 데이터 도구 (일회성 운영 스크립트)",
+  "scripts": {
+    "seed": "node run.js",
+    "rollback": "node rollback.js",
+    "rollback:dry": "node rollback.js --dry-run"
+  }
+}
