@@ -60,6 +60,6 @@ public class CommentController {
             @PathVariable("commentId") Long commentId,
             @RequestBody java.util.Map<String, String> body,
             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(commentService.updateComment(commentId, body.get("content"), userDetails));
+        return ResponseEntity.ok(commentService.updateComment(commentId, body.get("content"), body.get("praiseCardType"), userDetails));
     }
 }
