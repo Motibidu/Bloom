@@ -8,6 +8,7 @@ const userFilter = `(SELECT id FROM users WHERE email LIKE '%@${domain}')`;
 
 const steps = [
   { label: 'likes',              sql: `DELETE FROM likes WHERE checkin_id IN (SELECT id FROM checkins WHERE user_id IN ${userFilter})` },
+  { label: 'comments (replies)',  sql: `DELETE FROM comments WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE checkin_id IN (SELECT id FROM checkins WHERE user_id IN ${userFilter})) t)` },
   { label: 'comments',           sql: `DELETE FROM comments WHERE checkin_id IN (SELECT id FROM checkins WHERE user_id IN ${userFilter})` },
   { label: 'checkin_photos',     sql: `DELETE FROM checkin_photos WHERE checkin_id IN (SELECT id FROM checkins WHERE user_id IN ${userFilter})` },
   { label: 'checkins',           sql: `DELETE FROM checkins WHERE user_id IN ${userFilter}` },
