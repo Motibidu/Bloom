@@ -13,6 +13,9 @@ import {
   PenLine,
   CalendarDays,
   Smile,
+  Home,
+  Bell,
+  Link2,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import type { LucideIcon } from 'lucide-react'
@@ -71,7 +74,7 @@ const PREVIEW_CARDS: PreviewCard[] = [
     initial: '박',
     categoryLabel: '요리',
     categoryIcon: ChefHat,
-    title: '김치찌개 끓이기 성공!',
+    title: '김치찌개 끓이기 성공',
     description:
       '딸아이가 요즘 바빠서 제가 직접 끓여봤는데, 맛있다고 두 그릇이나 먹더라고요. 오랜만에 칭찬받으니 어깨가 으쓱했어요.',
     likeCount: 8,
@@ -106,21 +109,43 @@ interface Feature {
 const FEATURES: Feature[] = [
   {
     icon: PenLine,
-    title: '간단하게 기록해요',
+    title: '카테고리 한 번, 한 줄이면 끝이에요',
     description:
-      '카테고리를 고르고 한 줄만 쓰면 됩니다. 원하시면 사진도 한 장 올릴 수 있어요.',
+      '복잡한 앱 없이 카테고리를 고르고 한 줄만 쓰면 돼요. 사진도 최대 3장 올릴 수 있어요.',
   },
   {
     icon: Users,
-    title: '이웃과 함께해요',
+    title: '혼자가 아니에요',
     description:
-      '같은 활동을 한 이웃이 몇 명인지 볼 수 있어요. 자연스럽게 공감을 나눠 보세요.',
+      '오늘 산책한 이웃이 몇 명인지 바로 보여요. 댓글과 칭찬카드로 공감을 나눠 보세요.',
   },
   {
     icon: CalendarDays,
-    title: '내 기록을 돌아봐요',
+    title: '한 달 뒤, 내가 얼마나 바빴는지 보여요',
     description:
-      '캘린더로 내 활동 이력을 한눈에 확인하고 꾸준히 이어가는 보람을 느껴 보세요.',
+      '캘린더로 내 활동을 돌아보고, 월간 리포트로 이달의 나를 확인해요.',
+  },
+]
+
+// ─── 가족 기능 포인트 데이터 ───────────────────────────────────────────────────
+
+interface FamilyPoint {
+  icon: LucideIcon
+  text: string
+}
+
+const FAMILY_POINTS: FamilyPoint[] = [
+  {
+    icon: Link2,
+    text: '카카오톡 초대 링크 하나로 가족만 보는 공간 완성',
+  },
+  {
+    icon: Home,
+    text: '간편 기록은 가족에게만 공개 — 이웃 피드엔 노출 안 됨',
+  },
+  {
+    icon: Bell,
+    text: '"오늘 뭐 했어요?" 알림으로 서로 기록 독려',
   },
 ]
 
@@ -259,15 +284,16 @@ export default function LandingPage() {
                 className="text-4xl sm:text-5xl md:text-6xl font-black leading-tight tracking-tight text-foreground animate-fade-up"
                 style={{ ...serifStyle, animationDelay: '0.1s', textWrap: 'balance', wordBreak: 'keep-all' } as React.CSSProperties}
               >
-                오늘 하루도{' '}
-                <span style={gradientText}>수고하셨어요.</span>
+                오늘{' '}
+                <span style={gradientText}>뭐 하셨어요?</span>
               </h1>
 
               <p
                 className="text-lg sm:text-xl text-foreground/70 leading-relaxed font-medium animate-fade-up"
                 style={{ animationDelay: '0.2s', wordBreak: 'keep-all' }}
               >
-                나의 소소한 일상을 기록하고, 같은 활동을 한 이웃과 따뜻하게 연결되어 보세요.
+                산책, 요리, 독서 — 내 하루를 기록하면 오늘 같은 활동을 한 이웃이 보여요.
+                가족도 내 일상을 응원해줘요.
               </p>
 
               <div
@@ -282,7 +308,7 @@ export default function LandingPage() {
                     onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                     onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
                   >
-                    지금 시작하기
+                    무료로 기록 시작하기
                   </button>
                 </Link>
                 <Link to="/login">
@@ -301,6 +327,13 @@ export default function LandingPage() {
                   </button>
                 </Link>
               </div>
+
+              <p
+                className="text-sm text-foreground/50 font-medium animate-fade-up"
+                style={{ animationDelay: '0.35s' }}
+              >
+                가입비 없음 · 1분이면 충분해요
+              </p>
             </div>
 
             {/* 우측 플로팅 카드 (데스크톱 only) */}
@@ -353,10 +386,10 @@ export default function LandingPage() {
                 className="text-3xl md:text-4xl font-black text-foreground"
                 style={serifStyle}
               >
-                이런 활동들이 올라와요
+                지금도 누군가 기록하고 있어요
               </h2>
               <p className="text-lg text-foreground/60 font-medium leading-relaxed">
-                오늘 이웃들이 기록한 따뜻한 일상을 함께 나눠 보세요.
+                오늘 한강 산책한 이웃, 직접 김치찌개 끓인 이웃 — 나도 합류해 보세요.
               </p>
             </div>
 
@@ -497,6 +530,140 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── 가족 연결 섹션 ──────────────────────────────────────────────── */}
+        <section
+          aria-labelledby="family-heading"
+          className="relative px-6 py-20 overflow-hidden"
+          style={{
+            background: `radial-gradient(ellipse 70% 50% at 0% 50%, ${mainA(0.10)} 0%, transparent 60%), ${mainA(0.04)}`,
+          }}
+        >
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-14">
+
+            {/* 좌측 텍스트 */}
+            <div className="flex-1 space-y-8 text-center md:text-left">
+
+              <p
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-base font-bold"
+                style={badgeCoral}
+              >
+                <Home size={18} aria-hidden="true" />
+                가족 전용 기능
+              </p>
+
+              <h2
+                id="family-heading"
+                className="text-3xl md:text-4xl font-black text-foreground leading-snug"
+                style={{ ...serifStyle, wordBreak: 'keep-all' }}
+              >
+                자녀가 오늘{' '}
+                <span style={gradientText}>부모님 안부</span>를 확인해요
+              </h2>
+
+              <p
+                className="text-lg text-foreground/70 leading-relaxed font-medium"
+                style={{ wordBreak: 'keep-all' }}
+              >
+                "산책했어요" 한 줄이 자녀에게는 오늘의 안부예요.
+                카카오톡 초대 링크 하나로 가족만 볼 수 있는 공간을 만들어요.
+              </p>
+
+              <ul className="space-y-4" aria-label="가족 기능 특징">
+                {FAMILY_POINTS.map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-start gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={featureIconBg}
+                      aria-hidden="true"
+                    >
+                      <Icon size={20} style={coralColor} />
+                    </div>
+                    <span
+                      className="text-lg text-foreground/80 font-medium leading-snug"
+                      style={{ wordBreak: 'keep-all' }}
+                    >
+                      {text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link to="/register">
+                <button
+                  className="h-16 text-xl font-black px-12 rounded-2xl
+                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                  style={coralBtn}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.92'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  가족 그룹 만들기
+                </button>
+              </Link>
+            </div>
+
+            {/* 우측 가족 피드 미리보기 카드 (데스크톱 only) */}
+            <div
+              className="hidden md:flex flex-col gap-4 w-80 shrink-0 lp-float"
+              style={{ transform: 'rotate(-2deg)' }}
+              aria-hidden="true"
+            >
+              {/* 간편 기록 카드 */}
+              <div
+                className="rounded-2xl bg-white px-5 py-4"
+                style={{ boxShadow: `0 16px 48px ${mainA(0.18)}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: `linear-gradient(135deg, ${mainA(0.2)}, ${lightA(0.2)})` }}
+                  >
+                    <span className="text-sm font-black" style={coralColor}>홍</span>
+                  </div>
+                  <div>
+                    <span className="text-base font-bold text-foreground">홍길동</span>
+                    <p className="text-sm text-foreground/60 font-medium">오늘 오전 8:15</p>
+                  </div>
+                  <div
+                    className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold"
+                    style={badgeCoral}
+                  >
+                    <Footprints size={14} aria-hidden="true" />
+                    산책했어요
+                  </div>
+                </div>
+              </div>
+              {/* 상세 기록 카드 */}
+              <div
+                className="rounded-2xl bg-white overflow-hidden"
+                style={{ boxShadow: `0 8px 32px ${mainA(0.12)}` }}
+              >
+                <div className="px-5 pt-5 pb-4 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${mainA(0.2)}, ${lightA(0.2)})` }}
+                    >
+                      <span className="text-sm font-black" style={coralColor}>홍</span>
+                    </div>
+                    <div>
+                      <span className="text-base font-bold text-foreground">홍길동</span>
+                      <p className="text-sm text-foreground/60 font-medium">오늘 오후 2:30</p>
+                    </div>
+                  </div>
+                  <h3 className="text-base font-bold text-foreground">도서관에서 책 한 권 읽었어요</h3>
+                  <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
+                    오늘 오후에 동네 도서관에 갔다가 소설 한 권을 앉은 자리에서 다 읽었어요.
+                  </p>
+                </div>
+                <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-1.5" style={coralColor}>
+                  <Heart size={16} aria-hidden="true" />
+                  <span className="text-sm font-semibold">아빠 잘하셨어요!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── 하단 CTA 배너 ──────────────────────────────────────────────── */}
         <section
           aria-labelledby="cta-heading"
@@ -527,10 +694,10 @@ export default function LandingPage() {
                 className="text-3xl md:text-4xl font-black text-white leading-snug"
                 style={serifStyle}
               >
-                오늘 하루, 기록으로 남겨 보세요
+                오늘의 나를 기록해 보세요
               </h2>
               <p className="text-xl text-white/80 leading-relaxed font-medium">
-                가입은 무료이고 1분이면 충분해요.
+                무료 · 1분 가입 · 언제든 그만해도 괜찮아요
               </p>
             </div>
             <Link to="/register">
@@ -542,7 +709,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { e.currentTarget.style.background = mainA(0.08) }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
               >
-                지금 시작하기
+                무료로 기록 시작하기
               </button>
             </Link>
           </div>
