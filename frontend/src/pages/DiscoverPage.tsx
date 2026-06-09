@@ -60,7 +60,7 @@ function UserCard({ user }: { user: UserSearchResult }) {
             </p>
           )}
           <div
-            className="flex items-center gap-3 text-sm font-bold"
+            className="flex items-center gap-3 text-sm font-bold whitespace-nowrap"
             style={{ color: `oklch(0.58 0.05 220)` }}
           >
             <span>팔로워 {user.followerCount}명</span>
@@ -169,7 +169,7 @@ function SearchTab() {
           aria-hidden="true"
         />
         <Input
-          type="search"
+          type="text"
           placeholder="닉네임으로 검색해보세요"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}

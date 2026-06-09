@@ -288,7 +288,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={handleSendCode}
                     disabled={isEmailVerified || sendingCode}
-                    className="h-14 px-4 rounded-xl text-base font-bold border-2 bg-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 whitespace-nowrap"
+                    className="h-14 px-4 rounded-xl text-base font-bold border-2 bg-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 whitespace-nowrap shrink-0"
                     style={{ borderColor: main, color: dark }}
                   >
                     {isEmailVerified ? '인증완료' : sendingCode ? '발송 중...' : codeSent ? '재발송' : '인증코드 발송'}
