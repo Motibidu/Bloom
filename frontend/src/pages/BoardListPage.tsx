@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PenLine } from 'lucide-react'
-import { usePostList, type PostCategoryValue } from '@/hooks/usePostMock'
+import { usePostList, type PostCategoryValue } from '@/hooks/usePost'
 import PostCategoryTabs from '@/components/ui/domain/board/post-category-tabs'
 import PostListRow from '@/components/ui/domain/board/post-list-row'
 import Pagination from '@/components/ui/domain/board/pagination'

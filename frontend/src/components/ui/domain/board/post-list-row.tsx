@@ -1,4 +1,4 @@
-import type { PostSummary } from '@/hooks/usePostMock'
+import type { PostSummary } from '@/hooks/usePost'
 
 const dark = 'oklch(0.48 0.15 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`

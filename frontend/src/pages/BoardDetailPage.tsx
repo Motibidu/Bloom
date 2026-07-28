@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, MessageCircle, Trash2 } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRef, useState } from 'react'
 import {
@@ -9,14 +9,27 @@ import {
   useCreatePostComment,
   usePostLikeToggle,
   useDeletePost,
-} from '@/hooks/usePostMock'
+  type PostComment,
+} from '@/hooks/usePost'
+import { useCreateReport } from '@/hooks/useReport'
+import { useBlockUser } from '@/hooks/useBlock'
 import { useAuthStore } from '@/store/authStore'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
+import { isKakaoShareReady } from '@/lib/kakao'
 
 const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
+const light = 'oklch(0.76 0.12 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
+const grad = `linear-gradient(135deg, ${main}, ${light})`
 const serifStyle = { fontFamily: "'Noto Serif KR', serif" }
+
+const REASON_LABELS: Record<string, string> = {
+  SPAM: '스팸/도배',
+  INAPPROPRIATE: '부적절한 콘텐츠',
+  ABUSE: '욕설/혐오 표현',
+  OTHER: '기타',
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   FREE: '자유게시판',
@@ -87,6 +100,172 @@ function DeleteConfirmModal({
   )
 }
 
+// ── 신고 모달 ────────────────────────────────────────────────────────────────
+function ReportModal({
+  postId,
+  onClose,
+  onSuccess,
+}: {
+  postId: number
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const createReport = useCreateReport()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const handleSubmit = async () => {
+    if (!selected) return
+    try {
+      await createReport.mutateAsync({
+        targetType: 'POST',
+        targetId: postId,
+        reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER',
+      })
+      onClose()
+      onSuccess()
+    } catch {
+      toast.error('신고 처리 중 오류가 발생했어요.')
+    }
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="게시글 신고"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black text-foreground">신고 사유 선택</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center"
+            style={{ background: mA(0.06), color: dark }}
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Object.entries(REASON_LABELS).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSelected(value)}
+              className="w-full min-h-[56px] flex items-center gap-3 px-5 py-4 rounded-2xl text-base font-bold text-left transition-all"
+              style={{
+                background: selected === value ? mA(0.10) : mA(0.04),
+                border: `2px solid ${selected === value ? mA(0.40) : mA(0.10)}`,
+                color: dark,
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                style={{ borderColor: selected === value ? mA(1) : mA(0.30) }}
+              >
+                {selected === value && <div className="w-2.5 h-2.5 rounded-full" style={{ background: mA(1) }} />}
+              </div>
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!selected || createReport.isPending}
+          className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center disabled:opacity-40 transition-opacity"
+          style={{ background: 'oklch(0.55 0.18 20)' }}
+        >
+          {createReport.isPending ? '신고하는 중...' : '신고하기'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 차단 확인 모달 ────────────────────────────────────────────────────────────
+function BlockConfirmModal({
+  targetUserId,
+  nickname,
+  onClose,
+  onSuccess,
+}: {
+  targetUserId: number
+  nickname: string
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const blockUser = useBlockUser()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const handleConfirm = async () => {
+    await blockUser.mutateAsync(targetUserId)
+    onClose()
+    onSuccess()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="사용자 차단 확인"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="text-center space-y-2 pt-2">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'oklch(0.95 0.02 20)' }}
+            aria-hidden="true"
+          >
+            <ShieldOff size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+          </div>
+          <h2 className="text-xl font-black text-foreground">{nickname}님을 차단할까요?</h2>
+          <p className="text-base text-foreground/60">차단하면 이 분의 게시글이 보이지 않아요.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={blockUser.isPending}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ background: 'oklch(0.55 0.18 20)' }}
+          >
+            {blockUser.isPending ? '차단하는 중...' : '차단하기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BoardDetailPage() {
   const { id } = useParams()
   const postId = Number(id)
@@ -101,6 +280,10 @@ export default function BoardDetailPage() {
 
   const [commentText, setCommentText] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
+  const [replyText, setReplyText] = useState('')
 
   if (isLoading || !post) {
     return <p role="status" aria-live="polite" className="text-center py-16 text-base text-foreground/50">불러오는 중이에요...</p>
@@ -116,10 +299,65 @@ export default function BoardDetailPage() {
     )
   }
 
+  const handleReplySubmit = (parentId: number) => {
+    if (!replyText.trim()) return
+    createComment.mutate(
+      { content: replyText.trim(), commentType: 'TEXT', parentId },
+      { onSuccess: () => { setReplyText(''); setReplyTargetId(null) } }
+    )
+  }
+
   const handleDelete = async () => {
     await deletePost.mutateAsync()
     toast.success('게시글을 삭제했어요.')
     navigate('/board')
+  }
+
+  const shareUrl = `${window.location.origin}/board/${postId}`
+
+  const handleKakaoShare = () => {
+    if (isKakaoShareReady()) {
+      const thumbnail = post.photoUrls[0]
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: post.title,
+          description: `${post.nickname}님의 게시글`,
+          ...(thumbnail ? { imageUrl: thumbnail } : {}),
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        },
+        buttons: [{ title: '게시글 보러 가기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
+      })
+    } else {
+      toast('카카오톡 앱이 필요해요')
+    }
+  }
+
+  const handleBandShare = () => {
+    const text = encodeURIComponent(`${post.nickname}님의 게시글: ${post.title}\n${shareUrl}`)
+    const route = encodeURIComponent(window.location.hostname)
+    const appScheme = `bandapp://create/post?text=${text}&route=${route}`
+    const webUrl = `https://band.us/plugin/share?body=${text}&route=${route}`
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const timer = setTimeout(() => {
+        window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+      }, 1500)
+      window.location.href = appScheme
+      window.addEventListener('visibilitychange', () => {
+        if (document.hidden) clearTimeout(timer)
+      }, { once: true })
+    } else {
+      window.open(webUrl, '_blank', 'noopener,noreferrer,width=500,height=500')
+    }
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('링크를 복사했어요')
+    } catch {
+      toast.error('링크 복사에 실패했어요')
+    }
   }
 
   return (
@@ -135,7 +373,7 @@ export default function BoardDetailPage() {
           <ArrowLeft size={20} aria-hidden="true" />
           <span className="text-base font-bold">돌아가기</span>
         </button>
-        {isOwner && (
+        {isOwner ? (
           <button
             type="button"
             onClick={() => setDeleteConfirmOpen(true)}
@@ -145,6 +383,28 @@ export default function BoardDetailPage() {
             <Trash2 size={18} aria-hidden="true" />
             삭제
           </button>
+        ) : (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              aria-label="게시글 신고"
+              className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold focus-visible:outline-none focus-visible:ring-2"
+              style={{ color: 'oklch(0.55 0.18 20)' }}
+            >
+              <Flag size={18} aria-hidden="true" />
+              신고
+            </button>
+            <button
+              type="button"
+              onClick={() => setBlockOpen(true)}
+              aria-label="작성자 차단"
+              className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold text-destructive focus-visible:outline-none focus-visible:ring-2"
+            >
+              <ShieldOff size={18} aria-hidden="true" />
+              차단
+            </button>
+          </div>
         )}
       </div>
 
@@ -152,6 +412,25 @@ export default function BoardDetailPage() {
         <DeleteConfirmModal
           onConfirm={() => { setDeleteConfirmOpen(false); handleDelete() }}
           onClose={() => setDeleteConfirmOpen(false)}
+        />,
+        document.body
+      )}
+
+      {reportOpen && createPortal(
+        <ReportModal
+          postId={postId}
+          onClose={() => setReportOpen(false)}
+          onSuccess={() => toast.success('신고가 접수되었습니다.')}
+        />,
+        document.body
+      )}
+
+      {blockOpen && createPortal(
+        <BlockConfirmModal
+          targetUserId={post.userId}
+          nickname={post.nickname}
+          onClose={() => setBlockOpen(false)}
+          onSuccess={() => { toast.success(`${post.nickname}님을 차단했습니다.`); navigate('/board') }}
         />,
         document.body
       )}
@@ -189,8 +468,41 @@ export default function BoardDetailPage() {
         </div>
       </article>
 
+      <div className="flex gap-2 justify-center">
+        <button
+          type="button"
+          onClick={handleKakaoShare}
+          aria-label="카카오톡으로 이 게시글 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: '#FEE500', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#FEE500' } as React.CSSProperties}
+        >
+          <img src="/kakao/kakaotalk_sharing_btn_medium.png" alt="" width={20} height={20} aria-hidden="true" />
+          <span>카카오톡</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleBandShare}
+          aria-label="네이버 밴드로 이 게시글 공유하기"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl text-base font-black transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: '#00ee65', color: 'rgba(0,0,0,0.90)', '--tw-ring-color': '#00ee65' } as React.CSSProperties}
+        >
+          <img src="/band/band_icon.png" alt="" width={20} height={20} aria-hidden="true" />
+          <span>밴드</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          aria-label="링크 복사"
+          className="flex-1 inline-flex items-center justify-center gap-2 min-h-[48px] rounded-xl text-base font-bold transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+          style={{ background: mA(0.10), color: dark, border: `1px solid ${mA(0.18)}`, '--tw-ring-color': main } as React.CSSProperties}
+        >
+          <LinkIcon size={16} aria-hidden="true" />
+          <span>링크 복사</span>
+        </button>
+      </div>
+
       <section aria-labelledby="comments-label" className="space-y-4">
-        <h2 id="comments-label" className="text-lg font-black text-foreground">댓글 {comments.length}개</h2>
+        <h2 id="comments-label" className="text-lg font-black text-foreground">댓글 {comments?.length ?? 0}개</h2>
         <div className="flex gap-2">
           <input
             type="text"
@@ -211,12 +523,58 @@ export default function BoardDetailPage() {
           </button>
         </div>
         <div className="space-y-3">
-          {comments.map(c => (
-            <div key={c.id} className="rounded-xl px-4 py-3" style={{ background: mA(0.04) }}>
+          {(comments ?? []).map((c: PostComment) => (
+            <div key={c.id} className="rounded-xl px-4 py-3 space-y-2" style={{ background: mA(0.04) }}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-black text-foreground">{c.nickname}</span>
               </div>
               <p className="text-base text-foreground/80">{c.content}</p>
+
+              {/* 대댓글 목록 */}
+              {c.replies && c.replies.length > 0 && (
+                <div className="space-y-2 pl-4 ml-1" style={{ borderLeft: `3px solid ${mA(0.20)}` }}>
+                  {c.replies.map(reply => (
+                    <div key={reply.id} className="rounded-xl px-3 py-2.5" style={{ background: 'white' }}>
+                      <span className="text-sm font-black text-foreground">{reply.nickname}</span>
+                      <p className="text-base text-foreground/80 mt-0.5">{reply.content}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 답글 달기 버튼 */}
+              <button
+                type="button"
+                onClick={() => setReplyTargetId(replyTargetId === c.id ? null : c.id)}
+                className="min-h-[36px] text-sm font-bold rounded-lg px-2 focus-visible:outline-none focus-visible:ring-2"
+                style={{ color: mA(0.5), background: mA(0.06) }}
+              >
+                {replyTargetId === c.id ? '취소' : '↩ 답글 달기'}
+              </button>
+
+              {/* 답글 입력창 */}
+              {replyTargetId === c.id && (
+                <div className="flex gap-2 items-start pt-1">
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    placeholder="답글을 입력해 주세요"
+                    className="flex-1 h-12 text-base px-3 rounded-xl border-2 focus-visible:ring-0 outline-none"
+                    style={{ borderColor: mA(0.15) }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleReplySubmit(c.id)}
+                    disabled={!replyText.trim() || createComment.isPending}
+                    className="min-h-[48px] px-4 rounded-xl text-base font-black text-white disabled:opacity-40 shrink-0"
+                    style={{ background: grad }}
+                  >
+                    등록
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

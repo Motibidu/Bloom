@@ -4,7 +4,7 @@ import { ArrowLeft, ImagePlus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/shadcn/input'
 import { Textarea } from '@/components/ui/shadcn/textarea'
-import { useCreatePost, type PostCategoryValue } from '@/hooks/usePostMock'
+import { useCreatePost, usePostPhotoUploadUrl, type PostCategoryValue } from '@/hooks/usePost'
 
 const main  = 'oklch(0.62 0.15 220)'
 const dark  = 'oklch(0.48 0.15 220)'
@@ -24,17 +24,21 @@ export default function BoardWritePage() {
   const [category, setCategory] = useState<PostCategoryValue | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
+  const [uploadingCount, setUploadingCount] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const createPost = useCreatePost()
+  const getUploadUrl = usePostPhotoUploadUrl()
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? [])
     if (selected.length === 0) return
-    const remaining = 3 - photoPreviews.length
+    const remaining = 3 - photoFiles.length
     const toAdd = selected.slice(0, remaining)
+    setPhotoFiles(prev => [...prev, ...toAdd])
     toAdd.forEach(file => {
       const reader = new FileReader()
       reader.onload = () => setPhotoPreviews(prev => [...prev, reader.result as string])
@@ -44,6 +48,7 @@ export default function BoardWritePage() {
   }
 
   const removePhoto = (index: number) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index))
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index))
   }
 
@@ -51,11 +56,26 @@ export default function BoardWritePage() {
     if (!category || !title.trim() || !content.trim()) return
     setIsSubmitting(true)
     try {
+      const objectKeys: string[] = []
+      if (photoFiles.length > 0) setUploadingCount(photoFiles.length)
+      for (const file of photoFiles) {
+        const { uploadUrl, objectKey } = await getUploadUrl.mutateAsync({
+          filename: file.name,
+          contentType: file.type,
+        })
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        })
+        objectKeys.push(objectKey)
+        setUploadingCount(prev => prev - 1)
+      }
       const newPost = await createPost.mutateAsync({
         category,
         title: title.trim(),
         content: content.trim(),
-        photoObjectKeys: photoPreviews.length > 0 ? photoPreviews : undefined,
+        photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
       })
       toast.success('게시글을 등록했어요 🎉')
       navigate(`/board/${newPost.id}`)
@@ -63,6 +83,7 @@ export default function BoardWritePage() {
       toast.error('등록에 실패했어요. 다시 시도해 주세요.')
     } finally {
       setIsSubmitting(false)
+      setUploadingCount(0)
     }
   }
 
@@ -167,6 +188,17 @@ export default function BoardWritePage() {
           <div className="grid grid-cols-3 gap-3">
             {photoPreviews.map((src, i) => (
               <div key={i} className="relative aspect-square rounded-xl overflow-hidden" style={{ border: `2px solid ${mA(0.15)}` }}>
+                {isSubmitting && uploadingCount > 0 && i < uploadingCount && (
+                  <div
+                    className="absolute inset-0 z-10 flex items-center justify-center"
+                    style={{ background: 'oklch(0 0 0 / 0.40)' }}
+                  >
+                    <svg className="animate-spin h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  </div>
+                )}
                 <img src={src} alt={`첨부 사진 ${i + 1} 미리보기`} className="w-full h-full object-cover" />
                 <button
                   type="button"
