@@ -1,6 +1,7 @@
 package com.starterkit.domain.comment.service;
 
 import com.starterkit.domain.block.service.BlockService;
+import com.starterkit.domain.board.repository.PostRepository;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
@@ -25,6 +26,7 @@ import java.util.List;
 public class CommentService {
 
     private final CheckinRepository checkinRepository;
+    private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
@@ -90,6 +92,44 @@ public class CommentService {
         }
 
         return response;
+    }
+
+    public List<CommentResponse> getCommentsForPost(Long postId, UserDetails userDetails) {
+        postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
+        if (!blockedIds.isEmpty()) {
+            return commentRepository.findRootCommentsByPostIdExcludingUsers(postId, blockedIds)
+                    .stream().map(CommentResponse::from).toList();
+        }
+        return commentRepository.findRootCommentsByPostId(postId)
+                .stream().map(CommentResponse::from).toList();
+    }
+
+    @Transactional
+    public CommentResponse addCommentToPost(Long postId, CreateCommentRequest req, UserDetails userDetails) {
+        com.starterkit.domain.board.entity.Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        Comment parent = null;
+        if (req.parentId() != null) {
+            parent = commentRepository.findById(req.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("부모 댓글을 찾을 수 없습니다."));
+        }
+
+        Comment comment = Comment.builder()
+                .user(user)
+                .post(post)
+                .parent(parent)
+                .content(req.content() != null ? req.content() : "")
+                .commentType(req.resolvedCommentType())
+                .build();
+
+        return CommentResponse.fromReply(commentRepository.save(comment));
     }
 
     @Transactional

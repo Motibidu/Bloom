@@ -1,5 +1,6 @@
 package com.starterkit.domain.like.service;
 
+import com.starterkit.domain.board.repository.PostRepository;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.like.dto.request.LikeRequest;
@@ -29,6 +30,7 @@ public class LikeService {
     private final UserRepository userRepository;
     private final LikeRepository likeRepository;
     private final CheckinRepository checkinRepository;
+    private final PostRepository postRepository;
     private final NotificationService notificationService;
 
     /**
@@ -92,6 +94,54 @@ public class LikeService {
 
         Map<String, Long> reactionCounts = buildReactionCounts(checkinId);
         return new LikeResponse(liked, resultReactionType, reactionCounts);
+    }
+
+    @Transactional
+    public LikeResponse toggleReactionForPost(Long postId, LikeRequest request, UserDetails userDetails) {
+        postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        ReactionType incoming = request.resolvedReactionType();
+        Optional<Like> existing = likeRepository.findByUserIdAndPostId(user.getId(), postId);
+
+        boolean liked;
+        ReactionType resultReactionType;
+
+        if (existing.isPresent()) {
+            likeRepository.deleteByUserIdAndPostId(user.getId(), postId);
+            likeRepository.flush();
+
+            if (existing.get().getReactionType() == incoming) {
+                liked = false;
+                resultReactionType = null;
+            } else {
+                com.starterkit.domain.board.entity.Post post = postRepository.getReferenceById(postId);
+                likeRepository.save(Like.builder().user(user).post(post).reactionType(incoming).build());
+                liked = true;
+                resultReactionType = incoming;
+            }
+        } else {
+            com.starterkit.domain.board.entity.Post post = postRepository.getReferenceById(postId);
+            likeRepository.save(Like.builder().user(user).post(post).reactionType(incoming).build());
+            liked = true;
+            resultReactionType = incoming;
+        }
+
+        Map<String, Long> reactionCounts = buildReactionCountsForPost(postId);
+        return new LikeResponse(liked, resultReactionType, reactionCounts);
+    }
+
+    private Map<String, Long> buildReactionCountsForPost(Long postId) {
+        List<Object[]> rows = likeRepository.countByReactionTypeForPost(postId);
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            ReactionType rt = (ReactionType) row[0];
+            Long cnt = (Long) row[1];
+            counts.put(rt.name(), cnt);
+        }
+        return counts;
     }
 
     // ---- 하위 호환용 메서드 (기존 addLike / removeLike 대체) ----
