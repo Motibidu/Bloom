@@ -34,15 +34,41 @@ CREATE TABLE IF NOT EXISTS checkin_photos (
     INDEX idx_checkin_photos_checkin (checkin_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS posts (
+    id         BIGINT       NOT NULL AUTO_INCREMENT,
+    user_id    BIGINT       NOT NULL,
+    category   VARCHAR(20)  NOT NULL,
+    title      VARCHAR(50)  NOT NULL,
+    content    VARCHAR(2000) NOT NULL,
+    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users (id),
+    INDEX idx_posts_category_created (category, created_at),
+    INDEX idx_posts_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS post_photos (
+    id         BIGINT       NOT NULL AUTO_INCREMENT,
+    post_id    BIGINT       NOT NULL,
+    object_key VARCHAR(300) NOT NULL,
+    sort_order INT          NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_post_photos_post FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE,
+    INDEX idx_post_photos_post (post_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS likes (
     id         BIGINT   NOT NULL AUTO_INCREMENT,
     user_id    BIGINT   NOT NULL,
-    checkin_id BIGINT   NOT NULL,
+    checkin_id BIGINT   NULL,
+    post_id    BIGINT   NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_likes_user_checkin (user_id, checkin_id),
+    UNIQUE KEY uq_likes_user_post (user_id, post_id),
     CONSTRAINT fk_likes_user    FOREIGN KEY (user_id)    REFERENCES users    (id),
-    CONSTRAINT fk_likes_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id)
+    CONSTRAINT fk_likes_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id),
+    CONSTRAINT fk_likes_post    FOREIGN KEY (post_id)    REFERENCES posts    (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS follows (
@@ -82,7 +108,8 @@ CREATE TABLE IF NOT EXISTS family_members (
 CREATE TABLE IF NOT EXISTS comments (
     id               BIGINT       NOT NULL AUTO_INCREMENT,
     user_id          BIGINT       NOT NULL,
-    checkin_id       BIGINT       NOT NULL,
+    checkin_id       BIGINT       NULL,
+    post_id          BIGINT       NULL,
     parent_id        BIGINT       NULL,
     content          VARCHAR(200) NULL,
     comment_type     ENUM('TEXT','PRAISE_CARD') NOT NULL DEFAULT 'TEXT',
@@ -91,6 +118,7 @@ CREATE TABLE IF NOT EXISTS comments (
     PRIMARY KEY (id),
     CONSTRAINT fk_comments_user    FOREIGN KEY (user_id)    REFERENCES users    (id),
     CONSTRAINT fk_comments_checkin FOREIGN KEY (checkin_id) REFERENCES checkins (id),
+    CONSTRAINT fk_comments_post    FOREIGN KEY (post_id)    REFERENCES posts    (id),
     CONSTRAINT fk_comments_parent  FOREIGN KEY (parent_id)  REFERENCES comments (id) ON DELETE CASCADE,
     INDEX idx_comments_parent (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
