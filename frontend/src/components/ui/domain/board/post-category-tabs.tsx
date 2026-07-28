@@ -32,7 +32,7 @@ export default function PostCategoryTabs({ value, onChange }: Props) {
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(opt)}
-            className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-base font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+            className="inline-flex items-center min-h-[48px] px-4 rounded-xl text-base font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
             style={selected
               ? { background: grad, color: 'white', '--tw-ring-color': main } as React.CSSProperties
               : { color: dark, '--tw-ring-color': main } as React.CSSProperties}

@@ -23,7 +23,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pr
             onClick={() => onPageChange(p)}
             aria-current={selected ? 'page' : undefined}
             aria-label={`${p + 1}페이지`}
-            className="min-w-[44px] min-h-[44px] rounded-xl text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="min-w-[48px] min-h-[48px] rounded-xl text-base font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             style={selected
               ? { background: main, color: 'white' }
               : { background: mA(0.06), color: dark }}
