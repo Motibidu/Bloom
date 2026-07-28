@@ -49,6 +49,26 @@ export interface PostPage {
 let mockIdSeq = 1000
 const mockComments = new Map<number, PostComment[]>()
 
+// Listener pattern for notifying all subscribers when mock data changes
+let mockVersion = 0
+const listeners = new Set<() => void>()
+
+function notifyChange() {
+  mockVersion++
+  listeners.forEach(fn => fn())
+}
+
+function useMockVersion() {
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    const listener = () => forceUpdate(v => v + 1)
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
+}
+
 const seedPosts: PostDetail[] = [
   {
     id: 1, userId: 1, nickname: '김영희', profileImageUrl: null,
@@ -92,6 +112,7 @@ function toSummary(p: PostDetail): PostSummary {
 export function usePostList(category: PostCategoryValue | null, page: number) {
   const [data, setData] = useState<PostPage | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  useMockVersion()
 
   useEffect(() => {
     setIsLoading(true)
@@ -107,7 +128,7 @@ export function usePostList(category: PostCategoryValue | null, page: number) {
       totalElements: sorted.length,
     })
     setIsLoading(false)
-  }, [category, page])
+  }, [category, page, mockVersion])
 
   return { data, isLoading }
 }
@@ -115,13 +136,14 @@ export function usePostList(category: PostCategoryValue | null, page: number) {
 export function usePostDetail(id: number) {
   const [data, setData] = useState<PostDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  useMockVersion()
 
   useEffect(() => {
     setIsLoading(true)
     const found = mockPosts.find(p => p.id === id) ?? null
     setData(found)
     setIsLoading(false)
-  }, [id])
+  }, [id, mockVersion])
 
   return { data, isLoading }
 }
@@ -149,6 +171,7 @@ export function useCreatePost() {
       createdAt: new Date().toISOString(),
     }
     mockPosts.unshift(newPost)
+    notifyChange()
     return newPost
   }, [])
 
@@ -159,6 +182,7 @@ export function useDeletePost(id: number) {
   const mutateAsync = useCallback(async () => {
     const idx = mockPosts.findIndex(p => p.id === id)
     if (idx >= 0) mockPosts.splice(idx, 1)
+    notifyChange()
   }, [id])
 
   return { mutateAsync }
@@ -166,10 +190,11 @@ export function useDeletePost(id: number) {
 
 export function usePostComments(postId: number) {
   const [data, setData] = useState<PostComment[]>([])
+  useMockVersion()
 
   useEffect(() => {
     setData(mockComments.get(postId) ?? [])
-  }, [postId])
+  }, [postId, mockVersion])
 
   return { data }
 }
@@ -194,6 +219,7 @@ export function useCreatePostComment(postId: number) {
     mockComments.set(postId, [...list, newComment])
     const post = mockPosts.find(p => p.id === postId)
     if (post) post.commentCount += 1
+    notifyChange()
     setIsPending(false)
     opts?.onSuccess?.()
   }, [postId])
@@ -220,6 +246,7 @@ export function usePostLikeToggle(postId: number) {
       }
       post.likeCount = Object.values(post.reactionCounts).reduce((a, b) => a + b, 0)
     }
+    notifyChange()
     setIsPending(false)
   }, [postId])
 
