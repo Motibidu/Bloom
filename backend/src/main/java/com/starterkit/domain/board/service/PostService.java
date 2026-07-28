@@ -23,12 +23,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -143,10 +143,15 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다."));
         User user = findUserByEmail(email);
         if (!post.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("본인 게시글만 삭제할 수 있습니다.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 게시글만 삭제할 수 있습니다.");
         }
         likeRepository.deleteByPostId(id);
         commentRepository.deleteByPostId(id);
+        post.getPhotos().forEach(p ->
+                s3Client.deleteObject(DeleteObjectRequest.builder()
+                        .bucket(s3Bucket)
+                        .key(p.getObjectKey())
+                        .build()));
         postRepository.delete(post);
     }
 
