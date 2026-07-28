@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { ArrowLeft, MessageCircle, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   usePostDetail,
   usePostComments,
@@ -23,6 +24,69 @@ const CATEGORY_LABELS: Record<string, string> = {
   INFO: '정보공유',
 }
 
+// ── 삭제 확인 모달 ──────────────────────────────────────────────────────────
+function DeleteConfirmModal({
+  onConfirm,
+  onClose,
+}: {
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === overlayRef.current) onClose()
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label="게시글 삭제 확인"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="text-center space-y-2 pt-2">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'oklch(0.95 0.02 20)' }}
+            aria-hidden="true"
+          >
+            <Trash2 size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+          </div>
+          <h2 className="text-xl font-black text-foreground">게시글을 삭제할까요?</h2>
+          <p className="text-base text-foreground/60">삭제한 게시글은 되돌릴 수 없어요.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.55 0.18 20)' }}
+          >
+            삭제하기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function BoardDetailPage() {
   const { id } = useParams()
   const postId = Number(id)
@@ -36,6 +100,7 @@ export default function BoardDetailPage() {
   const deletePost = useDeletePost(postId)
 
   const [commentText, setCommentText] = useState('')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   if (isLoading || !post) {
     return <p role="status" aria-live="polite" className="text-center py-16 text-base text-foreground/50">불러오는 중이에요...</p>
@@ -73,7 +138,7 @@ export default function BoardDetailPage() {
         {isOwner && (
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setDeleteConfirmOpen(true)}
             aria-label="게시글 삭제"
             className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold text-destructive focus-visible:outline-none focus-visible:ring-2"
           >
@@ -82,6 +147,14 @@ export default function BoardDetailPage() {
           </button>
         )}
       </div>
+
+      {deleteConfirmOpen && createPortal(
+        <DeleteConfirmModal
+          onConfirm={() => { setDeleteConfirmOpen(false); handleDelete() }}
+          onClose={() => setDeleteConfirmOpen(false)}
+        />,
+        document.body
+      )}
 
       <article className="rounded-2xl bg-white px-6 py-7 space-y-4" style={{ boxShadow: `0 2px 16px ${mA(0.08)}` }}>
         <div className="flex items-center gap-2">
