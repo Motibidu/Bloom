@@ -26,8 +26,12 @@ public class Comment {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "checkin_id", nullable = false)
+    @JoinColumn(name = "checkin_id", nullable = true)
     private Checkin checkin;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = true)
+    private com.starterkit.domain.board.entity.Post post;
 
     @Column(nullable = true, length = 200)
     private String content;
