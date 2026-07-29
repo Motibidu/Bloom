@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon, MoreVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRef, useState } from 'react'
 import {
@@ -284,6 +284,17 @@ export default function BoardDetailPage() {
   const [blockOpen, setBlockOpen] = useState(false)
   const [replyTargetId, setReplyTargetId] = useState<number | null>(null)
   const [replyText, setReplyText] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuBtnRef = useRef<HTMLButtonElement>(null)
+  const [menuPos, setMenuPos] = useState<React.CSSProperties>({})
+
+  const openMenu = () => {
+    if (!menuOpen && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect()
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    }
+    setMenuOpen(prev => !prev)
+  }
 
   if (isLoading || !post) {
     return <p role="status" aria-live="polite" className="text-center py-16 text-base text-foreground/50">불러오는 중이에요...</p>
@@ -361,8 +372,8 @@ export default function BoardDetailPage() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
-      <div className="flex items-center justify-between">
+    <main className="space-y-2 pb-24">
+      <div className="flex items-center px-2 py-2">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -373,40 +384,59 @@ export default function BoardDetailPage() {
           <ArrowLeft size={20} aria-hidden="true" />
           <span className="text-base font-bold">돌아가기</span>
         </button>
-        {isOwner ? (
-          <button
-            type="button"
-            onClick={() => setDeleteConfirmOpen(true)}
-            aria-label="게시글 삭제"
-            className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold text-destructive focus-visible:outline-none focus-visible:ring-2"
-          >
-            <Trash2 size={18} aria-hidden="true" />
-            삭제
-          </button>
-        ) : (
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setReportOpen(true)}
-              aria-label="게시글 신고"
-              className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold focus-visible:outline-none focus-visible:ring-2"
-              style={{ color: 'oklch(0.55 0.18 20)' }}
-            >
-              <Flag size={18} aria-hidden="true" />
-              신고
-            </button>
-            <button
-              type="button"
-              onClick={() => setBlockOpen(true)}
-              aria-label="작성자 차단"
-              className="inline-flex items-center gap-1.5 min-h-[48px] px-3 rounded-xl text-base font-bold text-destructive focus-visible:outline-none focus-visible:ring-2"
-            >
-              <ShieldOff size={18} aria-hidden="true" />
-              차단
-            </button>
-          </div>
-        )}
       </div>
+
+      {menuOpen && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-[90]"
+            aria-hidden="true"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div
+            role="menu"
+            className="fixed z-[91] min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
+            style={{
+              ...menuPos,
+              background: 'white',
+              border: `1px solid ${mA(0.15)}`,
+              boxShadow: `0 8px 24px ${mA(0.18)}`,
+            }}
+          >
+            {isOwner ? (
+              <button
+                role="menuitem"
+                onClick={() => { setMenuOpen(false); setDeleteConfirmOpen(true) }}
+                className="w-full min-h-[48px] flex items-center gap-2.5 px-5 text-base font-bold text-destructive transition-colors text-left"
+              >
+                <Trash2 size={16} aria-hidden="true" />
+                삭제하기
+              </button>
+            ) : (
+              <>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setReportOpen(true) }}
+                  className="w-full min-h-[48px] flex items-center gap-2.5 px-5 text-base font-bold transition-colors text-left"
+                  style={{ color: 'oklch(0.55 0.18 20)' }}
+                >
+                  <Flag size={16} aria-hidden="true" />
+                  신고하기
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setBlockOpen(true) }}
+                  className="w-full min-h-[48px] flex items-center gap-2.5 px-5 text-base font-bold text-destructive transition-colors text-left"
+                >
+                  <ShieldOff size={16} aria-hidden="true" />
+                  차단하기
+                </button>
+              </>
+            )}
+          </div>
+        </>,
+        document.body
+      )}
 
       {deleteConfirmOpen && createPortal(
         <DeleteConfirmModal
@@ -435,25 +465,58 @@ export default function BoardDetailPage() {
         document.body
       )}
 
-      <article className="rounded-2xl bg-white px-6 py-7 space-y-4" style={{ boxShadow: `0 2px 16px ${mA(0.08)}` }}>
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-0.5 rounded-full text-sm font-bold" style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}>
+      <article className="relative bg-white py-4 space-y-3">
+        <div className="flex items-center gap-3 px-4">
+          <div
+            className="w-11 h-11 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-base font-black"
+            style={post.profileImageUrl
+              ? { boxShadow: `0 2px 8px ${mA(0.25)}` }
+              : { background: grad, color: 'white', boxShadow: `0 2px 8px ${mA(0.25)}` }}
+            aria-label={`${post.nickname} 아바타`}
+          >
+            {post.profileImageUrl ? (
+              <img src={post.profileImageUrl} alt={`${post.nickname} 프로필`} className="w-full h-full object-cover" />
+            ) : (
+              <span aria-hidden="true">{post.nickname[0]}</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+            <span className="text-base font-black text-foreground leading-tight truncate">{post.nickname}</span>
+            <time className="text-sm text-foreground/50 font-medium leading-tight">
+              {new Date(post.createdAt).toLocaleString('ko-KR')}
+            </time>
+          </div>
+          <button
+            ref={menuBtnRef}
+            type="button"
+            onClick={openMenu}
+            aria-label="더 보기 메뉴"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            className="shrink-0 inline-flex items-center justify-center w-11 h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ color: dark, background: menuOpen ? mA(0.10) : 'transparent' }}
+          >
+            <MoreVertical size={20} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="px-4 space-y-3">
+          <span className="inline-block px-2.5 py-0.5 rounded-full text-sm font-bold" style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}>
             {CATEGORY_LABELS[post.category]}
           </span>
-          <span className="text-sm text-foreground/50 font-medium">{post.nickname}</span>
+          <h1 className="text-2xl font-black text-foreground leading-snug" style={serifStyle}>{post.title}</h1>
+          <p className="text-base text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
         </div>
-        <h1 className="text-2xl font-black text-foreground leading-snug" style={serifStyle}>{post.title}</h1>
-        <p className="text-base text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
         {post.photoUrls.length > 0 && (
-          <div className="grid grid-cols-1 gap-3">
+          <div className="px-4 grid grid-cols-1 gap-3">
             {post.photoUrls.map((url, i) => (
               <img key={i} src={url} alt={`첨부 사진 ${i + 1}`} className="w-full rounded-xl object-cover" loading="lazy" />
             ))}
           </div>
         )}
 
-        <div className="flex items-center gap-3 pt-2" style={{ borderTop: `1px solid ${mA(0.10)}` }}>
+        <div className="flex items-center gap-3 px-4 pt-2" style={{ borderTop: `1px solid ${mA(0.10)}` }}>
           <ReactionPicker
             checkinId={postId}
             myReactionType={post.myReactionType}
@@ -468,7 +531,7 @@ export default function BoardDetailPage() {
         </div>
       </article>
 
-      <div className="flex gap-2 justify-center">
+      <div className="flex gap-2 justify-center px-4">
         <button
           type="button"
           onClick={handleKakaoShare}
@@ -501,7 +564,7 @@ export default function BoardDetailPage() {
         </button>
       </div>
 
-      <section aria-labelledby="comments-label" className="space-y-4">
+      <section aria-labelledby="comments-label" className="px-4 space-y-4">
         <h2 id="comments-label" className="text-lg font-black text-foreground">댓글 {comments?.length ?? 0}개</h2>
         <div className="flex gap-2">
           <input
