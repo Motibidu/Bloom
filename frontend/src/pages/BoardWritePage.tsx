@@ -78,7 +78,7 @@ export default function BoardWritePage() {
         photoObjectKeys: objectKeys.length > 0 ? objectKeys : undefined,
       })
       toast.success('게시글을 등록했어요 🎉')
-      navigate(`/board/${newPost.id}`)
+      navigate(`/board/${newPost.id}`, { replace: true })
     } catch {
       toast.error('등록에 실패했어요. 다시 시도해 주세요.')
     } finally {
