@@ -26,30 +26,19 @@ export default function BoardListPage() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 space-y-5 pb-24">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black text-foreground" style={serifStyle}>게시판</h1>
-        {user?.canWriteFeed && (
-          <button
-            type="button"
-            onClick={() => navigate('/board/write')}
-            className="inline-flex items-center gap-1.5 min-h-[48px] px-5 rounded-2xl text-base font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-            style={{ background: grad }}
-          >
-            <PenLine size={18} aria-hidden="true" />
-            글쓰기
-          </button>
-        )}
-      </div>
-
+    <main className="pb-24">
       <PostCategoryTabs value={category} onChange={handleCategoryChange} />
+
+      <div className="px-4 pb-3">
+        <h1 className="text-2xl font-black text-foreground" style={serifStyle}>게시판</h1>
+      </div>
 
       {isLoading ? (
         <p role="status" aria-live="polite" className="text-center py-12 text-base text-foreground/50">
           불러오는 중이에요...
         </p>
       ) : data && data.posts.length > 0 ? (
-        <div className="space-y-3">
+        <div className="border-t" style={{ borderColor: 'oklch(0.62 0.15 220 / 0.10)' }}>
           {data.posts.map(post => (
             <PostListRow key={post.id} post={post} onClick={() => navigate(`/board/${post.id}`)} />
           ))}
@@ -59,7 +48,22 @@ export default function BoardListPage() {
       )}
 
       {data && (
-        <Pagination currentPage={data.currentPage} totalPages={data.totalPages} onPageChange={setPage} />
+        <div className="px-4 pt-4">
+          <Pagination currentPage={data.currentPage} totalPages={data.totalPages} onPageChange={setPage} />
+        </div>
+      )}
+
+      {user?.canWriteFeed && (
+        <button
+          type="button"
+          onClick={() => navigate('/board/write')}
+          aria-label="게시글 작성하기"
+          className="fixed z-40 right-5 bottom-24 md:bottom-8 inline-flex items-center gap-2 min-h-[56px] px-6 rounded-full text-base font-black text-white transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{ background: grad, boxShadow: '0 6px 20px oklch(0.62 0.15 220 / 0.35)' }}
+        >
+          <PenLine size={18} aria-hidden="true" />
+          글쓰기
+        </button>
       )}
     </main>
   )

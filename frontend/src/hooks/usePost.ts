@@ -112,6 +112,10 @@ export function useCreatePostComment(postId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['postComments', postId] })
       queryClient.invalidateQueries({ queryKey: ['posts', postId] })
+      // 목록 캐시(['posts', category, page])도 무효화해 댓글 수가 목록에 즉시 반영되도록 함
+      queryClient.invalidateQueries({
+        predicate: q => q.queryKey[0] === 'posts' && typeof q.queryKey[1] === 'string',
+      })
     },
   })
 }

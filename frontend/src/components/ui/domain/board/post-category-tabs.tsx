@@ -19,10 +19,10 @@ export default function PostCategoryTabs({ value, onChange }: Props) {
   const options: (string | null)[] = [null, 'FREE', 'QNA', 'INFO']
   return (
     <div
-      className="flex gap-1.5 p-1 rounded-2xl overflow-x-auto"
-      style={{ background: mA(0.07) }}
+      className="flex gap-2 overflow-x-auto px-4 py-3"
       role="tablist"
       aria-label="게시판 카테고리"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       {options.map(opt => {
         const selected = value === opt
@@ -32,10 +32,10 @@ export default function PostCategoryTabs({ value, onChange }: Props) {
             role="tab"
             aria-selected={selected}
             onClick={() => onChange(opt)}
-            className="inline-flex items-center min-h-[48px] px-4 rounded-xl text-base font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+            className="inline-flex items-center justify-center shrink-0 min-h-[48px] px-5 rounded-full text-base font-bold whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
             style={selected
               ? { background: grad, color: 'white', '--tw-ring-color': main } as React.CSSProperties
-              : { color: dark, '--tw-ring-color': main } as React.CSSProperties}
+              : { background: mA(0.07), color: dark, '--tw-ring-color': main } as React.CSSProperties}
           >
             {opt === null ? '전체' : CATEGORY_LABELS[opt]}
           </button>
