@@ -376,7 +376,7 @@ export default function BoardDetailPage() {
     <main className="space-y-2 pb-24">
       <BoardSubheader
         title={CATEGORY_LABELS[post.category]}
-        right={
+        left={
           <button
             type="button"
             onClick={() => navigate(-1)}

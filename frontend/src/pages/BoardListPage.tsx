@@ -5,7 +5,6 @@ import { usePostList, type PostCategoryValue } from '@/hooks/usePost'
 import PostCategoryTabs from '@/components/ui/domain/board/post-category-tabs'
 import PostListRow from '@/components/ui/domain/board/post-list-row'
 import Pagination from '@/components/ui/domain/board/pagination'
-import BoardSubheader from '@/components/ui/domain/board/board-subheader'
 import { useAuthStore } from '@/store/authStore'
 
 const main = 'oklch(0.62 0.15 220)'
@@ -27,7 +26,6 @@ export default function BoardListPage() {
 
   return (
     <main className="pb-24">
-      <BoardSubheader title="게시판" />
       <PostCategoryTabs value={category} onChange={handleCategoryChange} />
 
       {isLoading ? (
