@@ -15,6 +15,7 @@ import { useCreateReport } from '@/hooks/useReport'
 import { useBlockUser } from '@/hooks/useBlock'
 import { useAuthStore } from '@/store/authStore'
 import ReactionPicker from '@/components/ui/domain/checkin/reaction-picker'
+import BoardSubheader from '@/components/ui/domain/board/board-subheader'
 import { isKakaoShareReady } from '@/lib/kakao'
 
 const main  = 'oklch(0.62 0.15 220)'
@@ -373,18 +374,20 @@ export default function BoardDetailPage() {
 
   return (
     <main className="space-y-2 pb-24">
-      <div className="flex items-center px-2 py-2">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="이전 페이지로 돌아가기"
-          className="inline-flex items-center gap-1.5 min-h-[48px] px-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          style={{ color: dark, '--tw-ring-color': main } as React.CSSProperties}
-        >
-          <ArrowLeft size={20} aria-hidden="true" />
-          <span className="text-base font-bold">돌아가기</span>
-        </button>
-      </div>
+      <BoardSubheader
+        title={CATEGORY_LABELS[post.category]}
+        right={
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="이전 페이지로 돌아가기"
+            className="inline-flex items-center gap-1 min-h-[48px] px-2 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{ color: dark, '--tw-ring-color': main } as React.CSSProperties}
+          >
+            <ArrowLeft size={20} aria-hidden="true" />
+          </button>
+        }
+      />
 
       {menuOpen && createPortal(
         <>
