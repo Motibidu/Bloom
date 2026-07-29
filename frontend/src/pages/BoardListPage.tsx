@@ -10,7 +10,6 @@ import { useAuthStore } from '@/store/authStore'
 const main = 'oklch(0.62 0.15 220)'
 const light = 'oklch(0.76 0.12 220)'
 const grad = `linear-gradient(135deg, ${main}, ${light})`
-const serifStyle = { fontFamily: "'Noto Serif KR', serif" }
 
 export default function BoardListPage() {
   const navigate = useNavigate()
@@ -28,10 +27,6 @@ export default function BoardListPage() {
   return (
     <main className="pb-24">
       <PostCategoryTabs value={category} onChange={handleCategoryChange} />
-
-      <div className="px-4 pb-3">
-        <h1 className="text-2xl font-black text-foreground" style={serifStyle}>게시판</h1>
-      </div>
 
       {isLoading ? (
         <p role="status" aria-live="polite" className="text-center py-12 text-base text-foreground/50">

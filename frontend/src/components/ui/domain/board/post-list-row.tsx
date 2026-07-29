@@ -207,24 +207,24 @@ export default function PostListRow({ post, onClick }: Props) {
         style={{ '--tw-ring-color': dark } as React.CSSProperties}
       >
         <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <span
-              className="px-2.5 py-0.5 rounded-full text-sm font-bold shrink-0"
-              style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}
-            >
-              {CATEGORY_LABELS[post.category]}
-            </span>
-            <h3 className="text-lg font-black text-foreground truncate leading-snug">
-              {post.title}
-            </h3>
-          </div>
-          <p className="text-base text-foreground/60 truncate">{post.contentPreview}</p>
-          <div className="flex items-center gap-2 text-sm text-foreground/50 font-medium">
+          <span
+            className="inline-block px-2.5 py-0.5 rounded-full text-sm font-bold"
+            style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}
+          >
+            {CATEGORY_LABELS[post.category]}
+          </span>
+          <h3 className="text-xl font-black text-foreground truncate leading-snug">
+            {post.title}
+          </h3>
+          <p className="text-lg text-foreground/60 truncate">{post.contentPreview}</p>
+          <div className="flex items-center gap-2 text-base text-foreground/50 font-medium">
             <span>{post.nickname}</span>
             <span aria-hidden="true">·</span>
             <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
             <span aria-hidden="true">·</span>
-            <span>댓글 {post.commentCount}</span>
+            <span aria-label={`댓글 ${post.commentCount}개`}>
+              <span aria-hidden="true">💬 {post.commentCount}</span>
+            </span>
           </div>
         </div>
         {post.thumbnailUrl && (
