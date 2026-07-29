@@ -19,11 +19,16 @@ export default function PostCategoryTabs({ value, onChange }: Props) {
   const options: (string | null)[] = [null, 'FREE', 'QNA', 'INFO']
   return (
     <div
-      className="flex gap-2 overflow-x-auto px-4 py-3"
+      className="post-category-tabs__scroll flex gap-2 overflow-x-auto px-4 py-3"
       role="tablist"
       aria-label="게시판 카테고리"
-      style={{ WebkitOverflowScrolling: 'touch' }}
+      style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}
     >
+      <style>{`
+        .post-category-tabs__scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       {options.map(opt => {
         const selected = value === opt
         return (
