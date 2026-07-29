@@ -197,8 +197,8 @@ export default function PostListRow({ post, onClick }: Props) {
 
   return (
     <div
-      className="relative w-full bg-white border-b"
-      style={{ borderColor: mA(0.10) }}
+      className="relative w-full bg-white"
+      style={{ boxShadow: `0 1px 3px ${mA(0.12)}` }}
     >
       <button
         type="button"

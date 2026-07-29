@@ -33,7 +33,10 @@ export default function BoardListPage() {
           불러오는 중이에요...
         </p>
       ) : data && data.posts.length > 0 ? (
-        <div className="border-t" style={{ borderColor: 'oklch(0.62 0.15 220 / 0.10)' }}>
+        <div
+          className="flex flex-col gap-2 py-2"
+          style={{ background: 'oklch(0.62 0.15 220 / 0.05)' }}
+        >
           {data.posts.map(post => (
             <PostListRow key={post.id} post={post} onClick={() => navigate(`/board/${post.id}`)} />
           ))}
