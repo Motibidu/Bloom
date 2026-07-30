@@ -97,6 +97,16 @@ public class PostController {
                 .body(commentService.addCommentToPost(id, req, userDetails));
     }
 
+    @DeleteMapping("/{id}/comments/{commentId}")
+    @Operation(summary = "게시글 댓글 삭제")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable("id") Long id,
+            @PathVariable("commentId") Long commentId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        commentService.deleteComment(commentId, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/likes")
     @Operation(summary = "게시글 리액션 토글")
     public ResponseEntity<LikeResponse> toggleReaction(
