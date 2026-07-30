@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, BarChart2, Pencil, ShieldOff, Footprints, ChefHat, BookOpen, Sprout, Dumbbell, Users, MoreHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, BarChart2, Pencil, ShieldOff, Search, Footprints, ChefHat, BookOpen, Sprout, Dumbbell, Users, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/categories'
 import { useMyCalendar, useMyCheckins, useMyCategoryStats } from '@/hooks/useMyActivity'
@@ -121,6 +121,14 @@ export default function MyActivityPage() {
             >
               <Pencil size={15} aria-hidden="true" />
               <span>편집</span>
+            </button>
+            <button
+              onClick={() => navigate('/discover')}
+              aria-label="사람 찾기"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-all active:scale-95 [-webkit-tap-highlight-color:transparent]"
+              style={{ background: mA(0.10), color: dark }}
+            >
+              <Search size={18} aria-hidden="true" />
             </button>
             <button
               onClick={() => navigate('/me/report')}
