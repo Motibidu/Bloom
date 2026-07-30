@@ -716,7 +716,7 @@ export default function BoardDetailPage() {
         </div>
       </article>
 
-      <div className="flex gap-2 justify-center px-4">
+      <div className="flex gap-2 justify-center px-4 !mt-0">
         <button
           type="button"
           onClick={handleKakaoShare}
