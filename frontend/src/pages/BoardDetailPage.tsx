@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon, MoreVertical, Eye } from 'lucide-react'
 import { toast } from 'sonner'
+import axios from 'axios'
 import { useRef, useState } from 'react'
 import {
   usePostDetail,
@@ -120,11 +121,15 @@ function DeleteConfirmModal({
 
 // ── 신고 모달 ────────────────────────────────────────────────────────────────
 function ReportModal({
-  postId,
+  targetType,
+  targetId,
+  ariaLabel,
   onClose,
   onSuccess,
 }: {
-  postId: number
+  targetType: 'POST' | 'COMMENT'
+  targetId: number
+  ariaLabel: string
   onClose: () => void
   onSuccess: () => void
 }) {
@@ -136,14 +141,15 @@ function ReportModal({
     if (!selected) return
     try {
       await createReport.mutateAsync({
-        targetType: 'POST',
-        targetId: postId,
+        targetType,
+        targetId,
         reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER',
       })
       onClose()
       onSuccess()
-    } catch {
-      toast.error('신고 처리 중 오류가 발생했어요.')
+    } catch (e) {
+      const message = axios.isAxiosError(e) ? e.response?.data?.message : undefined
+      toast.error(message ?? '신고 처리 중 오류가 발생했어요.')
     }
   }
 
@@ -155,7 +161,7 @@ function ReportModal({
       onClick={e => { if (e.target === overlayRef.current) onClose() }}
       role="dialog"
       aria-modal="true"
-      aria-label="게시글 신고"
+      aria-label={ariaLabel}
     >
       <div
         className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
@@ -217,10 +223,12 @@ function CommentDeleteConfirmModal({
   onClose,
   onConfirm,
   isPending,
+  replyCount,
 }: {
   onClose: () => void
   onConfirm: () => void
   isPending: boolean
+  replyCount: number
 }) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -250,6 +258,9 @@ function CommentDeleteConfirmModal({
           </div>
           <h2 className="text-xl font-black text-foreground">댓글을 삭제할까요?</h2>
           <p className="text-base text-foreground/60">삭제한 댓글은 되돌릴 수 없어요.</p>
+          {replyCount > 0 && (
+            <p className="text-sm text-foreground/50">답글 {replyCount}개도 함께 삭제돼요.</p>
+          )}
         </div>
         <div className="flex gap-3">
           <button
@@ -270,100 +281,6 @@ function CommentDeleteConfirmModal({
             {isPending ? '삭제하는 중...' : '삭제하기'}
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ── 댓글 신고 모달 ────────────────────────────────────────────────────────────
-function CommentReportModal({
-  commentId,
-  onClose,
-  onSuccess,
-}: {
-  commentId: number
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [selected, setSelected] = useState<string | null>(null)
-  const createReport = useCreateReport()
-  const overlayRef = useRef<HTMLDivElement>(null)
-
-  const handleSubmit = async () => {
-    if (!selected) return
-    try {
-      await createReport.mutateAsync({
-        targetType: 'COMMENT',
-        targetId: commentId,
-        reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER',
-      })
-      onClose()
-      onSuccess()
-    } catch {
-      toast.error('신고 처리 중 오류가 발생했어요.')
-    }
-  }
-
-  return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
-      style={{ background: 'oklch(0 0 0 / 0.45)' }}
-      onClick={e => { if (e.target === overlayRef.current) onClose() }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="댓글 신고"
-    >
-      <div
-        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
-        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-foreground">신고 사유 선택</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            className="min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center"
-            style={{ background: mA(0.06), color: dark }}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-        </div>
-        <div className="space-y-2">
-          {Object.entries(REASON_LABELS).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setSelected(value)}
-              className="w-full min-h-[56px] flex items-center gap-3 px-5 py-4 rounded-2xl text-base font-bold text-left transition-all"
-              style={{
-                background: selected === value ? mA(0.10) : mA(0.04),
-                border: `2px solid ${selected === value ? mA(0.40) : mA(0.10)}`,
-                color: dark,
-              }}
-            >
-              <div
-                className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
-                style={{ borderColor: selected === value ? mA(1) : mA(0.30) }}
-              >
-                {selected === value && <div className="w-2.5 h-2.5 rounded-full" style={{ background: mA(1) }} />}
-              </div>
-              {label}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!selected || createReport.isPending}
-          className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center disabled:opacity-40 transition-opacity"
-          style={{ background: 'oklch(0.55 0.18 20)' }}
-        >
-          {createReport.isPending ? '신고하는 중...' : '신고하기'}
-        </button>
       </div>
     </div>
   )
@@ -510,7 +427,7 @@ export default function BoardDetailPage() {
   const deletePost = useDeletePost(postId)
   const deletePostComment = useDeletePostComment(postId)
   const [commentMenuTarget, setCommentMenuTarget] = useState<PostComment | null>(null)
-  const [commentDeleteTarget, setCommentDeleteTarget] = useState<number | null>(null)
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<PostComment | null>(null)
   const [commentReportTarget, setCommentReportTarget] = useState<number | null>(null)
 
   const [commentText, setCommentText] = useState('')
@@ -555,7 +472,7 @@ export default function BoardDetailPage() {
 
   const handleCommentDelete = () => {
     if (commentDeleteTarget == null) return
-    deletePostComment.mutate(commentDeleteTarget, {
+    deletePostComment.mutate(commentDeleteTarget.id, {
       onSuccess: () => {
         setCommentDeleteTarget(null)
         toast.success('댓글을 삭제했어요.')
@@ -698,7 +615,9 @@ export default function BoardDetailPage() {
 
       {reportOpen && createPortal(
         <ReportModal
-          postId={postId}
+          targetType="POST"
+          targetId={postId}
+          ariaLabel="게시글 신고"
           onClose={() => setReportOpen(false)}
           onSuccess={() => toast.success('신고가 접수되었습니다.')}
         />,
@@ -864,7 +783,7 @@ export default function BoardDetailPage() {
                       type="button"
                       onClick={() => setCommentMenuTarget(c)}
                       aria-label="댓글 메뉴 열기"
-                      className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2"
+                      className="-m-1 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       style={{ color: mA(0.5) }}
                     >
                       <MoreVertical size={18} aria-hidden="true" />
@@ -903,7 +822,7 @@ export default function BoardDetailPage() {
                               type="button"
                               onClick={() => setCommentMenuTarget(reply)}
                               aria-label="답글 메뉴 열기"
-                              className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2"
+                              className="-m-1 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                               style={{ color: mA(0.5) }}
                             >
                               <MoreVertical size={18} aria-hidden="true" />
@@ -959,7 +878,7 @@ export default function BoardDetailPage() {
             isOwner={commentMenuTarget.userId === currentUser?.id}
             onClose={() => setCommentMenuTarget(null)}
             onDelete={() => {
-              setCommentDeleteTarget(commentMenuTarget.id)
+              setCommentDeleteTarget(commentMenuTarget)
               setCommentMenuTarget(null)
             }}
             onReport={() => {
@@ -974,12 +893,15 @@ export default function BoardDetailPage() {
             onClose={() => setCommentDeleteTarget(null)}
             onConfirm={handleCommentDelete}
             isPending={deletePostComment.isPending}
+            replyCount={commentDeleteTarget.replies?.length ?? 0}
           />
         )}
 
         {commentReportTarget != null && (
-          <CommentReportModal
-            commentId={commentReportTarget}
+          <ReportModal
+            targetType="COMMENT"
+            targetId={commentReportTarget}
+            ariaLabel="댓글 신고"
             onClose={() => setCommentReportTarget(null)}
             onSuccess={() => toast.success('신고가 접수되었습니다.')}
           />
