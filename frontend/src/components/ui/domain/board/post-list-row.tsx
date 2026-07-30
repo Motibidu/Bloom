@@ -202,54 +202,56 @@ export default function PostListRow({ post, onClick }: Props) {
       <button
         type="button"
         onClick={onClick}
-        className="w-full flex items-center gap-4 pl-4 pr-12 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset"
+        className="w-full text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset"
         style={{ '--tw-ring-color': dark } as React.CSSProperties}
       >
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <span
-            className="inline-block px-2.5 py-0.5 rounded-full text-sm font-bold"
-            style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}
-          >
-            {CATEGORY_LABELS[post.category]}
-          </span>
-          <h3 className="text-xl font-black text-foreground truncate leading-snug">
-            {post.title}
-          </h3>
-          <p className="text-lg text-foreground/60 truncate">{post.contentPreview}</p>
-          <div className="flex items-center justify-between gap-2 text-base text-foreground/50 font-medium">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="inline-flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
-                <Eye size={16} aria-hidden="true" />
-                <span aria-hidden="true">{post.viewCount}</span>
-              </span>
-              <span className="inline-flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
-                <ThumbsUp size={16} aria-hidden="true" />
-                <span aria-hidden="true">{post.likeCount}</span>
-              </span>
-              <span className="inline-flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
-                <MessageCircle size={16} aria-hidden="true" />
-                <span aria-hidden="true">{post.commentCount}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="truncate max-w-[7rem]">{post.nickname}</span>
-              <span aria-hidden="true">·</span>
-              <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
-            </div>
+        <div className="flex items-center gap-4 pl-4 pr-12 pt-4">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <span
+              className="inline-block px-2.5 py-0.5 rounded-full text-sm font-bold"
+              style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}
+            >
+              {CATEGORY_LABELS[post.category]}
+            </span>
+            <h3 className="text-xl font-black text-foreground truncate leading-snug">
+              {post.title}
+            </h3>
+            <p className="text-lg text-foreground/60 truncate">{post.contentPreview}</p>
+          </div>
+          {post.thumbnailUrl && (
+            <img
+              src={post.thumbnailUrl}
+              alt=""
+              aria-hidden="true"
+              width={96}
+              height={96}
+              className="rounded-xl object-cover shrink-0"
+              style={{ width: 96, height: 96 }}
+              loading="lazy"
+            />
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2 pl-4 pr-12 pb-4 pt-2 text-base text-foreground/50 font-medium">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="inline-flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
+              <Eye size={16} aria-hidden="true" />
+              <span aria-hidden="true">{post.viewCount}</span>
+            </span>
+            <span className="inline-flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
+              <ThumbsUp size={16} aria-hidden="true" />
+              <span aria-hidden="true">{post.likeCount}</span>
+            </span>
+            <span className="inline-flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
+              <MessageCircle size={16} aria-hidden="true" />
+              <span aria-hidden="true">{post.commentCount}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="truncate max-w-[7rem]">{post.nickname}</span>
+            <span aria-hidden="true">·</span>
+            <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
           </div>
         </div>
-        {post.thumbnailUrl && (
-          <img
-            src={post.thumbnailUrl}
-            alt=""
-            aria-hidden="true"
-            width={96}
-            height={96}
-            className="rounded-xl object-cover shrink-0"
-            style={{ width: 96, height: 96 }}
-            loading="lazy"
-          />
-        )}
       </button>
 
       {/* 케밥 메뉴 */}
