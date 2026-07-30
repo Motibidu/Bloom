@@ -79,6 +79,9 @@ public class CheckinService {
                 if (!user.isAdult50s()) {
                         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "50대 이상만 활동을 기록할 수 있습니다.");
                 }
+                if (!req.isSimple() && (req.photoObjectKeys() == null || req.photoObjectKeys().isEmpty())) {
+                        throw new IllegalArgumentException("상세 기록에는 최소 1장의 사진이 필요합니다.");
+                }
                 String expectedPrefix = "checkins/" + user.getId() + "/";
                 if (req.photoObjectKeys() != null) {
                         for (String key : req.photoObjectKeys()) {
