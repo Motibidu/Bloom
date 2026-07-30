@@ -289,56 +289,60 @@ function CommentDeleteConfirmModal({
 // ── 댓글 케밥 메뉴(액션 시트) ─────────────────────────────────────────────────
 function CommentActionSheet({
   isOwner,
+  pos,
   onClose,
   onDelete,
   onReport,
 }: {
   isOwner: boolean
+  pos: React.CSSProperties
   onClose: () => void
   onDelete: () => void
   onReport: () => void
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null)
-
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
-      style={{ background: 'oklch(0 0 0 / 0.45)' }}
-      onClick={e => { if (e.target === overlayRef.current) onClose() }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="댓글 메뉴"
-    >
+    <>
       <div
-        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-2"
-        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
-        onClick={e => e.stopPropagation()}
+        className="fixed inset-0 z-[90]"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+      <div
+        role="menu"
+        aria-label="댓글 메뉴"
+        className="fixed z-[91] min-w-[140px] rounded-2xl py-1.5 overflow-hidden"
+        style={{
+          ...pos,
+          background: 'white',
+          border: `1px solid ${mA(0.15)}`,
+          boxShadow: `0 8px 24px ${mA(0.18)}`,
+        }}
       >
-        <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ background: mA(0.20) }} aria-hidden="true" />
         {isOwner ? (
           <button
+            role="menuitem"
             type="button"
             onClick={onDelete}
-            className="w-full min-h-[56px] flex items-center gap-3 px-4 rounded-2xl text-lg font-bold text-left"
+            className="w-full min-h-[48px] flex items-center gap-2.5 px-5 text-base font-bold transition-colors text-left"
             style={{ color: 'oklch(0.55 0.18 20)' }}
           >
-            <Trash2 size={20} aria-hidden="true" />
+            <Trash2 size={16} aria-hidden="true" />
             삭제하기
           </button>
         ) : (
           <button
+            role="menuitem"
             type="button"
             onClick={onReport}
-            className="w-full min-h-[56px] flex items-center gap-3 px-4 rounded-2xl text-lg font-bold text-left"
-            style={{ color: dark }}
+            className="w-full min-h-[48px] flex items-center gap-2.5 px-5 text-base font-bold transition-colors text-left"
+            style={{ color: 'oklch(0.55 0.18 20)' }}
           >
-            <Flag size={20} aria-hidden="true" />
+            <Flag size={16} aria-hidden="true" />
             신고하기
           </button>
         )}
       </div>
-    </div>
+    </>
   )
 }
 
@@ -427,6 +431,7 @@ export default function BoardDetailPage() {
   const deletePost = useDeletePost(postId)
   const deletePostComment = useDeletePostComment(postId)
   const [commentMenuTarget, setCommentMenuTarget] = useState<PostComment | null>(null)
+  const [commentMenuPos, setCommentMenuPos] = useState<React.CSSProperties>({})
   const [commentDeleteTarget, setCommentDeleteTarget] = useState<PostComment | null>(null)
   const [commentReportTarget, setCommentReportTarget] = useState<number | null>(null)
 
@@ -446,6 +451,12 @@ export default function BoardDetailPage() {
       setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
     }
     setMenuOpen(prev => !prev)
+  }
+
+  const openCommentMenu = (e: React.MouseEvent<HTMLButtonElement>, target: PostComment) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setCommentMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    setCommentMenuTarget(target)
   }
 
   if (isLoading || !post) {
@@ -781,7 +792,7 @@ export default function BoardDetailPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setCommentMenuTarget(c)}
+                      onClick={e => openCommentMenu(e, c)}
                       aria-label="댓글 메뉴 열기"
                       className="-m-1 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                       style={{ color: mA(0.5) }}
@@ -820,7 +831,7 @@ export default function BoardDetailPage() {
                             </div>
                             <button
                               type="button"
-                              onClick={() => setCommentMenuTarget(reply)}
+                              onClick={e => openCommentMenu(e, reply)}
                               aria-label="답글 메뉴 열기"
                               className="-m-1 min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                               style={{ color: mA(0.5) }}
@@ -873,9 +884,10 @@ export default function BoardDetailPage() {
           ))}
         </div>
 
-        {commentMenuTarget && (
+        {commentMenuTarget && createPortal(
           <CommentActionSheet
             isOwner={commentMenuTarget.userId === currentUser?.id}
+            pos={commentMenuPos}
             onClose={() => setCommentMenuTarget(null)}
             onDelete={() => {
               setCommentDeleteTarget(commentMenuTarget)
@@ -885,7 +897,8 @@ export default function BoardDetailPage() {
               setCommentReportTarget(commentMenuTarget.id)
               setCommentMenuTarget(null)
             }}
-          />
+          />,
+          document.body
         )}
 
         {commentDeleteTarget != null && (
