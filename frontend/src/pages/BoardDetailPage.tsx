@@ -25,7 +25,6 @@ const dark  = 'oklch(0.48 0.15 220)'
 const light = 'oklch(0.76 0.12 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
 const grad = `linear-gradient(135deg, ${main}, ${light})`
-const serifStyle = { fontFamily: "'Noto Serif KR', serif" }
 
 const REASON_LABELS: Record<string, string> = {
   SPAM: '스팸/도배',
@@ -681,8 +680,10 @@ export default function BoardDetailPage() {
           </button>
         </div>
 
+        <hr className="mx-3 sm:mx-6 border-none h-px" style={{ background: mA(0.18) }} />
+
         <div className="px-4 space-y-3">
-          <h1 className="text-2xl font-black text-foreground leading-snug" style={serifStyle}>{post.title}</h1>
+          <h1 className="text-2xl font-black text-foreground leading-snug">{post.title}</h1>
           <p className="text-base text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
         </div>
 
@@ -694,7 +695,13 @@ export default function BoardDetailPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-3 px-4 pt-2" style={{ borderTop: `1px solid ${mA(0.10)}` }}>
+        <div
+          className="flex items-center gap-3 px-3 sm:px-5"
+          style={{
+            borderTop: `1px solid ${mA(0.10)}`,
+            background: `linear-gradient(to right, ${mA(0.03)}, transparent)`,
+          }}
+        >
           <ReactionPicker
             checkinId={postId}
             myReactionType={post.myReactionType}
@@ -743,7 +750,7 @@ export default function BoardDetailPage() {
       </div>
 
       <section aria-labelledby="comments-label" className="px-4 space-y-4">
-        <h2 id="comments-label" className="text-lg font-black text-foreground">댓글 {comments?.length ?? 0}개</h2>
+        <h2 id="comments-label" className="sr-only">댓글 {comments?.length ?? 0}개</h2>
         <div className="flex gap-2">
           <input
             type="text"
