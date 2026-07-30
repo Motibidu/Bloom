@@ -1,4 +1,4 @@
-import { LogOut, UserRound, Smile, LayoutList, Users, Search } from 'lucide-react'
+import { LogOut, UserRound, Smile, LayoutList, Users, Camera } from 'lucide-react'
 import NotificationBell from '@/components/layout/NotificationBell'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/shadcn/avatar'
@@ -53,7 +53,7 @@ function Logo({ to }: { to: string }) {
 const NAV_ITEMS = [
   { to: '/',         label: '피드', icon: LayoutList, exact: true },
   { to: '/family',   label: '가족', icon: Users,      exact: false },
-  { to: '/discover', label: '찾기', icon: Search,     exact: false },
+  { to: '/photos',   label: '사진', icon: Camera,     exact: false },
 ] as const
 
 export default function Header({ variant = 'internal' }: HeaderProps) {
