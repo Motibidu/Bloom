@@ -19,6 +19,7 @@ export interface PostComment {
   id: number
   userId: number
   nickname: string
+  profileImageUrl: string | null
   content: string
   createdAt: string
   commentType: 'TEXT' | 'PRAISE_CARD'
@@ -114,6 +115,21 @@ export function useCreatePostComment(postId: number) {
       queryClient.invalidateQueries({ queryKey: ['postComments', postId] })
       queryClient.invalidateQueries({ queryKey: ['posts', postId] })
       // 목록 캐시(['posts', category, page])도 무효화해 댓글 수가 목록에 즉시 반영되도록 함
+      queryClient.invalidateQueries({
+        predicate: q => q.queryKey[0] === 'posts' && typeof q.queryKey[1] === 'string',
+      })
+    },
+  })
+}
+
+export function useDeletePostComment(postId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (commentId: number) =>
+      api.delete(`/posts/${postId}/comments/${commentId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['postComments', postId] })
+      queryClient.invalidateQueries({ queryKey: ['posts', postId] })
       queryClient.invalidateQueries({
         predicate: q => q.queryKey[0] === 'posts' && typeof q.queryKey[1] === 'string',
       })

@@ -8,7 +8,6 @@ import { useCreateReport } from '@/hooks/useReport'
 import { useBlockUser } from '@/hooks/useBlock'
 import { useAuthStore } from '@/store/authStore'
 
-const main = 'oklch(0.62 0.15 220)'
 const dark = 'oklch(0.48 0.15 220)'
 const mA = (a: number) => `oklch(0.62 0.15 220 / ${a})`
 
