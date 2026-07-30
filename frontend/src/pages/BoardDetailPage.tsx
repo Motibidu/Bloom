@@ -64,37 +64,32 @@ function DeleteConfirmModal({
   onConfirm: () => void
   onClose: () => void
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) onClose()
-  }
-
   return (
     <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
-      style={{ background: 'oklch(0 0 0 / 0.45)' }}
-      onClick={handleOverlayClick}
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: 'oklch(0 0 0 / 0.50)' }}
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="게시글 삭제 확인"
     >
       <div
-        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
-        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        className="w-full max-w-sm rounded-3xl px-7 py-8 space-y-6"
+        style={{ background: 'white', boxShadow: `0 8px 40px ${mA(0.25)}` }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
-        <div className="text-center space-y-2 pt-2">
+        <div className="flex flex-col items-center gap-4 text-center">
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{ background: 'oklch(0.95 0.02 20)' }}
             aria-hidden="true"
           >
-            <Trash2 size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+            <Trash2 size={28} style={{ color: 'oklch(0.55 0.18 20)' }} />
           </div>
-          <h2 className="text-xl font-black text-foreground">게시글을 삭제할까요?</h2>
-          <p className="text-base text-foreground/60">삭제한 게시글은 되돌릴 수 없어요.</p>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-black text-foreground">게시글을 삭제할까요?</h2>
+            <p className="text-base text-foreground/60">삭제한 게시글은 되돌릴 수 없어요.</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <button
@@ -643,10 +638,13 @@ export default function BoardDetailPage() {
         document.body
       )}
 
-      <article className="relative bg-white py-4 space-y-3">
+      <article
+        className="relative rounded-none sm:rounded-2xl bg-white py-4 space-y-3 mx-0 sm:mx-4"
+        style={{ boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}` }}
+      >
         <div className="flex items-center gap-3 px-4">
           <div
-            className="w-11 h-11 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-base font-black"
+            className="w-12 h-12 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-lg font-black"
             style={post.profileImageUrl
               ? { boxShadow: `0 2px 8px ${mA(0.25)}` }
               : { background: grad, color: 'white', boxShadow: `0 2px 8px ${mA(0.25)}` }}
@@ -658,9 +656,9 @@ export default function BoardDetailPage() {
               <span aria-hidden="true">{post.nickname[0]}</span>
             )}
           </div>
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            <span className="text-base font-black text-foreground leading-tight truncate">{post.nickname}</span>
-            <div className="flex items-center gap-1.5 text-sm text-foreground/50 font-medium leading-tight">
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <span className="text-base font-black text-foreground leading-none truncate">{post.nickname}</span>
+            <div className="flex items-center gap-1.5 text-sm text-foreground/50 font-medium leading-none">
               <time>{formatRelativeDate(post.createdAt)}</time>
               <span aria-hidden="true">·</span>
               <span className="inline-flex items-center gap-0.5" aria-label={`조회 ${post.viewCount}회`}>
