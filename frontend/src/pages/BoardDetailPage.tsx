@@ -639,7 +639,7 @@ export default function BoardDetailPage() {
       )}
 
       <article
-        className="relative rounded-none sm:rounded-2xl bg-white py-4 space-y-3 mx-0 sm:mx-4"
+        className="relative bg-white py-4 space-y-3"
         style={{ boxShadow: `0 2px 16px ${mA(0.08)}, 0 1px 4px ${mA(0.06)}` }}
       >
         <div className="flex items-center gap-3 px-4">
