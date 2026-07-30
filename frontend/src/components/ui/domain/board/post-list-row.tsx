@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MoreVertical, Trash2, Flag, ShieldOff, X } from 'lucide-react'
+import { MoreVertical, Trash2, Flag, ShieldOff, X, Eye, ThumbsUp, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import type { PostSummary } from '@/hooks/usePost'
 import { useDeletePost } from '@/hooks/usePost'
@@ -216,14 +216,26 @@ export default function PostListRow({ post, onClick }: Props) {
             {post.title}
           </h3>
           <p className="text-lg text-foreground/60 truncate">{post.contentPreview}</p>
-          <div className="flex items-center gap-2 text-base text-foreground/50 font-medium">
-            <span>{post.nickname}</span>
-            <span aria-hidden="true">·</span>
-            <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
-            <span aria-hidden="true">·</span>
-            <span aria-label={`댓글 ${post.commentCount}개`}>
-              <span aria-hidden="true">💬 {post.commentCount}</span>
-            </span>
+          <div className="flex items-center justify-between gap-2 text-base text-foreground/50 font-medium">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="inline-flex items-center gap-1" aria-label={`조회 ${post.viewCount}회`}>
+                <Eye size={16} aria-hidden="true" />
+                <span aria-hidden="true">{post.viewCount}</span>
+              </span>
+              <span className="inline-flex items-center gap-1" aria-label={`좋아요 ${post.likeCount}개`}>
+                <ThumbsUp size={16} aria-hidden="true" />
+                <span aria-hidden="true">{post.likeCount}</span>
+              </span>
+              <span className="inline-flex items-center gap-1" aria-label={`댓글 ${post.commentCount}개`}>
+                <MessageCircle size={16} aria-hidden="true" />
+                <span aria-hidden="true">{post.commentCount}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="truncate max-w-[7rem]">{post.nickname}</span>
+              <span aria-hidden="true">·</span>
+              <time dateTime={post.createdAt}>{formatRelativeDate(post.createdAt)}</time>
+            </div>
           </div>
         </div>
         {post.thumbnailUrl && (
@@ -231,10 +243,10 @@ export default function PostListRow({ post, onClick }: Props) {
             src={post.thumbnailUrl}
             alt=""
             aria-hidden="true"
-            width={72}
-            height={72}
+            width={96}
+            height={96}
             className="rounded-xl object-cover shrink-0"
-            style={{ width: 72, height: 72 }}
+            style={{ width: 96, height: 96 }}
             loading="lazy"
           />
         )}

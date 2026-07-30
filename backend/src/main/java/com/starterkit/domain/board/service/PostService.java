@@ -132,7 +132,11 @@ public class PostService {
         }
 
         List<PostSummaryResponse> summaries = postPage.getContent().stream()
-                .map(p -> PostSummaryResponse.of(p, commentRepository.countByPostId(p.getId()), s3BaseUrl()))
+                .map(p -> PostSummaryResponse.of(
+                        p,
+                        commentRepository.countByPostId(p.getId()),
+                        likeRepository.countByPostId(p.getId()),
+                        s3BaseUrl()))
                 .toList();
 
         return new PostPageResponse(summaries, postPage.getNumber(), postPage.getTotalPages(), postPage.getTotalElements());

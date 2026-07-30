@@ -13,6 +13,8 @@ export interface PostSummary {
   nickname: string
   createdAt: string
   commentCount: number
+  likeCount: number
+  viewCount: number
 }
 
 export interface PostComment {

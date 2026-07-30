@@ -14,9 +14,11 @@ public record PostSummaryResponse(
         Long userId,
         String nickname,
         LocalDateTime createdAt,
-        long commentCount) {
+        long commentCount,
+        long likeCount,
+        long viewCount) {
 
-    public static PostSummaryResponse of(Post p, long commentCount, String s3BaseUrl) {
+    public static PostSummaryResponse of(Post p, long commentCount, long likeCount, String s3BaseUrl) {
         String preview = p.getContent().length() > 60
                 ? p.getContent().substring(0, 60)
                 : p.getContent();
@@ -25,6 +27,7 @@ public record PostSummaryResponse(
                 : s3BaseUrl + "/" + p.getPhotos().get(0).getObjectKey();
         return new PostSummaryResponse(
                 p.getId(), p.getCategory(), p.getTitle(), preview, thumbnail,
-                p.getUser().getId(), p.getUser().getNickname(), p.getCreatedAt(), commentCount);
+                p.getUser().getId(), p.getUser().getNickname(), p.getCreatedAt(),
+                commentCount, likeCount, p.getViewCount());
     }
 }
