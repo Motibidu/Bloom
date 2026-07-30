@@ -211,6 +211,219 @@ function ReportModal({
   )
 }
 
+// ── 댓글 삭제 확인 모달 ──────────────────────────────────────────────────────
+function CommentDeleteConfirmModal({
+  onClose,
+  onConfirm,
+  isPending,
+}: {
+  onClose: () => void
+  onConfirm: () => void
+  isPending: boolean
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="댓글 삭제 확인"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="text-center space-y-2 pt-2">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: 'oklch(0.95 0.02 20)' }}
+            aria-hidden="true"
+          >
+            <Trash2 size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+          </div>
+          <h2 className="text-xl font-black text-foreground">댓글을 삭제할까요?</h2>
+          <p className="text-base text-foreground/60">삭제한 댓글은 되돌릴 수 없어요.</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: mA(0.08), color: dark }}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isPending}
+            className="flex-1 min-h-[56px] rounded-2xl text-lg font-black text-white disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 [-webkit-tap-highlight-color:transparent]"
+            style={{ background: 'oklch(0.55 0.18 20)' }}
+          >
+            {isPending ? '삭제하는 중...' : '삭제하기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 댓글 신고 모달 ────────────────────────────────────────────────────────────
+function CommentReportModal({
+  commentId,
+  onClose,
+  onSuccess,
+}: {
+  commentId: number
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const createReport = useCreateReport()
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  const handleSubmit = async () => {
+    if (!selected) return
+    try {
+      await createReport.mutateAsync({
+        targetType: 'COMMENT',
+        targetId: commentId,
+        reason: selected as 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER',
+      })
+      onClose()
+      onSuccess()
+    } catch {
+      toast.error('신고 처리 중 오류가 발생했어요.')
+    }
+  }
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="댓글 신고"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-black text-foreground">신고 사유 선택</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center"
+            style={{ background: mA(0.06), color: dark }}
+          >
+            <X size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="space-y-2">
+          {Object.entries(REASON_LABELS).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSelected(value)}
+              className="w-full min-h-[56px] flex items-center gap-3 px-5 py-4 rounded-2xl text-base font-bold text-left transition-all"
+              style={{
+                background: selected === value ? mA(0.10) : mA(0.04),
+                border: `2px solid ${selected === value ? mA(0.40) : mA(0.10)}`,
+                color: dark,
+              }}
+            >
+              <div
+                className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                style={{ borderColor: selected === value ? mA(1) : mA(0.30) }}
+              >
+                {selected === value && <div className="w-2.5 h-2.5 rounded-full" style={{ background: mA(1) }} />}
+              </div>
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!selected || createReport.isPending}
+          className="w-full min-h-[56px] rounded-2xl text-lg font-black text-white flex items-center justify-center disabled:opacity-40 transition-opacity"
+          style={{ background: 'oklch(0.55 0.18 20)' }}
+        >
+          {createReport.isPending ? '신고하는 중...' : '신고하기'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── 댓글 케밥 메뉴(액션 시트) ─────────────────────────────────────────────────
+function CommentActionSheet({
+  isOwner,
+  onClose,
+  onDelete,
+  onReport,
+}: {
+  isOwner: boolean
+  onClose: () => void
+  onDelete: () => void
+  onReport: () => void
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
+      style={{ background: 'oklch(0 0 0 / 0.45)' }}
+      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="댓글 메뉴"
+    >
+      <div
+        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-2"
+        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{ background: mA(0.20) }} aria-hidden="true" />
+        {isOwner ? (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="w-full min-h-[56px] flex items-center gap-3 px-4 rounded-2xl text-lg font-bold text-left"
+            style={{ color: 'oklch(0.55 0.18 20)' }}
+          >
+            <Trash2 size={20} aria-hidden="true" />
+            삭제하기
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onReport}
+            className="w-full min-h-[56px] flex items-center gap-3 px-4 rounded-2xl text-lg font-bold text-left"
+            style={{ color: dark }}
+          >
+            <Flag size={20} aria-hidden="true" />
+            신고하기
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 차단 확인 모달 ────────────────────────────────────────────────────────────
 function BlockConfirmModal({
   targetUserId,
