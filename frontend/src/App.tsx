@@ -19,6 +19,7 @@ import MonthlyReportPage from '@/pages/MonthlyReportPage'
 import FamilyPage from '@/pages/FamilyPage'
 import FamilyInvitePage from '@/pages/FamilyInvitePage'
 import DiscoverPage from '@/pages/DiscoverPage'
+import PhotoFeedPage from '@/pages/PhotoFeedPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import KakaoCallbackPage from '@/pages/KakaoCallbackPage'
 import KakaoOnboardingPage from '@/pages/KakaoOnboardingPage'
@@ -116,6 +117,7 @@ export default function App() {
             <Route path="board/write" element={<BoardWritePage />} />
             <Route path="board/:id" element={<BoardDetailPage />} />
             <Route path="discover" element={<DiscoverPage />} />
+            <Route path="photos" element={<PhotoFeedPage />} />
             <Route path="me" element={<MyActivityPage />} />
             <Route path="me/edit" element={<ProfileEditPage />} />
             <Route path="me/blocks" element={<BlockListPage />} />

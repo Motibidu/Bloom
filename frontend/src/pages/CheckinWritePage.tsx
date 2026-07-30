@@ -123,7 +123,7 @@ export default function CheckinWritePage() {
   }
 
   const canSubmitSimple = !!selectedCategory && !isSubmitting
-  const canSubmitDetail = !!selectedCategory && !!title.trim() && !isSubmitting
+  const canSubmitDetail = !!selectedCategory && !!title.trim() && photoFiles.length > 0 && !isSubmitting
   const canSubmit = mode === 'simple' ? canSubmitSimple : canSubmitDetail
 
   return (
@@ -283,7 +283,7 @@ export default function CheckinWritePage() {
             <section aria-labelledby="photo-label" className="space-y-3">
               <p id="photo-label" className="text-lg font-bold text-foreground">
                 사진 첨부{' '}
-                <span className="text-base font-medium text-muted-foreground">(선택, 최대 3장)</span>
+                <span className="text-base font-medium text-muted-foreground">(필수, 최대 3장)</span>
               </p>
               <input
                 ref={fileInputRef}
@@ -353,6 +353,11 @@ export default function CheckinWritePage() {
                   </button>
                 )}
               </div>
+              {photoPreviews.length === 0 && (
+                <p className="text-sm font-semibold text-center" style={{ color: mA(0.55) }} aria-live="polite">
+                  상세 기록에는 사진이 1장 이상 필요해요
+                </p>
+              )}
             </section>
           </>
         )}
