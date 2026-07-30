@@ -1,6 +1,7 @@
 package com.starterkit.domain.comment.service;
 
 import com.starterkit.domain.block.service.BlockService;
+import com.starterkit.domain.board.repository.PostRepository;
 import com.starterkit.domain.checkin.entity.Checkin;
 import com.starterkit.domain.checkin.repository.CheckinRepository;
 import com.starterkit.domain.comment.dto.request.CreateCommentRequest;
@@ -25,10 +26,21 @@ import java.util.List;
 public class CommentService {
 
     private final CheckinRepository checkinRepository;
+    private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final BlockService blockService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.s3.bucket}")
+    private String s3Bucket;
+
+    @org.springframework.beans.factory.annotation.Value("${app.s3.region}")
+    private String s3Region;
+
+    private String s3BaseUrl() {
+        return "https://" + s3Bucket + ".s3." + s3Region + ".amazonaws.com";
+    }
 
     public List<CommentResponse> getComments(Long checkinId, UserDetails userDetails) {
         checkinRepository.findById(checkinId)
@@ -39,12 +51,12 @@ public class CommentService {
         if (!blockedIds.isEmpty()) {
             return commentRepository.findRootCommentsByCheckinIdExcludingUsers(checkinId, blockedIds)
                     .stream()
-                    .map(CommentResponse::from)
+                    .map(c -> CommentResponse.from(c, s3BaseUrl()))
                     .toList();
         }
         return commentRepository.findRootCommentsByCheckinId(checkinId)
                 .stream()
-                .map(CommentResponse::from)
+                .map(c -> CommentResponse.from(c, s3BaseUrl()))
                 .toList();
     }
 
@@ -71,7 +83,7 @@ public class CommentService {
                 .praiseCardType(req.praiseCardType())
                 .build();
 
-        CommentResponse response = CommentResponse.fromReply(commentRepository.save(comment));
+        CommentResponse response = CommentResponse.fromReply(commentRepository.save(comment), s3BaseUrl());
 
         if (!checkin.getUser().getId().equals(user.getId())) {
             boolean isReply = parent != null;
@@ -90,6 +102,44 @@ public class CommentService {
         }
 
         return response;
+    }
+
+    public List<CommentResponse> getCommentsForPost(Long postId, UserDetails userDetails) {
+        postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+        List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
+        if (!blockedIds.isEmpty()) {
+            return commentRepository.findRootCommentsByPostIdExcludingUsers(postId, blockedIds)
+                    .stream().map(c -> CommentResponse.from(c, s3BaseUrl())).toList();
+        }
+        return commentRepository.findRootCommentsByPostId(postId)
+                .stream().map(c -> CommentResponse.from(c, s3BaseUrl())).toList();
+    }
+
+    @Transactional
+    public CommentResponse addCommentToPost(Long postId, CreateCommentRequest req, UserDetails userDetails) {
+        com.starterkit.domain.board.entity.Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
+
+        Comment parent = null;
+        if (req.parentId() != null) {
+            parent = commentRepository.findById(req.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("부모 댓글을 찾을 수 없습니다."));
+        }
+
+        Comment comment = Comment.builder()
+                .user(user)
+                .post(post)
+                .parent(parent)
+                .content(req.content() != null ? req.content() : "")
+                .commentType(req.resolvedCommentType())
+                .build();
+
+        return CommentResponse.fromReply(commentRepository.save(comment), s3BaseUrl());
     }
 
     @Transactional
@@ -118,6 +168,6 @@ public class CommentService {
         } else {
             comment.updateContent(content);
         }
-        return CommentResponse.from(comment);
+        return CommentResponse.from(comment, s3BaseUrl());
     }
 }

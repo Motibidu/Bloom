@@ -8,7 +8,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "likes", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "checkin_id"}))
+@Table(name = "likes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "checkin_id"}),
+    @UniqueConstraint(columnNames = {"user_id", "post_id"})
+})
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,8 +27,12 @@ public class Like {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "checkin_id", nullable = false)
+    @JoinColumn(name = "checkin_id", nullable = true)
     private Checkin checkin;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", nullable = true)
+    private com.starterkit.domain.board.entity.Post post;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "reaction_type", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'LIKE'")

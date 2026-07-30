@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import api from '@/lib/api'
 
-type ReportTargetType = 'CHECKIN' | 'COMMENT'
+type ReportTargetType = 'CHECKIN' | 'COMMENT' | 'POST'
 type ReasonType = 'SPAM' | 'INAPPROPRIATE' | 'ABUSE' | 'OTHER'
 
 interface CreateReportRequest {

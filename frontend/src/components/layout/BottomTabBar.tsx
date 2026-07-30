@@ -1,4 +1,4 @@
-import { LayoutList, Users, UserCircle2, Camera } from 'lucide-react'
+import { UserCircle2, NotebookText, Camera } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 const warmBlueGradient = 'linear-gradient(135deg, oklch(0.62 0.15 220), oklch(0.76 0.12 220))'
@@ -18,27 +18,20 @@ export default function BottomTabBar() {
 
   const tabs: TabItem[] = [
     {
-      path: '/',
-      label: '피드',
-      ariaLabel: '오늘의 피드 보기',
-      icon: <LayoutList size={26} className="text-muted-foreground" aria-hidden="true" />,
-      iconActive: <LayoutList size={26} className="text-white" aria-hidden="true" />,
-    },
-    {
-      path: '/family',
-      label: '가족',
-      ariaLabel: '가족 그룹 보기',
-      matchPrefix: true,
-      icon: <Users size={26} className="text-muted-foreground" aria-hidden="true" />,
-      iconActive: <Users size={26} className="text-white" aria-hidden="true" />,
-    },
-    {
       path: '/photos',
       label: '사진',
       ariaLabel: '사진 모아보기',
       matchPrefix: true,
       icon: <Camera size={26} className="text-muted-foreground" aria-hidden="true" />,
       iconActive: <Camera size={26} className="text-white" aria-hidden="true" />,
+    },
+    {
+      path: '/board',
+      label: '게시판',
+      ariaLabel: '게시판 보기',
+      matchPrefix: true,
+      icon: <NotebookText size={26} className="text-muted-foreground" aria-hidden="true" />,
+      iconActive: <NotebookText size={26} className="text-white" aria-hidden="true" />,
     },
     {
       path: '/me',

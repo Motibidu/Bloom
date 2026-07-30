@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/prompts/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
                         .requestMatchers("/api/families/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
                         .requestMatchers(HttpMethod.GET, "/api/checkins/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**").hasAnyRole("MEMBER", "FAMILY_VIEWER")
                         .requestMatchers(HttpMethod.GET, "/api/users/me").hasAnyRole("MEMBER", "FAMILY_VIEWER")
                         // 나머지는 MEMBER만 접근 가능
                         .anyRequest().hasRole("MEMBER")

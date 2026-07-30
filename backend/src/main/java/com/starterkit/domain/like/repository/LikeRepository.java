@@ -46,4 +46,22 @@ public interface LikeRepository extends JpaRepository<Like, Long> {
      */
     @Query("SELECT l.checkin.id, l.reactionType FROM Like l WHERE l.checkin.id IN :checkinIds AND l.user.id = :userId")
     List<Object[]> findReactionsByUserIdAndCheckinIds(@Param("checkinIds") List<Long> checkinIds, @Param("userId") Long userId);
+
+    Optional<Like> findByUserIdAndPostId(Long userId, Long postId);
+
+    boolean existsByUserIdAndPostId(Long userId, Long postId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Like l WHERE l.user.id = :userId AND l.post.id = :postId")
+    void deleteByUserIdAndPostId(@Param("userId") Long userId, @Param("postId") Long postId);
+
+    @Modifying
+    @Query("DELETE FROM Like l WHERE l.post.id = :postId")
+    void deleteByPostId(@Param("postId") Long postId);
+
+    @Query("SELECT l.reactionType, COUNT(l) FROM Like l WHERE l.post.id = :postId GROUP BY l.reactionType")
+    List<Object[]> countByReactionTypeForPost(@Param("postId") Long postId);
+
+    long countByPostId(Long postId);
 }
