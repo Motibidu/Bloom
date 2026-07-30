@@ -42,11 +42,19 @@ public class Post {
     @Builder.Default
     private List<PostPhoto> photos = new ArrayList<>();
 
+    @Column(name = "view_count", nullable = false)
+    @Builder.Default
+    private long viewCount = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now(java.time.ZoneOffset.UTC);
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
     }
 }

@@ -21,6 +21,7 @@ public record PostResponse(
         ReactionType myReactionType,
         Map<String, Long> reactionCounts,
         long commentCount,
+        long viewCount,
         LocalDateTime createdAt) {
 
     public static PostResponse of(Post p, long likeCount, ReactionType myReactionType,
@@ -35,6 +36,6 @@ public record PostResponse(
                 p.getId(), p.getUser().getId(), p.getUser().getNickname(), profileImgUrl,
                 p.getCategory(), p.getTitle(), p.getContent(), urls,
                 likeCount, myReactionType, reactionCounts != null ? reactionCounts : Map.of(),
-                commentCount, p.getCreatedAt());
+                commentCount, p.getViewCount(), p.getCreatedAt());
     }
 }

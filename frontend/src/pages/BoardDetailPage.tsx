@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon, MoreVertical } from 'lucide-react'
+import { ArrowLeft, MessageCircle, Trash2, Flag, ShieldOff, X, Link as LinkIcon, MoreVertical, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRef, useState } from 'react'
 import {
@@ -36,6 +36,22 @@ const CATEGORY_LABELS: Record<string, string> = {
   FREE: '자유게시판',
   QNA: '질문공간',
   INFO: '정보공유',
+}
+
+function formatRelativeDate(createdAt: string): string {
+  const date = new Date(createdAt)
+  const diffMs = Date.now() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return '방금 전'
+  if (diffMin < 60) return `${diffMin}분 전`
+  const diffHour = Math.floor(diffMin / 60)
+  if (diffHour < 24) return `${diffHour}시간 전`
+  const diffDay = Math.floor(diffHour / 24)
+  if (diffDay < 7) return `${diffDay}일 전`
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  const d = date.getDate()
+  return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`
 }
 
 // ── 삭제 확인 모달 ──────────────────────────────────────────────────────────
@@ -485,9 +501,14 @@ export default function BoardDetailPage() {
           </div>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             <span className="text-base font-black text-foreground leading-tight truncate">{post.nickname}</span>
-            <time className="text-sm text-foreground/50 font-medium leading-tight">
-              {new Date(post.createdAt).toLocaleString('ko-KR')}
-            </time>
+            <div className="flex items-center gap-1.5 text-sm text-foreground/50 font-medium leading-tight">
+              <time>{formatRelativeDate(post.createdAt)}</time>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-0.5" aria-label={`조회 ${post.viewCount}회`}>
+                <Eye size={14} aria-hidden="true" />
+                <span aria-hidden="true">{post.viewCount}</span>
+              </span>
+            </div>
           </div>
           <button
             ref={menuBtnRef}
@@ -504,9 +525,6 @@ export default function BoardDetailPage() {
         </div>
 
         <div className="px-4 space-y-3">
-          <span className="inline-block px-2.5 py-0.5 rounded-full text-sm font-bold" style={{ background: mA(0.10), border: `1px solid ${mA(0.22)}`, color: dark }}>
-            {CATEGORY_LABELS[post.category]}
-          </span>
           <h1 className="text-2xl font-black text-foreground leading-snug" style={serifStyle}>{post.title}</h1>
           <p className="text-base text-foreground/80 leading-relaxed whitespace-pre-wrap">{post.content}</p>
         </div>

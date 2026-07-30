@@ -40,6 +40,7 @@ export interface PostDetail {
   myReactionType: string | null
   reactionCounts: Record<string, number>
   commentCount: number
+  viewCount: number
   createdAt: string
 }
 

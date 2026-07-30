@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS posts (
     category   VARCHAR(20)  NOT NULL,
     title      VARCHAR(50)  NOT NULL,
     content    VARCHAR(2000) NOT NULL,
+    view_count BIGINT       NOT NULL DEFAULT 0,
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users (id),

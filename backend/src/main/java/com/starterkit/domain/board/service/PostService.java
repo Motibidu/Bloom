@@ -101,6 +101,7 @@ public class PostService {
     public PostResponse getById(String email, Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다."));
+        post.incrementViewCount();
         User user = findUserByEmail(email);
 
         long likeCount = likeRepository.countByPostId(id);
