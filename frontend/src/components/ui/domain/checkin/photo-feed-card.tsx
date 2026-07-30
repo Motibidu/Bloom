@@ -34,6 +34,8 @@ export default function PhotoFeedCard({ checkin, onClick }: Props) {
       <img
         src={photoUrl}
         alt={`${checkin.nickname}님의 ${checkin.title} 활동 사진`}
+        width={320}
+        height={400}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
       />
