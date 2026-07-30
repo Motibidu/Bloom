@@ -7,6 +7,7 @@ import {
   usePostDetail,
   usePostComments,
   useCreatePostComment,
+  useDeletePostComment,
   usePostLikeToggle,
   useDeletePost,
   type PostComment,
@@ -507,6 +508,10 @@ export default function BoardDetailPage() {
   const createComment = useCreatePostComment(postId)
   const likeToggle = usePostLikeToggle(postId)
   const deletePost = useDeletePost(postId)
+  const deletePostComment = useDeletePostComment(postId)
+  const [commentMenuTarget, setCommentMenuTarget] = useState<PostComment | null>(null)
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState<number | null>(null)
+  const [commentReportTarget, setCommentReportTarget] = useState<number | null>(null)
 
   const [commentText, setCommentText] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -546,6 +551,19 @@ export default function BoardDetailPage() {
       { content: replyText.trim(), commentType: 'TEXT', parentId },
       { onSuccess: () => { setReplyText(''); setReplyTargetId(null) } }
     )
+  }
+
+  const handleCommentDelete = () => {
+    if (commentDeleteTarget == null) return
+    deletePostComment.mutate(commentDeleteTarget, {
+      onSuccess: () => {
+        setCommentDeleteTarget(null)
+        toast.success('댓글을 삭제했어요.')
+      },
+      onError: () => {
+        toast.error('댓글 삭제 중 오류가 발생했어요.')
+      },
+    })
   }
 
   const handleDelete = async () => {
@@ -822,18 +840,78 @@ export default function BoardDetailPage() {
         <div className="space-y-3">
           {(comments ?? []).map((c: PostComment) => (
             <div key={c.id} className="rounded-xl px-4 py-3 space-y-2" style={{ background: mA(0.04) }}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-black text-foreground">{c.nickname}</span>
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-11 h-11 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-base font-black"
+                  style={c.profileImageUrl
+                    ? { boxShadow: `0 2px 8px ${mA(0.25)}` }
+                    : { background: grad, color: 'white', boxShadow: `0 2px 8px ${mA(0.25)}` }}
+                  aria-label={`${c.nickname} 아바타`}
+                >
+                  {c.profileImageUrl ? (
+                    <img src={c.profileImageUrl} alt={`${c.nickname} 프로필`} className="w-full h-full object-cover" />
+                  ) : (
+                    <span aria-hidden="true">{c.nickname[0]}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-black text-foreground">{c.nickname}</p>
+                      <p className="text-xs text-foreground/50 mt-0.5">{formatRelativeDate(c.createdAt)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCommentMenuTarget(c)}
+                      aria-label="댓글 메뉴 열기"
+                      className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2"
+                      style={{ color: mA(0.5) }}
+                    >
+                      <MoreVertical size={18} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <p className="text-base text-foreground/80 mt-1">{c.content}</p>
+                </div>
               </div>
-              <p className="text-base text-foreground/80">{c.content}</p>
 
               {/* 대댓글 목록 */}
               {c.replies && c.replies.length > 0 && (
                 <div className="space-y-2 pl-4 ml-1" style={{ borderLeft: `3px solid ${mA(0.20)}` }}>
                   {c.replies.map(reply => (
                     <div key={reply.id} className="rounded-xl px-3 py-2.5" style={{ background: 'white' }}>
-                      <span className="text-sm font-black text-foreground">{reply.nickname}</span>
-                      <p className="text-base text-foreground/80 mt-0.5">{reply.content}</p>
+                      <div className="flex items-start gap-2.5">
+                        <div
+                          className="w-9 h-9 rounded-full shrink-0 overflow-hidden flex items-center justify-center text-sm font-black"
+                          style={reply.profileImageUrl
+                            ? { boxShadow: `0 2px 6px ${mA(0.20)}` }
+                            : { background: grad, color: 'white', boxShadow: `0 2px 6px ${mA(0.20)}` }}
+                          aria-label={`${reply.nickname} 아바타`}
+                        >
+                          {reply.profileImageUrl ? (
+                            <img src={reply.profileImageUrl} alt={`${reply.nickname} 프로필`} className="w-full h-full object-cover" />
+                          ) : (
+                            <span aria-hidden="true">{reply.nickname[0]}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-black text-foreground">{reply.nickname}</p>
+                              <p className="text-xs text-foreground/50 mt-0.5">{formatRelativeDate(reply.createdAt)}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setCommentMenuTarget(reply)}
+                              aria-label="답글 메뉴 열기"
+                              className="min-w-[36px] min-h-[36px] rounded-lg flex items-center justify-center shrink-0 focus-visible:outline-none focus-visible:ring-2"
+                              style={{ color: mA(0.5) }}
+                            >
+                              <MoreVertical size={18} aria-hidden="true" />
+                            </button>
+                          </div>
+                          <p className="text-base text-foreground/80 mt-1">{reply.content}</p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -875,6 +953,37 @@ export default function BoardDetailPage() {
             </div>
           ))}
         </div>
+
+        {commentMenuTarget && (
+          <CommentActionSheet
+            isOwner={commentMenuTarget.userId === currentUser?.id}
+            onClose={() => setCommentMenuTarget(null)}
+            onDelete={() => {
+              setCommentDeleteTarget(commentMenuTarget.id)
+              setCommentMenuTarget(null)
+            }}
+            onReport={() => {
+              setCommentReportTarget(commentMenuTarget.id)
+              setCommentMenuTarget(null)
+            }}
+          />
+        )}
+
+        {commentDeleteTarget != null && (
+          <CommentDeleteConfirmModal
+            onClose={() => setCommentDeleteTarget(null)}
+            onConfirm={handleCommentDelete}
+            isPending={deletePostComment.isPending}
+          />
+        )}
+
+        {commentReportTarget != null && (
+          <CommentReportModal
+            commentId={commentReportTarget}
+            onClose={() => setCommentReportTarget(null)}
+            onSuccess={() => toast.success('신고가 접수되었습니다.')}
+          />
+        )}
       </section>
     </main>
   )
