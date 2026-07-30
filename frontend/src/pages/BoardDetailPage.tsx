@@ -230,37 +230,35 @@ function CommentDeleteConfirmModal({
   isPending: boolean
   replyCount: number
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null)
-
   return (
     <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end justify-center pb-[env(safe-area-inset-bottom)]"
-      style={{ background: 'oklch(0 0 0 / 0.45)' }}
-      onClick={e => { if (e.target === overlayRef.current) onClose() }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: 'oklch(0 0 0 / 0.50)' }}
+      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="댓글 삭제 확인"
     >
       <div
-        className="w-full max-w-2xl rounded-t-3xl px-6 pt-5 pb-8 space-y-5"
-        style={{ background: 'white', boxShadow: `0 -8px 40px oklch(0.62 0.15 220 / 0.18)` }}
+        className="w-full max-w-sm rounded-3xl px-7 py-8 space-y-6"
+        style={{ background: 'white', boxShadow: `0 8px 40px ${mA(0.25)}` }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full mx-auto" style={{ background: mA(0.20) }} aria-hidden="true" />
-        <div className="text-center space-y-2 pt-2">
+        <div className="flex flex-col items-center gap-4 text-center">
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            className="w-16 h-16 rounded-2xl flex items-center justify-center"
             style={{ background: 'oklch(0.95 0.02 20)' }}
             aria-hidden="true"
           >
-            <Trash2 size={24} style={{ color: 'oklch(0.55 0.18 20)' }} />
+            <Trash2 size={28} style={{ color: 'oklch(0.55 0.18 20)' }} />
           </div>
-          <h2 className="text-xl font-black text-foreground">댓글을 삭제할까요?</h2>
-          <p className="text-base text-foreground/60">삭제한 댓글은 되돌릴 수 없어요.</p>
-          {replyCount > 0 && (
-            <p className="text-sm text-foreground/50">답글 {replyCount}개도 함께 삭제돼요.</p>
-          )}
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-black text-foreground">댓글을 삭제할까요?</h2>
+            <p className="text-base text-foreground/60">삭제한 댓글은 되돌릴 수 없어요.</p>
+            {replyCount > 0 && (
+              <p className="text-sm text-foreground/50">답글 {replyCount}개도 함께 삭제돼요.</p>
+            )}
+          </div>
         </div>
         <div className="flex gap-3">
           <button
