@@ -40,6 +40,23 @@ export default function PhotoFeedPage() {
     return () => observer.disconnect()
   }, [onIntersect])
 
+  const loadedPageCount = infiniteFeed?.pages?.length ?? 0
+  const photoCheckins = ((infiniteFeed?.pages ?? []).flatMap((p) => p.checkins).filter(Boolean) as CheckIn[])
+    .filter((c) => (c.photoUrls?.length ?? 0) > 0)
+
+  // 사진 없는 레거시 기록이 페이지를 가득 채워 필터링 후 0개가 되는 경우,
+  // sentinel이 보이지 않는 빈 상태에 갇히지 않도록 자동으로 다음 페이지를 가져온다.
+  useEffect(() => {
+    if (
+      photoCheckins.length === 0 &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      loadedPageCount > 0
+    ) {
+      fetchNextPage()
+    }
+  }, [photoCheckins.length, hasNextPage, isFetchingNextPage, loadedPageCount, fetchNextPage])
+
   if (isLoading) {
     return (
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -78,8 +95,7 @@ export default function PhotoFeedPage() {
     )
   }
 
-  const checkins = ((infiniteFeed?.pages ?? []).flatMap((p) => p.checkins).filter(Boolean) as CheckIn[])
-    .filter((c) => (c.photoUrls?.length ?? 0) > 0)
+  const checkins = photoCheckins
 
   return (
     <main className="max-w-6xl mx-auto pt-4 pb-8 sm:py-8 sm:px-6 space-y-5">
@@ -119,7 +135,6 @@ export default function PhotoFeedPage() {
               />
             ))}
           </div>
-          <div ref={sentinelRef} className="h-4" aria-hidden="true" />
           {!hasNextPage && checkins.length > 0 && (
             <p className="text-center text-sm font-semibold py-4" style={{ color: mA(0.45) }}>
               모든 사진을 확인했어요
@@ -127,6 +142,7 @@ export default function PhotoFeedPage() {
           )}
         </>
       )}
+      <div ref={sentinelRef} className="h-4" aria-hidden="true" />
     </main>
   )
 }
