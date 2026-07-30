@@ -11,6 +11,7 @@ public record CommentResponse(
         Long id,
         Long userId,
         String nickname,
+        String profileImageUrl,
         String content,
         LocalDateTime createdAt,
         CommentType commentType,
@@ -18,14 +19,15 @@ public record CommentResponse(
         Long parentId,
         List<CommentResponse> replies
 ) {
-    public static CommentResponse from(Comment comment) {
+    public static CommentResponse from(Comment comment, String s3BaseUrl) {
         List<CommentResponse> replyList = comment.getReplies().stream()
-                .map(CommentResponse::fromReply)
+                .map(reply -> CommentResponse.fromReply(reply, s3BaseUrl))
                 .toList();
         return new CommentResponse(
                 comment.getId(),
                 comment.getUser().getId(),
                 comment.getUser().getNickname(),
+                resolveProfileImageUrl(comment, s3BaseUrl),
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getCommentType(),
@@ -35,11 +37,12 @@ public record CommentResponse(
         );
     }
 
-    public static CommentResponse fromReply(Comment comment) {
+    public static CommentResponse fromReply(Comment comment, String s3BaseUrl) {
         return new CommentResponse(
                 comment.getId(),
                 comment.getUser().getId(),
                 comment.getUser().getNickname(),
+                resolveProfileImageUrl(comment, s3BaseUrl),
                 comment.getContent(),
                 comment.getCreatedAt(),
                 comment.getCommentType(),
@@ -47,5 +50,11 @@ public record CommentResponse(
                 comment.getParent() != null ? comment.getParent().getId() : null,
                 List.of()
         );
+    }
+
+    private static String resolveProfileImageUrl(Comment comment, String s3BaseUrl) {
+        return comment.getUser().getProfileImageObjectKey() != null
+                ? s3BaseUrl + "/" + comment.getUser().getProfileImageObjectKey()
+                : null;
     }
 }

@@ -32,6 +32,16 @@ public class CommentService {
     private final NotificationService notificationService;
     private final BlockService blockService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.s3.bucket}")
+    private String s3Bucket;
+
+    @org.springframework.beans.factory.annotation.Value("${app.s3.region}")
+    private String s3Region;
+
+    private String s3BaseUrl() {
+        return "https://" + s3Bucket + ".s3." + s3Region + ".amazonaws.com";
+    }
+
     public List<CommentResponse> getComments(Long checkinId, UserDetails userDetails) {
         checkinRepository.findById(checkinId)
                 .orElseThrow(() -> new ResourceNotFoundException("체크인을 찾을 수 없습니다."));
@@ -41,12 +51,12 @@ public class CommentService {
         if (!blockedIds.isEmpty()) {
             return commentRepository.findRootCommentsByCheckinIdExcludingUsers(checkinId, blockedIds)
                     .stream()
-                    .map(CommentResponse::from)
+                    .map(c -> CommentResponse.from(c, s3BaseUrl()))
                     .toList();
         }
         return commentRepository.findRootCommentsByCheckinId(checkinId)
                 .stream()
-                .map(CommentResponse::from)
+                .map(c -> CommentResponse.from(c, s3BaseUrl()))
                 .toList();
     }
 
@@ -73,7 +83,7 @@ public class CommentService {
                 .praiseCardType(req.praiseCardType())
                 .build();
 
-        CommentResponse response = CommentResponse.fromReply(commentRepository.save(comment));
+        CommentResponse response = CommentResponse.fromReply(commentRepository.save(comment), s3BaseUrl());
 
         if (!checkin.getUser().getId().equals(user.getId())) {
             boolean isReply = parent != null;
@@ -102,10 +112,10 @@ public class CommentService {
         List<Long> blockedIds = blockService.getBlockedUserIds(user.getId());
         if (!blockedIds.isEmpty()) {
             return commentRepository.findRootCommentsByPostIdExcludingUsers(postId, blockedIds)
-                    .stream().map(CommentResponse::from).toList();
+                    .stream().map(c -> CommentResponse.from(c, s3BaseUrl())).toList();
         }
         return commentRepository.findRootCommentsByPostId(postId)
-                .stream().map(CommentResponse::from).toList();
+                .stream().map(c -> CommentResponse.from(c, s3BaseUrl())).toList();
     }
 
     @Transactional
@@ -129,7 +139,7 @@ public class CommentService {
                 .commentType(req.resolvedCommentType())
                 .build();
 
-        return CommentResponse.fromReply(commentRepository.save(comment));
+        return CommentResponse.fromReply(commentRepository.save(comment), s3BaseUrl());
     }
 
     @Transactional
@@ -158,6 +168,6 @@ public class CommentService {
         } else {
             comment.updateContent(content);
         }
-        return CommentResponse.from(comment);
+        return CommentResponse.from(comment, s3BaseUrl());
     }
 }
